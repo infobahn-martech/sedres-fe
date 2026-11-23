@@ -69,6 +69,13 @@ export const generateVesselRegistrationPdf = (payload) =>
 export const getVesselRegPdf = (callTaskDocumentId) =>
   Gateway.get(`task_card/get_vessel_reg_pdf/${encodeURIComponent(String(callTaskDocumentId))}`);
 
+/**
+ * POST task_card/generate_crew_immigration_pdf — { call_id, card_id, role_id, task_id, batch_name, entry_html, return_html }
+ * → { status, call_task_document_id, document_name, file_name, file_url }
+ */
+export const generateCrewImmigrationPdf = (payload) =>
+  Gateway.post("task_card/generate_crew_immigration_pdf", payload);
+
 /** POST arrival/get_task_details — { call_id, card_id, task_id }: previously saved arrival popover values for a task. */
 export const getTaskDetails = (payload) => Gateway.post("arrival/get_task_details", payload);
 
@@ -87,6 +94,7 @@ const groService = {
   getStageTimeObjects,
   generateVesselRegistrationPdf,
   getVesselRegPdf,
+  generateCrewImmigrationPdf,
   getTaskDetails,
   assignTask: taskCardService.assignTask,
   startTask: taskCardService.startTask,

@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import PropTypes from "prop-types";
+import { FiPrinter, FiAlertTriangle } from "react-icons/fi";
 import DOMPurify from "dompurify";
 import groService from "@/services/groService";
 import vesselService from "@/services/vesselService";
@@ -80,8 +81,35 @@ const formatHijriFromValue = (value) => {
 /** "BATCH 2" -> "2"; falls back to the batch name as-is. */
 const batchNumber = (batch) => String(batch ?? "").match(/\d+/)?.[0] ?? String(batch ?? "");
 
+const PLACEHOLDER_TOKEN_RE = /\{[a-zA-Z0-9_]+\}/g;
+
+/** Template key / name -> which letter it is ("entry" | "return"); falls back to order. */
+const letterKindOf = (key, template, index) => {
+  const label = `${key} ${template?.template_name ?? ""}`.toLowerCase();
+  if (/return|exit|خروج|عودة/.test(label)) return "return";
+  if (/entry|دخول/.test(label)) return "entry";
+  return index === 0 ? "entry" : "return";
+};
+
+/** Self-contained letter HTML for the PDF renderer, which has none of the app's CSS. */
+const buildPrintHtml = (bodyHtml) =>
+  bodyHtml
+    ? `<style>
+.ql-align-center{text-align:center}.ql-align-left{text-align:left}
+.ql-align-right{text-align:right}.ql-align-justify{text-align:justify}
+.ql-direction-rtl{direction:rtl}table{width:100%}
+</style><div dir="rtl" style="direction:rtl">${bodyHtml}</div>`
+    : "";
+
 /** One template (Entry / Return): its fields, crew table and live preview. */
-function CrewImmigrationTemplateSection({ template, autoValues, crew }) {
+function CrewImmigrationTemplateSection({
+  templateKey,
+  template,
+  autoValues,
+  crew,
+  onPreviewHtml,
+  headerAction = null,
+}) {
   const html = template?.more_description ?? "";
   const { fieldKeys, crewKeys } = useMemo(() => extractCrewImmigrationPlaceholders(html), [html]);
 
@@ -158,15 +186,23 @@ function CrewImmigrationTemplateSection({ template, autoValues, crew }) {
     SANITIZE_CONFIG
   );
 
+  // Report the rendered letter upward so the batch can be printed as it is shown.
+  useEffect(() => {
+    onPreviewHtml?.(templateKey, previewHtml);
+  }, [onPreviewHtml, templateKey, previewHtml]);
+
   const editableCrewKeys = crewKeys.filter((key) => key !== "sl_no");
 
   return (
     <section className="gro-crew-imm-form-section">
-      <div className="gro-crew-imm-form-section-head">
-        <h4 className="gro-crew-imm-form-section-title">{template?.template_name || "Crew Immigration"}</h4>
-        {template?.description ? (
-          <p className="gro-crew-imm-form-section-desc">{template.description}</p>
-        ) : null}
+      <div className="gro-crew-imm-form-section-head gro-crew-imm-form-section-head--split">
+        <div className="gro-crew-imm-form-section-heading">
+          <h4 className="gro-crew-imm-form-section-title">{template?.template_name || "Crew Immigration"}</h4>
+          {template?.description ? (
+            <p className="gro-crew-imm-form-section-desc">{template.description}</p>
+          ) : null}
+        </div>
+        {headerAction}
       </div>
 
       <div className="gro-crew-immigration-bulk-body">
@@ -297,6 +333,9 @@ function CrewImmigrationTemplateSection({ template, autoValues, crew }) {
 }
 
 CrewImmigrationTemplateSection.propTypes = {
+  templateKey: PropTypes.string.isRequired,
+  onPreviewHtml: PropTypes.func,
+  headerAction: PropTypes.node,
   template: PropTypes.shape({
     template_name: PropTypes.string,
     description: PropTypes.string,
@@ -310,7 +349,13 @@ CrewImmigrationTemplateSection.propTypes = {
  * Crew Immigration form tab — one section per Crew Immigration template for the port
  * (Entry / Return), each filled from the selected batch's crew and the call's vessel.
  */
-export default function CrewImmigrationFormView({ portId, callId, activeBatch: controlledBatch }) {
+export default function CrewImmigrationFormView({
+  portId,
+  callId,
+  activeBatch: controlledBatch,
+  onPrint,
+  isPrinting = false,
+}) {
   const [templates, setTemplates] = useState([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [batches, setBatches] = useState([]);
@@ -373,6 +418,88 @@ export default function CrewImmigrationFormView({ portId, callId, activeBatch: c
     () => batches.find((b) => b.batch === activeBatch)?.crew ?? [],
     [batches, activeBatch]
   );
+
+  // Rendered letter HTML per template key, as shown in each preview.
+  const [sectionHtml, setSectionHtml] = useState({});
+  const handlePreviewHtml = useCallback((key, html) => {
+    setSectionHtml((prev) => (prev[key] === html ? prev : { ...prev, [key]: html }));
+  }, []);
+
+  const letters = useMemo(
+    () =>
+      templates.map(({ key, template }, index) => ({
+        key,
+        kind: letterKindOf(key, template, index),
+        html: sectionHtml[key] ?? "",
+      })),
+    [templates, sectionHtml]
+  );
+
+  const unfilledCount = useMemo(
+    () =>
+      letters.reduce(
+        (sum, { html }) => sum + new Set(String(html).match(PLACEHOLDER_TOKEN_RE) ?? []).size,
+        0
+      ),
+    [letters]
+  );
+
+  const letterLabel = letters.some((l) => l.kind === "entry") && letters.some((l) => l.kind === "return")
+    ? "Entry & Return letters"
+    : letters.length === 1
+      ? `${letters[0].kind === "return" ? "Return" : "Entry"} letter`
+      : "Letters";
+
+  const canPrint =
+    Boolean(onPrint) &&
+    Boolean(activeBatch) &&
+    !templatesLoading &&
+    letters.length > 0 &&
+    letters.every((l) => l.html) &&
+    crew.length > 0 &&
+    !isPrinting;
+
+  const handlePrint = () => {
+    if (!canPrint) return;
+    const htmlOf = (kind) => buildPrintHtml(letters.find((l) => l.kind === kind)?.html ?? "");
+    onPrint({ batchName: activeBatch, entryHtml: htmlOf("entry"), returnHtml: htmlOf("return") });
+  };
+
+  const printControls =
+    onPrint && activeBatch ? (
+      <div className="gro-crew-imm-print-actions">
+        {unfilledCount > 0 ? (
+          <span
+            className="gro-crew-imm-print-warn"
+            title="Placeholders still shown as {field} will print as-is. Fill them below if needed."
+          >
+            <FiAlertTriangle aria-hidden />
+            {unfilledCount} {unfilledCount === 1 ? "field" : "fields"} empty
+          </span>
+        ) : null}
+        <button
+          type="button"
+          className="gro-crew-imm-print-btn"
+          onClick={handlePrint}
+          disabled={!canPrint}
+          aria-busy={isPrinting}
+          title={
+            crew.length === 0
+              ? "No crew in this batch"
+              : `Print ${letterLabel.toLowerCase()} for ${activeBatch} (${crew.length} crew) as one PDF`
+          }
+        >
+          {isPrinting ? (
+            <span className="spinner-border spinner-border-sm" role="status">
+              <span className="visually-hidden">Generating…</span>
+            </span>
+          ) : (
+            <FiPrinter aria-hidden />
+          )}
+          {isPrinting ? "Generating PDF…" : `Print ${activeBatch}`}
+        </button>
+      </div>
+    ) : null;
 
   const autoValues = useMemo(() => {
     const today = new Date();
@@ -441,9 +568,12 @@ export default function CrewImmigrationFormView({ portId, callId, activeBatch: c
       ) : templates.length === 0 ? (
         <p className="gro-crew-immigration-bulk-empty">No Crew Immigration templates configured for this port.</p>
       ) : (
-        templates.map(({ key, template }) => (
+        templates.map(({ key, template }, index) => (
           <CrewImmigrationTemplateSection
             key={key}
+            templateKey={key}
+            onPreviewHtml={handlePreviewHtml}
+            headerAction={index === 0 ? printControls : null}
             template={template}
             autoValues={autoValues}
             crew={crew}
@@ -458,4 +588,7 @@ CrewImmigrationFormView.propTypes = {
   portId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   activeBatch: PropTypes.string,
+  /** ({ batchName, entryHtml, returnHtml }) => void — shows the Print button when given. */
+  onPrint: PropTypes.func,
+  isPrinting: PropTypes.bool,
 };

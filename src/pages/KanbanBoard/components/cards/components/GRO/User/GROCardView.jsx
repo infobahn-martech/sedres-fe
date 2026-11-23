@@ -143,6 +143,7 @@ const GROCardView = forwardRef(function GROCardView(
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
   const [isGeneratingVesselPdf, setIsGeneratingVesselPdf] = useState(false);
+  const [isGeneratingCrewImmigrationPdf, setIsGeneratingCrewImmigrationPdf] = useState(false);
   const [callDetail, setCallDetail] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [taskDocumentsData, setTaskDocumentsData] = useState(null);
@@ -1466,6 +1467,53 @@ const GROCardView = forwardRef(function GROCardView(
     }
   }, [isGeneratingVesselPdf, callId, cardId, taskId, userRoleId, applyCallDetailResponse]);
 
+  const handlePrintCrewImmigrationBatch = useCallback(
+    async ({ batchName, entryHtml, returnHtml }) => {
+      if (isGeneratingCrewImmigrationPdf) return;
+      if (callId == null || callId === "" || cardId == null || cardId === "" || !taskId) {
+        notify("Call, card or task id is missing.", "error");
+        return;
+      }
+      if (!entryHtml && !returnHtml) {
+        notify("No letters to print for this batch.", "error");
+        return;
+      }
+
+      setIsGeneratingCrewImmigrationPdf(true);
+      try {
+        const res = await groService.generateCrewImmigrationPdf({
+          call_id: Number(callId),
+          card_id: Number(cardId),
+          role_id: Number(userRoleId),
+          task_id: Number(taskId),
+          batch_name: batchName,
+          entry_html: entryHtml,
+          return_html: returnHtml,
+        });
+        const body = res?.data ?? {};
+        const result = body?.data && typeof body.data === "object" ? body.data : body;
+        if (String(body?.status ?? result?.status ?? "success").toLowerCase() !== "success") {
+          notify(body?.message || `Failed to generate the ${batchName} PDF.`, "error");
+          return;
+        }
+
+        refreshGroDocuments?.();
+
+        if (result?.file_url) {
+          window.open(result.file_url, "_blank", "noopener,noreferrer");
+          notify(`${result.document_name || `${batchName} letters`} generated.`, "success");
+        } else {
+          notify(`${batchName} PDF generated, but the file is not available to open.`, "warn");
+        }
+      } catch (err) {
+        notify(groApiErrorMessage(err, `Failed to generate the ${batchName} PDF.`), "error");
+      } finally {
+        setIsGeneratingCrewImmigrationPdf(false);
+      }
+    },
+    [isGeneratingCrewImmigrationPdf, callId, cardId, taskId, userRoleId, refreshGroDocuments]
+  );
+
   // Upload Signed Document is only offered on the Vessel Inward Registration card, and only
   // once the vessel registration has been uploaded (task.is_vessel_registration_uploaded).
   const hasVesselRegistrationDoc = useMemo(() => {
@@ -2014,6 +2062,8 @@ const GROCardView = forwardRef(function GROCardView(
                 portId={groPortId}
                 callId={callId}
                 activeBatch={crewImmigrationBatchFilter}
+                onPrint={handlePrintCrewImmigrationBatch}
+                isPrinting={isGeneratingCrewImmigrationPdf}
               />
             }
             actions={
