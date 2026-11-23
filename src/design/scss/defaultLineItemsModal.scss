@@ -44,6 +44,8 @@ $dli-primary-hover: #002a6d;
 
   .so-doc-modal-footer {
     padding: 16px 24px;
+    // Only the action buttons sit in this footer; keep them on the right.
+    justify-content: flex-end;
   }
 
   // Primary buttons

@@ -72,10 +72,107 @@ const normalizeExpiryDateForUi = (value) => {
   return s;
 };
 
+/**
+ * Task-card document review status — same codes as task_card/verify_docs:
+ * 0 not uploaded · 1 uploaded · 2 verified · 3 re-upload requested · 4 rejected.
+ */
+export const CHECKLIST_REVIEW_STATUS = {
+  UPLOADED: 1,
+  VERIFIED: 2,
+  REUPLOAD: 3,
+  REJECTED: 4,
+};
+
+const firstText = (...values) => {
+  for (const v of values) {
+    const s = String(v ?? "").trim();
+    if (s) return s;
+  }
+  return "";
+};
+
+const toStatusCode = (...values) => {
+  for (const v of values) {
+    if (v == null || v === "") continue;
+    const n = Number(v);
+    if (!Number.isNaN(n)) return n;
+  }
+  return null;
+};
+
+/** True when a review status means the document must be uploaded again. */
+export const isChecklistReviewRejected = (status) =>
+  status === CHECKLIST_REVIEW_STATUS.REJECTED || status === CHECKLIST_REVIEW_STATUS.REUPLOAD;
+
+/**
+ * Review (verify / reject) state of a call checklist item, as set from a task card
+ * (e.g. Custom Bayan rejecting a document with remarks). Reads the item first, then its
+ * newest file, accepting the field names the API may use. Returns null when not reviewed.
+ */
+export const extractChecklistItemReview = (item) => {
+  const files = Array.isArray(item?.files) ? item.files : [];
+  const latestFile = files[files.length - 1] ?? null;
+  const reviewed = item?.review ?? item?.verification ?? null;
+
+  const status = toStatusCode(
+    reviewed?.status,
+    item?.document_status,
+    item?.verify_status,
+    item?.verification_status,
+    item?.doc_status,
+    item?.status,
+    latestFile?.document_status,
+    latestFile?.verify_status,
+    latestFile?.status
+  );
+  if (status == null || status <= 0) return null;
+
+  return {
+    status,
+    reason: firstText(
+      reviewed?.remarks,
+      reviewed?.reason,
+      item?.reject_remarks,
+      item?.rejected_remarks,
+      item?.rejection_reason,
+      item?.verify_remarks,
+      item?.verification_remarks,
+      item?.doc_remarks,
+      latestFile?.reject_remarks,
+      latestFile?.verify_remarks,
+      latestFile?.remarks
+    ),
+    taskName: firstText(
+      reviewed?.task_name,
+      item?.rejected_task_name,
+      item?.verified_task_name,
+      item?.task_name,
+      latestFile?.task_name
+    ),
+    reviewedBy: firstText(
+      reviewed?.reviewed_by_name,
+      item?.rejected_by_name,
+      item?.verified_by_name,
+      item?.reviewed_by_name,
+      item?.rejected_by,
+      item?.verified_by,
+      latestFile?.verified_by_name
+    ),
+    reviewedAt: firstText(
+      reviewed?.reviewed_at,
+      item?.rejected_at,
+      item?.verified_at,
+      item?.reviewed_at,
+      latestFile?.verified_at
+    ),
+  };
+};
+
 const normalizeCallChecklistFile = (file, fallbackKey) => {
   const fileName = file?.file_name ?? file?.name ?? file?.filename ?? "File";
   const fileUrl = file?.file_url ?? file?.url ?? file?.link ?? null;
   return {
+    reviewStatus: toStatusCode(file?.document_status, file?.verify_status, file?.status),
     id: file?.file_id ?? file?.id ?? `api_${fallbackKey}`,
     file_id: file?.file_id ?? file?.id ?? null,
     name: fileName,
@@ -180,6 +277,7 @@ export const normalizeSavedChecklistLookup = (rows) => {
           expiryDate: normalizeExpiryDateForUi(item?.expiry_date ?? ""),
           apiUploadedFiles: files,
           uploadedFiles: files,
+          review: extractChecklistItemReview(item),
         };
       });
     });

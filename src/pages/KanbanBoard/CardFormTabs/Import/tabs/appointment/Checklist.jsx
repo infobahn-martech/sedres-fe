@@ -9,6 +9,7 @@ import ChecklistTypeBlock from "./checklistTab/ChecklistTypeBlock";
 import ChecklistFooterActions from "./checklistTab/ChecklistFooterActions";
 import ChecklistLoadingState from "./checklistTab/ChecklistLoadingState";
 import ChecklistEmptyState from "./checklistTab/ChecklistEmptyState";
+import ChecklistRejectedBanner from "./checklistTab/ChecklistRejectedBanner";
 import { parseChecklistTypeListResponse } from "./checklistTab/checklistApi";
 import { buildChecklistDataContext } from "./checklistTab/checklistContext";
 import { getPrerequisiteStateFromContext } from "./checklistTab/checklistPrerequisites";
@@ -18,6 +19,7 @@ import {
   extractCallChecklistRows,
   filterFilesExcludingRemovedBackend,
   flattenTreeItems,
+  isChecklistReviewRejected,
   mapApiSectionsToTree,
   mapGetChecklistByIdResponse,
   mergeChecklistTypeOptions,
@@ -341,16 +343,6 @@ function Checklist({
 
   const prerequisiteState = useMemo(() => getPrerequisiteStateFromContext(dataContext), [dataContext]);
 
-  // Per-requirement status for the empty state, so the user sees exactly what is still missing.
-  const prerequisiteRequirements = useMemo(() => {
-    const filled = (v) => v !== undefined && v !== null && String(v).trim() !== "";
-    return [
-      { label: "Call type", done: filled(dataContext?.calltypePayload) },
-      { label: "Port", done: filled(dataContext?.portIdForApi) },
-      { label: "Vessel or barge", done: Boolean(dataContext?.hasVessel || dataContext?.hasBarge) },
-    ];
-  }, [dataContext]);
-
   // Reset all checklist state before loading a new call so one call's options/selection
   // can never leak into another while the new call's data is still in flight.
   useEffect(() => {
@@ -568,6 +560,8 @@ function Checklist({
                 removedFiles: removedKeys,
                 requirement: item.requirement ?? null,
                 description: item.description ?? "",
+                // Verify / reject state set from a task card (read-only here).
+                review: savedItem?.review ?? null,
               };
             });
           });
@@ -641,16 +635,21 @@ function Checklist({
           const d = itemsData[item.id] || {};
           const checklistItemId = getChecklistItemIdFromUiItem(item);
           const resolvedChecklistItemId = checklistItemId || item.checklist_item_id || item.id;
+          const newLocalFiles = collectLocalFilesForSavePayload(d.uploadedFiles);
+          // A new file on a rejected item is a re-upload: the backend should reset the task
+          // document to "uploaded" (status 1) so the task card can verify it again.
+          const isReupload = isChecklistReviewRejected(d.review?.status) && newLocalFiles.length > 0;
           items.push({
             checklist_item_id: resolvedChecklistItemId,
             is_checked: d.checked === true ? 1 : 0,
             remarks: d.remarks || "",
             expiry_date: d.expiryDate || "",
+            ...(isReupload ? { is_reupload: 1 } : {}),
           });
           // Only new local File blobs — never re-post backend file metadata.
           // TODO: Backend delete API needed to persist removals from `removedFiles`; session hide does not change GET.
           const fileFieldName = `files_${resolvedChecklistItemId}[]`;
-          collectLocalFilesForSavePayload(d.uploadedFiles).forEach((file) => {
+          newLocalFiles.forEach((file) => {
             formData.append(fileFieldName, file);
           });
           const existingFileFieldName = `existing_file_ids_${resolvedChecklistItemId}[]`;
@@ -715,6 +714,33 @@ function Checklist({
     }
   }, [buildChecklistSaveFormData, checklistBlocks, checklistTypeOptions, currentCallId, onDirtyChange]);
 
+  // Items a task card rejected (or asked to re-upload) that still have no replacement file.
+  const rejectedSummary = useMemo(() => {
+    const list = [];
+    checklistBlocks.forEach((block) => {
+      flattenTreeItems(block.tree).forEach((item) => {
+        const d = itemsData[item.id];
+        if (!isChecklistReviewRejected(d?.review?.status)) return;
+        const hasReplacement = collectLocalFilesForSavePayload(d.uploadedFiles).length > 0;
+        list.push({ id: item.id, title: item.title, hasReplacement });
+      });
+    });
+    return {
+      pending: list.filter((r) => !r.hasReplacement),
+      replaced: list.filter((r) => r.hasReplacement),
+    };
+  }, [checklistBlocks, itemsData]);
+
+  const scrollToChecklistItem = useCallback((itemId) => {
+    const row = document.querySelector(`[data-cl-item-id="${CSS.escape(itemId)}"]`);
+    if (!row) return;
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+    row.classList.remove("cl-item-row--flash");
+    // Restart the flash animation so repeated clicks still draw the eye.
+    void row.offsetWidth;
+    row.classList.add("cl-item-row--flash");
+  }, []);
+
   const isLoading = effectiveCallDetailLoading || typeLoading || detailLoading || savedLoading;
   const hasChecklistData = checklistBlocks.some((b) => (b.tree || []).length > 0);
   // Any empty / error state: the card stretches to fill the panel so its content sits centred.
@@ -740,9 +766,8 @@ function Checklist({
             savedChecklistRows.length === 0 ? (
             <ChecklistEmptyState
               title="Checklist not available yet"
-              message="Add the details below in Appointment Details to load checklist types for this call."
+              message="Add the call type, port and vessel or barge in Appointment Details to load checklist types for this call."
               variant="prerequisite"
-              requirements={prerequisiteRequirements}
             />
           ) : null}
           {!isLoading && prerequisiteState.canLoadChecklists && checklistError ? (
@@ -767,6 +792,14 @@ function Checklist({
               title="No checklist items"
               message="The selected checklist types don't have any items configured yet."
               variant="noData"
+            />
+          ) : null}
+
+          {!isLoading && !checklistError && hasChecklistData ? (
+            <ChecklistRejectedBanner
+              pending={rejectedSummary.pending}
+              replaced={rejectedSummary.replaced}
+              onJump={scrollToChecklistItem}
             />
           ) : null}
 

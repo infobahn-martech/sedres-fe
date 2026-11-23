@@ -5,7 +5,7 @@ import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import SearchableSelect from '../../../components/form/SearchableSelect';
 import BusinessRuleFieldValue from './BusinessRuleFieldValue';
 import { isCustomGenericField } from './genericThenAction';
-import { getOperatorKey } from './businessRuleFieldUtils';
+import { getOperatorKey, normalizeConnector } from './businessRuleFieldUtils';
 import BoardMinimapModal from './BoardMinimapModal';
 import { findLoadedColumnName, isPositionColumnField } from './positionColumnFields';
 
@@ -56,6 +56,7 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
       fieldId,
       fieldLabel: field.field_label ?? field.custom_field_name ?? '',
       operatorKey: '',
+      connector: 'OR',
       value: '',
       timeUnitId: '',
       positionColumns: category?.positionColumns ?? [],
@@ -95,14 +96,24 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
           <div key={row.id} className="d-flex flex-column gap-2 mb-2 w-100">
             <div className="d-flex align-items-center justify-content-between gap-2">
               <span className="business-rule-form-action-chip-label">{rowLabel}</span>
-              <button
-                type="button"
-                className="business-rule-form-condition-remove"
-                onClick={() => onChange(rows.filter((r) => r.id !== row.id))}
-                aria-label={`Remove ${rowLabel}`}
-              >
-                <FiTrash2 size={14} />
-              </button>
+              <div className="d-flex align-items-center gap-2">
+                <button
+                  type="button"
+                  className="business-rule-form-or-btn"
+                  onClick={() => setRow(row.id, { connector: normalizeConnector(row.connector) === 'AND' ? 'OR' : 'AND' })}
+                  aria-label={`Connector of ${rowLabel}`}
+                >
+                  {normalizeConnector(row.connector)}
+                </button>
+                <button
+                  type="button"
+                  className="business-rule-form-condition-remove"
+                  onClick={() => onChange(rows.filter((r) => r.id !== row.id))}
+                  aria-label={`Remove ${rowLabel}`}
+                >
+                  <FiTrash2 size={14} />
+                </button>
+              </div>
             </div>
             {operators.length > 0 && (
               <SearchableSelect

@@ -2,6 +2,7 @@ import { useRef } from "react";
 import PropTypes from "prop-types";
 import { FiClock } from "react-icons/fi";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
+import { GroTimeFieldsSkeleton } from "../../GRO/User/GroCardViewSkeleton";
 
 /** Task document upload popover (anchored beside segmented tabs). */
 function TaskDocumentUploadPanel({
@@ -71,9 +72,7 @@ function TaskDocumentUploadPanel({
               </div>
             ) : null}
             {timeObjectsLoading ? (
-              <div className="gro-inward-popover-field">
-                <span className="gro-inward-popover-label gro-inward-popover-loading">Loading time fields…</span>
-              </div>
+              <GroTimeFieldsSkeleton fields={2} />
             ) : hasDynamicTimeFields ? (
               timeObjectFields.map((field) => (
                   <div

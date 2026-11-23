@@ -1,49 +1,767 @@
 {
     "status": "success",
-    "data": {
-        "call_id": 582,
-        "weather_forecast": "bad_weather",
-        "is_bad_weather": 1,
-        "tab_id": 68,
-        "tab_key": "pre_arrival",
-        "weather_map": {
-            "field_id": "weather_map",
-            "field_key": "weather_map",
-            "field_label": "Weather Map",
-            "field_type": "iframe",
-            "is_required": 0,
-            "row_no": 8,
-            "col_no": 1,
-            "option_source": null,
-            "master_key": null,
-            "depends_on_field_id": null,
-            "show_when_field_id": 223,
-            "show_when_value": "bad_weather",
-            "options": [],
-            "value": null,
-            "iframe": {
-                "title": "Windy Weather Map",
-                "src": "https:\/\/embed.windy.com\/embed.html?type=map&location=coordinates&metricRain=default&metricTemp=default&metricWind=default&zoom=8&overlay=wind&product=ecmwf&level=surface&lat=27.284&lon=49.109&detailLat=29.0525682775337&detailLon=48.087158203125&marker=true",
-                "width": 650,
-                "height": 450
-            }
+    "checklist_details": {
+        "checklist_type_id": "6",
+        "port_id": "1",
+        "call_type_id": "1",
+        "vessel_type_id": "4",
+        "barge_type_id": null,
+        "tug_type_id": null,
+        "checklist_name": "AL JUBAIL PORT ",
+        "created_by": "1",
+        "created_date": "2026-07-25 11:39:50",
+        "updated_by": "1",
+        "updated_date": "2026-08-03 10:51:36",
+        "call_type": "Domestic Call",
+        "barge_type": null,
+        "vessel_type": "Offshore Support Vessel",
+        "tug_type": null
+    },
+    "data": [
+        {
+            "checklist_section_id": "27",
+            "parent_id": null,
+            "title": "DOCUMENTS REQUIRED FOR IMPORT AND INWARD CLEARENCE FOR VESSELS",
+            "sort_order": "1",
+            "items": [
+                {
+                    "checklist_item_id": "159",
+                    "item_name": "Commercial invoice with shipper stamp and sign , for Taxi boat not applicable.",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "Original Required",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "160",
+                    "item_name": "Bill of lading \u2013 Surrender \/ Seaway bill , for Taxi boat not applicable.",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "161",
+                    "item_name": "Aramco contract with Arabic translation \u2013 Contract # , Start and Expiry date should be reflecting , for Taxi boat not applicable",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "162",
+                    "item_name": "Sub contract if there is no direct contract with Aramco",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "163",
+                    "item_name": "Last port Clearance for Tug , Barge , Crew boat",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "ORIGINAL REQUIRED ONBOARD",
+                        "uploaded_files": []
+                    },
+                    "roles": [
+                        {
+                            "role_id": 6,
+                            "role_name": "GRO Supervisor",
+                            "tasks": [
+                                {
+                                    "task_id": 3,
+                                    "task_name": "Inward Clearance"
+                                }
+                            ],
+                            "task_ids": [
+                                3
+                            ]
+                        }
+                    ],
+                    "role_ids": [
+                        6
+                    ]
+                },
+                {
+                    "checklist_item_id": "164",
+                    "item_name": "Stamped crew List from last port",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "COPY SIGNED AND STAMPED BY MASTER",
+                        "uploaded_files": []
+                    },
+                    "roles": [
+                        {
+                            "role_id": 6,
+                            "role_name": "GRO Supervisor",
+                            "tasks": [
+                                {
+                                    "task_id": 3,
+                                    "task_name": "Inward Clearance"
+                                }
+                            ],
+                            "task_ids": [
+                                3
+                            ]
+                        }
+                    ],
+                    "role_ids": [
+                        6
+                    ]
+                },
+                {
+                    "checklist_item_id": "165",
+                    "item_name": "Cargo Manifest IF ANY from last port with customs stamp ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "ORIGINAL REQUIRED ONBOARD",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "166",
+                    "item_name": "Pre-arrival Notice 40 points \u2013 As per attached with email",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "PRE-ARRIVAL  FOR TUB AND BARGE ",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "167",
+                    "item_name": "List of Last 10 port of calls",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "168",
+                    "item_name": "Arabic letters for temporary import on Consignee letter head \u2013 Sedres will provide Draft \u2013 for Taxi boat not Applicable",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "ORIGINAL REQUIRED ATTESTED BY CHAMBER",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "169",
+                    "item_name": "Vessel Health declaration form as per Attached with email",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                }
+            ],
+            "sub_sections": []
         },
-        "weather_detail": {
-            "field_id": "weather_detail",
-            "field_key": "weather_detail",
-            "field_label": "Weather Detail",
-            "field_type": "textarea",
-            "is_required": 0,
-            "row_no": 9,
-            "col_no": 1,
-            "option_source": null,
-            "master_key": null,
-            "depends_on_field_id": null,
-            "show_when_field_id": 223,
-            "show_when_value": "bad_weather",
-            "options": [],
-            "value": null,
-            "post_key": "weather_detail"
+        {
+            "checklist_section_id": "28",
+            "parent_id": null,
+            "title": "CREW IMMIGRATION (For Import vessel) ",
+            "sort_order": "2",
+            "items": [
+                {
+                    "checklist_item_id": "170",
+                    "item_name": "Crew list ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [
+                        {
+                            "role_id": 6,
+                            "role_name": "GRO Supervisor",
+                            "tasks": [
+                                {
+                                    "task_id": 2,
+                                    "task_name": "Crew Immigration"
+                                }
+                            ],
+                            "task_ids": [
+                                2
+                            ]
+                        }
+                    ],
+                    "role_ids": [
+                        6
+                    ]
+                },
+                {
+                    "checklist_item_id": "171",
+                    "item_name": "Crew passports and Saudi Visa copies",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [
+                        {
+                            "role_id": 6,
+                            "role_name": "GRO Supervisor",
+                            "tasks": [
+                                {
+                                    "task_id": 2,
+                                    "task_name": "Crew Immigration"
+                                }
+                            ],
+                            "task_ids": [
+                                2
+                            ]
+                        }
+                    ],
+                    "role_ids": [
+                        6
+                    ]
+                },
+                {
+                    "checklist_item_id": "172",
+                    "item_name": "Crew List split into two - for Immigration visit",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [
+                        {
+                            "role_id": 6,
+                            "role_name": "GRO Supervisor",
+                            "tasks": [
+                                {
+                                    "task_id": 2,
+                                    "task_name": "Crew Immigration"
+                                }
+                            ],
+                            "task_ids": [
+                                2
+                            ]
+                        }
+                    ],
+                    "role_ids": [
+                        6
+                    ]
+                }
+            ],
+            "sub_sections": []
+        },
+        {
+            "checklist_section_id": "29",
+            "parent_id": null,
+            "title": "AUTHORISATION LETTER FOR CUSTOMS BROKER     ",
+            "sort_order": "3",
+            "items": [
+                {
+                    "checklist_item_id": "173",
+                    "item_name": "Broker Authorization online system",
+                    "description": "Broker details  License no. 2753 Name : Khalid Sheshan Al Harbi  Port : Jubail ",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "CONFIRMATION ONLY",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                }
+            ],
+            "sub_sections": []
+        },
+        {
+            "checklist_section_id": "30",
+            "parent_id": null,
+            "title": "IF CARGO ONBOARD",
+            "sort_order": "4",
+            "items": [
+                {
+                    "checklist_item_id": "174",
+                    "item_name": "Cargo Commercial invoice with the company stamp.",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "ORIGINAL REQUIRED",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "175",
+                    "item_name": "Cargo packing list ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "ORIGINAL REQUIRED",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "176",
+                    "item_name": "Cargo Bill of Lading - Surrender \/ Seaway bill",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [
+                        {
+                            "role_id": 5,
+                            "role_name": "Custom Clearance Supervisor",
+                            "tasks": [
+                                {
+                                    "task_id": 4,
+                                    "task_name": "Custom Bayan"
+                                }
+                            ],
+                            "task_ids": [
+                                4
+                            ]
+                        }
+                    ],
+                    "role_ids": [
+                        5
+                    ]
+                },
+                {
+                    "checklist_item_id": "177",
+                    "item_name": "Arabic letter for cargo importation",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": false,
+                        "description": "ORIGINAL REQUIRED ATTESTED BY CHAMBER",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "178",
+                    "item_name": "SABER certificate if any as per HS code   ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [
+                        {
+                            "role_id": 5,
+                            "role_name": "Custom Clearance Supervisor",
+                            "tasks": [
+                                {
+                                    "task_id": 4,
+                                    "task_name": "Custom Bayan"
+                                }
+                            ],
+                            "task_ids": [
+                                4
+                            ]
+                        }
+                    ],
+                    "role_ids": [
+                        5
+                    ]
+                }
+            ],
+            "sub_sections": []
+        },
+        {
+            "checklist_section_id": "31",
+            "parent_id": null,
+            "title": "MARINE WORK PERMIT",
+            "sort_order": "5",
+            "items": [
+                {
+                    "checklist_item_id": "179",
+                    "item_name": "Vessel Registry certificate",
+                    "description": "(Check Vessel Age)",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [
+                        {
+                            "role_id": 6,
+                            "role_name": "GRO Supervisor",
+                            "tasks": [
+                                {
+                                    "task_id": 7,
+                                    "task_name": "Vessel Inward Registration"
+                                }
+                            ],
+                            "task_ids": [
+                                7
+                            ]
+                        }
+                    ],
+                    "role_ids": [
+                        6
+                    ]
+                },
+                {
+                    "checklist_item_id": "180",
+                    "item_name": "International Tonnage certificate ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "181",
+                    "item_name": "Ship Radio Station license",
+                    "description": "(EPIRB, AIS & VHF equipment details should be mentioned along with Frequency)",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "182",
+                    "item_name": "Certificate of Class certificate with a yearly endorsement",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "183",
+                    "item_name": "International Load line certificate with yearly endorsement ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "184",
+                    "item_name": "Cargo Ship Safety construction certificate with yearly endorsement (If GRT above 500 MT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "185",
+                    "item_name": "Cargo ship safety Equipment certificate with yearly endorsement (If GRT above 500 MT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "186",
+                    "item_name": "Cargo ship Safety Radio certificate with yearly endorsement (If GRT above 300 MT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "187",
+                    "item_name": "Passenger ship safety certificate for crew boat (for below 500GRT required exemption certificate from class) ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "188",
+                    "item_name": "General Condition Survey",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "189",
+                    "item_name": "International Ship Security Certificate with Biennial endorsement (If GRT above 500 MT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "190",
+                    "item_name": "International Oil Pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "191",
+                    "item_name": "International Air Pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "192",
+                    "item_name": "International Sewage pollution prevention certificate with yearly endorsement (If GRT above 400 MT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "193",
+                    "item_name": "Picture of vessel (Need to capture vessel name and IMO in one pic)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "194",
+                    "item_name": "Safety Management Certificate with Biennial endorsement (If GRT above 500 MT) ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "195",
+                    "item_name": "International Anti-fouling system certificate (if GRT above 400GRT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "196",
+                    "item_name": "International Energy Efficient certificate (If GRT above 400T)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "197",
+                    "item_name": "International Ballast Water management (If GRT above 400GRT)",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "198",
+                    "item_name": "Minimum Safe Manning certificate",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "199",
+                    "item_name": "Insurance ( P&I, H&M) oil pollution covered amount should be mentioned",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "200",
+                    "item_name": "Insurance for wrecks removal certificate from Flag for above 300GRT ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "201",
+                    "item_name": "Insurance for bunker oil pollution damage 2021 certificate from Flag for above 1000GRT",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                },
+                {
+                    "checklist_item_id": "202",
+                    "item_name": "Qualification Certificates (COC) for Master\/Officers ",
+                    "description": "",
+                    "expiry_date_reqd": "0",
+                    "document_details": {
+                        "require_copy_only": true,
+                        "description": "",
+                        "uploaded_files": []
+                    },
+                    "roles": [],
+                    "role_ids": []
+                }
+            ],
+            "sub_sections": []
         }
-    }
+    ]
 }

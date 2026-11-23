@@ -796,7 +796,16 @@ const SalesOrderList = ({
   // The Operator board is not a DA board (isDaContext is false there), so the Subsea 7 Approval Requested and
   // Approval Received flows open the header button and its modals on their own, for any user, like their Action column.
   const isOperatorSrtFlow = isOperatorSrtApprovalFlow || isOperatorSrtReceivedFlow;
-  const isSrtApprovalContext = isDaVerifyContext || isOperatorSrtFlow;
+  // Operator board: a BGP swimlane card on "Approval Requested" uses the standard SO approval flow (Send For SO
+  // approval email, then Approved / Rejected). It stays on the column with the Awaiting approval sticker after
+  // the send and the backend moves it on once the approval is recorded.
+  const isOperatorBgpApprovalFlow =
+    isBgpSwimlane({ title: card?.swimlaneTitle }) &&
+    Array.isArray(stepLabels) &&
+    currentStep != null &&
+    isApprovalRequestedColumnTitle(stepLabels[currentStep - 1]);
+  const isOperatorApprovalFlow = isOperatorSrtFlow || isOperatorBgpApprovalFlow;
+  const isSrtApprovalContext = isDaVerifyContext || isOperatorApprovalFlow;
   // Operator board: a BGP swimlane card on "Approval Received" takes the signed SO the client sent and,
   // optionally, the client's approval email (da/da_upload_so_approval_proof); the backend then moves the
   // card on to "Sent to DA".
@@ -808,9 +817,9 @@ const SalesOrderList = ({
   // daStatusRefreshToken is bumped by onDaStatusRefresh after every action below, so the
   // authoritative button_state is refetched once per action instead of being called by hand.
   useEffect(() => {
-    if (!canViewActionColumn && !isOperatorSrtFlow) return;
+    if (!canViewActionColumn && !isOperatorApprovalFlow) return;
     fetchSoActionState();
-  }, [canViewActionColumn, isOperatorSrtFlow, callId, daStatusRefreshToken, soActionStateResetToken, fetchSoActionState]);
+  }, [canViewActionColumn, isOperatorApprovalFlow, callId, daStatusRefreshToken, soActionStateResetToken, fetchSoActionState]);
   // Once the PR email is sent the Zamil Marine card sits on "PR Received", where the documents are uploaded.
   const isAtPrReceivedColumn =
     isZamilMarineWorkflowCard &&
@@ -822,6 +831,7 @@ const SalesOrderList = ({
     isAtAwaitingSoPrColumn ||
     isOperatorSrtApprovalFlow ||
     isOperatorSrtReceivedFlow ||
+    isOperatorBgpApprovalFlow ||
     (isSrtFlow && (isAtColumnAfterOpsCompleted || isAtAwaitingSrtColumn || isAtSrtReceivedColumn)) ||
     (Array.isArray(stepLabels) && currentStep != null && SO_SENT_FOR_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
     (Array.isArray(stepLabels) && currentStep != null && SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
@@ -1434,7 +1444,7 @@ const SalesOrderList = ({
       // that used to skip over "SO/PO Approval Received" entirely, jumping the card 2 steps
       // ahead in one Approve click.
       // Operator Subsea 7: the backend moves the card itself; closing refetches the board to show it.
-      if (isOperatorSrtApprovalFlow) {
+      if (isOperatorSrtApprovalFlow || isOperatorBgpApprovalFlow) {
         onCloseCard?.();
         return;
       }

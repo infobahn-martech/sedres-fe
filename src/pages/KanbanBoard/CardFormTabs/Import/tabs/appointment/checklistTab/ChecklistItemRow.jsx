@@ -1,9 +1,23 @@
 import PropTypes from "prop-types";
 import { useState, useEffect, useRef } from "react";
-import { FiUploadCloud } from "react-icons/fi";
+import { FiUploadCloud, FiAlertOctagon, FiRefreshCw, FiClock } from "react-icons/fi";
 import DatePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DatePickerField";
 import { FormTextarea } from "./checklistFormPrimitives";
-import { getBackendFileSessionRemovalKey } from "./checklistMappers";
+import {
+  CHECKLIST_REVIEW_STATUS,
+  getBackendFileSessionRemovalKey,
+  isChecklistReviewRejected,
+} from "./checklistMappers";
+
+/** "YYYY-MM-DD HH:mm:ss" -> "DD/MM/YYYY HH:mm" for the rejection note. */
+const formatReviewDate = (value) => {
+  const match = String(value ?? "").match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}:\d{2}))?/);
+  if (!match) return String(value ?? "");
+  const [, y, m, d, t] = match;
+  return `${d}/${m}/${y}${t ? ` ${t}` : ""}`;
+};
+
+const isLocalFileEntry = (entry) => entry instanceof File || entry?.file instanceof File;
 
 const formatDisplayDate = (value) => {
   if (!value) return "--/--/----";
@@ -234,6 +248,17 @@ const ChecklistItemRow = ({
   const referencePreviewUrl = itemRootBackendUrl || urlFromList(referenceFiles);
   const requirementMetaLabel = getRequirementMetaLabel({ requireCopyOnlyFromApi, requirement });
 
+  // Rejected from a task card (e.g. Custom Bayan): highlight, show the reason, ask for a re-upload.
+  const review = itemData?.review ?? null;
+  const isRejected = isChecklistReviewRejected(review?.status);
+  const hasReplacement = isRejected && uploadColumnFiles.some(isLocalFileEntry);
+  const reviewVerb = review?.status === CHECKLIST_REVIEW_STATUS.REUPLOAD ? "Re-upload requested" : "Rejected";
+  const isFileRejected = (entry) => {
+    if (!isRejected || isLocalFileEntry(entry)) return false;
+    if (entry?.reviewStatus != null) return isChecklistReviewRejected(entry.reviewStatus);
+    return entry?.fromApi === true;
+  };
+
   const uploadedFilesSyncKey = Array.isArray(itemData?.uploadedFiles)
     ? itemData.uploadedFiles.map((f) => `${f?.id ?? ""}:${f?.name ?? f?.fileName ?? ""}:${f?.file instanceof File ? "blob" : ""}`).join("|")
     : "";
@@ -376,10 +401,17 @@ const ChecklistItemRow = ({
   const renderFileChip = (entry, idx, { variant = "inline", allowRemove = true } = {}) => {
     const label = displayNameForEntry(entry);
     const previewOk = canPreviewEntry(entry);
-    const chipClass =
-      variant === "popover"
-        ? "checklist-file-chip checklist-file-chip--popover"
-        : "checklist-file-chip checklist-file-chip--inline";
+    const fileRejected = isFileRejected(entry);
+    const fileIsReplacement = hasReplacement && isLocalFileEntry(entry);
+    const chipClass = [
+      "checklist-file-chip",
+      variant === "popover" ? "checklist-file-chip--popover" : "checklist-file-chip--inline",
+      fileRejected ? "checklist-file-chip--rejected" : "",
+      fileRejected && hasReplacement ? "checklist-file-chip--superseded" : "",
+      fileIsReplacement ? "checklist-file-chip--replacement" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
     const nameClass =
       variant === "popover"
         ? "checklist-file-chip__name checklist-file-chip__name--popover"
@@ -387,9 +419,15 @@ const ChecklistItemRow = ({
     const displayLabel = variant === "popover" ? truncateMiddle(label, 36) : label;
 
     return (
-      <div key={fileEntryKey(entry, idx)} className={chipClass} title={label}>
+      <div
+        key={fileEntryKey(entry, idx)}
+        className={chipClass}
+        title={fileRejected ? `${label} — rejected` : fileIsReplacement ? `${label} — new, not saved yet` : label}
+      >
         <DocIcon size={variant === "popover" ? 12 : 11} />
         <span className={nameClass}>{displayLabel}</span>
+        {fileRejected ? <span className="checklist-file-chip__tag">Rejected</span> : null}
+        {fileIsReplacement ? <span className="checklist-file-chip__tag">New</span> : null}
         <button
           type="button"
           className="checklist-file-chip__btn checklist-file-chip__btn--view"
@@ -492,7 +530,17 @@ const ChecklistItemRow = ({
     });
 
   return (
-    <tr className={`checklist-table-row cl-item-row ${checked ? "checked" : ""}`}>
+    <tr
+      data-cl-item-id={id}
+      className={[
+        "checklist-table-row cl-item-row",
+        checked && !isRejected ? "checked" : "",
+        isRejected && !hasReplacement ? "cl-item-row--rejected" : "",
+        hasReplacement ? "cl-item-row--resubmit" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <td className="checklist-table-checkbox">
         <label className="checklist-checkbox-wrapper checklist-checkbox-wrapper--table">
           <input
@@ -562,6 +610,49 @@ const ChecklistItemRow = ({
           {itemDescription ? (
             <p className="cl-item-description">{itemDescription}</p>
           ) : null}
+          {isRejected ? (
+            <div
+              className={`cl-review-note${hasReplacement ? " cl-review-note--resubmit" : ""}`}
+              role={hasReplacement ? "status" : "alert"}
+            >
+              <div className="cl-review-note__head">
+                {hasReplacement ? (
+                  <FiClock className="cl-review-note__icon" aria-hidden />
+                ) : (
+                  <FiAlertOctagon className="cl-review-note__icon" aria-hidden />
+                )}
+                <span className="cl-review-note__status">
+                  {hasReplacement ? "Ready to resubmit" : reviewVerb}
+                </span>
+                {review?.taskName ? (
+                  <span className="cl-review-note__task">{review.taskName}</span>
+                ) : null}
+              </div>
+              {hasReplacement ? (
+                <p className="cl-review-note__reason">
+                  New file added — save the checklist to send it for verification again.
+                </p>
+              ) : (
+                <p className="cl-review-note__reason">
+                  {review?.reason ? (
+                    <>
+                      <span className="cl-review-note__label">Reason: </span>
+                      {review.reason}
+                    </>
+                  ) : (
+                    "No reason was given. Upload a corrected document."
+                  )}
+                </p>
+              )}
+              {!hasReplacement && (review?.reviewedBy || review?.reviewedAt) ? (
+                <p className="cl-review-note__meta">
+                  {[review.reviewedBy, review.reviewedAt ? formatReviewDate(review.reviewedAt) : ""]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           {showMetaRow ? (
             <div className="cl-item-meta-row cl-item-meta-row--inline">
               {expiryDateRequired ? (
@@ -615,7 +706,17 @@ const ChecklistItemRow = ({
       </td>
       <td className="checklist-table-upload cl-col-upload cl-col-upload--multi checklist-upload-compact-wrap">
         <div className="checklist-upload-compact checklist-upload-compact--icon">
-          {!isViewOnly ? (
+          {!isViewOnly && isRejected && !hasReplacement ? (
+            <button
+              type="button"
+              className="cl-reupload-btn"
+              onClick={handleBrowseClick}
+              title={review?.reason ? `Re-upload — ${review.reason}` : "Re-upload document"}
+            >
+              <FiRefreshCw size={14} aria-hidden />
+              Re-upload
+            </button>
+          ) : !isViewOnly ? (
             <button
               type="button"
               className="checklist-upload-icon-btn"

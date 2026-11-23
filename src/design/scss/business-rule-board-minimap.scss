@@ -109,6 +109,10 @@
 }
 
 // The stage colour is only the top line of its cell.
+.board-minimap-area-cell--pickable {
+  cursor: pointer;
+}
+
 .board-minimap-area-cell .board-minimap-band-fill {
   height: 3px;
 }
