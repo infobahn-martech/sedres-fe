@@ -164,6 +164,8 @@ const TEMPLATE_REFETCH_PARAMS = {
   appointment_type: "appointment_type",
   vessel: "vessel_id",
   billing_entity: "billing_entity_id",
+  barge_vessel: "barge_vessel_id",
+  barge_billing_entity: "barge_billing_entity_id",
   port: "port_id",
   last_port: "last_port",
   service_requestor_email: "service_requestor_email",
@@ -197,10 +199,14 @@ const normalizeBindingKey = (value) =>
     .replace(/^_+|_+$/g, "")
     .replace(/_(id|file|name)$/, "");
 
-const resolveTemplateRefetchParam = (field) =>
-  [field?.system_binding_key, field?.master_key, field?.field_label]
+// A barge field may share the generic master_key ("vessel" / "billing_entity") with the tug/vessel
+// field, so a barge-specific match (from its binding key or label) wins over the generic one.
+const resolveTemplateRefetchParam = (field) => {
+  const params = [field?.system_binding_key, field?.master_key, field?.field_label]
     .map((candidate) => TEMPLATE_REFETCH_PARAMS[normalizeBindingKey(candidate)])
-    .find(Boolean) ?? "";
+    .filter(Boolean);
+  return params.find((param) => param.startsWith("barge_")) ?? params[0] ?? "";
+};
 
 const isFileValue = (value) =>
   value instanceof File || (typeof Blob !== "undefined" && value instanceof Blob);
