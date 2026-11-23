@@ -76,6 +76,22 @@
   text-align: center;
 }
 
+.board-minimap-title-bar--pickable {
+  width: 100%;
+  color: inherit;
+  cursor: pointer;
+
+  &:hover {
+    background: #e0e7ff;
+    border-color: #00368c;
+  }
+}
+
+.board-minimap-title-bar--selected {
+  background: #e0e7ff;
+  border-color: #00368c;
+}
+
 .board-minimap-table {
   width: 100%;
   border-collapse: separate;
@@ -189,6 +205,12 @@
     background: #1d4ed8;
     border-color: #1d4ed8;
   }
+}
+
+// Lane-only map: a single cell is never highlighted on its own, only its whole row.
+.board-minimap-cell--lane-only:hover:not(.board-minimap-cell--row-active):not(.board-minimap-cell--selected) {
+  background: var(--bg-secondary);
+  border-color: var(--border-primary);
 }
 
 .board-minimap-cell--selected {
