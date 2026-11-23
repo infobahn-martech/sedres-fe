@@ -1,101 +1,30 @@
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useCallDetail } from "@/pages/KanbanBoard/CardFormTabs/shared/callDetailContext";
+import {
+  useCallDetail,
+  useSharedCallDetail,
+} from "@/pages/KanbanBoard/CardFormTabs/shared/callDetailContext";
 import checklistService from "@/services/checklistService";
+import callFileService from "@/services/callFileService";
 import { notify } from "@/components/Toaster";
 import "@/design/scss/checklist.scss";
-import ChecklistMultiSelect from "./checklistTab/ChecklistMultiSelect";
 import ChecklistTypeBlock from "./checklistTab/ChecklistTypeBlock";
 import ChecklistFooterActions from "./checklistTab/ChecklistFooterActions";
 import ChecklistLoadingState from "./checklistTab/ChecklistLoadingState";
 import ChecklistEmptyState from "./checklistTab/ChecklistEmptyState";
 import ChecklistRejectedBanner from "./checklistTab/ChecklistRejectedBanner";
-import { parseChecklistTypeListResponse } from "./checklistTab/checklistApi";
-import { buildChecklistDataContext } from "./checklistTab/checklistContext";
-import { getPrerequisiteStateFromContext } from "./checklistTab/checklistPrerequisites";
 import {
   collectItemIdsUnderSectionInBlocks,
   collectTreeSectionIds,
-  extractCallChecklistRows,
-  filterFilesExcludingRemovedBackend,
   flattenTreeItems,
   isChecklistReviewRejected,
-  mapApiSectionsToTree,
-  mapGetChecklistByIdResponse,
-  mergeChecklistTypeOptions,
-  mergeSavedChecklistsIntoTypeOptions,
-  normalizeSavedChecklistLookup,
+  mapCallDetailChecklist,
 } from "./checklistTab/checklistMappers";
-
-const toIdString = (v) => (v == null || String(v).trim() === "" ? null : String(v).trim());
 
 const normalizeExpiryDateForUi = (value) => {
   const s = String(value ?? "").trim();
   if (!s || s === "0000-00-00" || s.startsWith("0000-00-00")) return "";
   return s;
-};
-
-const normalizeBackendFile = (file, fallbackKey) => {
-  const fileName = file?.file_name ?? file?.name ?? file?.filename ?? "File";
-  const fileUrl =
-    file?.file_url ??
-    file?.sample_file_url ??
-    file?.requirement_file_url ??
-    file?.url ??
-    file?.link ??
-    null;
-
-  return {
-    id: file?.file_id ?? file?.id ?? `api_${fallbackKey}`,
-    file_id: file?.file_id ?? file?.id ?? null,
-    name: fileName,
-    fileName,
-    size: file?.size ?? null,
-    url: fileUrl,
-    link: fileUrl,
-    file_url: file?.file_url ?? fileUrl,
-    sample_file_url: file?.sample_file_url ?? null,
-    requirement_file_url: file?.requirement_file_url ?? null,
-    fromApi: true,
-    isNew: false,
-    file: undefined,
-  };
-};
-
-const createLocalChecklistFileEntry = (file, uniqueKey) => ({
-  id: `local_${uniqueKey}_${file.name}`,
-  name: file.name,
-  fileName: file.name,
-  url: null,
-  link: null,
-  file_url: null,
-  file,
-  fromApi: false,
-  isNew: true,
-});
-
-/** Normalize mixed legacy rows (File instances or partial objects) into unified file entries. */
-const normalizeUploadedFilesStateEntries = (entries, itemKeyPrefix) => {
-  if (!Array.isArray(entries)) return [];
-  return entries
-    .map((entry, idx) => {
-      if (entry instanceof File) return createLocalChecklistFileEntry(entry, `${itemKeyPrefix}_${idx}`);
-      if (!entry || typeof entry !== "object") return null;
-      const file = entry.file instanceof File ? entry.file : null;
-      const fromApi = entry.fromApi === true && !file;
-      const name = entry.name || entry.fileName || file?.name || "File";
-      return {
-        ...entry,
-        id: entry.id ?? `file_${itemKeyPrefix}_${idx}`,
-        name,
-        fileName: entry.fileName || name,
-        url: entry.url ?? entry.link ?? entry.file_url ?? null,
-        file: file || undefined,
-        fromApi: file ? false : fromApi,
-        isNew: Boolean(file),
-      };
-    })
-    .filter(Boolean);
 };
 
 const collectLocalFilesForSavePayload = (uploadedFilesList) => {
@@ -158,95 +87,6 @@ const dedupeChecklistFilesByNormalizedName = (entries) => {
   return out;
 };
 
-/** Drop local File rows that already appear on the server list (e.g. after save + refetch). */
-const filterLocalsNotReflectedOnBackend = (localEntries, backendEntries) => {
-  const backends = Array.isArray(backendEntries) ? backendEntries : [];
-  return (Array.isArray(localEntries) ? localEntries : []).filter((entry) => {
-    const pf = entry?.file instanceof File ? entry.file : null;
-    if (!pf) return false;
-    const normalizedPendingName = normalizeChecklistFilename(pf.name);
-    const nameMatch = (b) => {
-      const normalizedBackendName = getNormalizedChecklistFileName(b);
-      return normalizedBackendName && normalizedBackendName === normalizedPendingName;
-    };
-    const duplicate = backends.some((b) => {
-      if (b?.file instanceof File) return false;
-      if (!nameMatch(b)) return false;
-      const bs = b?.size != null ? Number(b.size) : null;
-      const ps = pf.size != null ? Number(pf.size) : null;
-      if (
-        bs != null &&
-        ps != null &&
-        !Number.isNaN(bs) &&
-        !Number.isNaN(ps)
-      ) {
-        return bs === ps;
-      }
-      return true;
-    });
-    return !duplicate;
-  });
-};
-
-const fetchChecklistTypes = async ({ vessel_type_id, barge_type_id, calltype, port_id }) => {
-  const isNoChecklistError = (error) => {
-    const status = error?.response?.status;
-    const message = String(
-      error?.response?.data?.message
-      ?? error?.response?.data?.error
-      ?? error?.message
-      ?? ""
-    ).toLowerCase();
-    return status === 404 || message.includes("no checklist found");
-  };
-
-  const parseSourceResult = (result) => {
-    if (result.status === "fulfilled") {
-      return {
-        rows: parseChecklistTypeListResponse(result.value),
-        failed: false,
-        errorMessage: "",
-      };
-    }
-    if (isNoChecklistError(result.reason)) {
-      return { rows: [], failed: false, errorMessage: "" };
-    }
-    return {
-      rows: [],
-      failed: true,
-      errorMessage: result.reason?.message || "Failed to load checklist types.",
-    };
-  };
-
-  const vesselCall = vessel_type_id
-    ? checklistService.getChecklistsByVesselType({ vessel_type_id, calltype, port_id })
-    : Promise.resolve(null);
-  const bargeCall = barge_type_id
-    ? checklistService.getChecklistsByBargeType({ barge_type_id, calltype, port_id })
-    : Promise.resolve(null);
-
-  const [vesselRes, bargeRes] = await Promise.allSettled([vesselCall, bargeCall]);
-  const vesselParsed = parseSourceResult(vesselRes);
-  const bargeParsed = parseSourceResult(bargeRes);
-  const hasUsableData =
-    vesselParsed.rows.length > 0 || bargeParsed.rows.length > 0;
-  const hasFailures = vesselParsed.failed || bargeParsed.failed;
-
-  return {
-    vesselRows: vesselParsed.rows,
-    bargeRows: bargeParsed.rows,
-    hasUsableData,
-    hasFailures,
-    errorMessage: [vesselParsed.errorMessage, bargeParsed.errorMessage]
-      .filter(Boolean)
-      .join(" | "),
-  };
-};
-
-const fetchChecklistById = async (checklistTypeId) => {
-  const { data } = await checklistService.getChecklistById(checklistTypeId);
-  return data;
-};
 
 // Comparable view of the user-editable checklist state, used for unsaved-change detection.
 const serializeItemsDataForDirtyCheck = (itemsData) =>
@@ -265,23 +105,6 @@ const serializeItemsDataForDirtyCheck = (itemsData) =>
       })
   );
 
-const fetchSavedCallChecklist = async (callId) => {
-  if (!callId) return [];
-  const { data } = await checklistService.getCallChecklist(callId);
-  return extractCallChecklistRows(data);
-};
-
-const normalizeChecklistTypeOptions = (rowsBySource) =>
-  mergeChecklistTypeOptions([rowsBySource.vesselRows, rowsBySource.bargeRows]);
-
-const normalizeChecklistDetailResponse = (checklistTypeId, payload, fallbackName) => {
-  const { checklistDetails, sections } = mapGetChecklistByIdResponse(payload);
-  const typeId = toIdString(checklistTypeId);
-  const typeName = checklistDetails?.checklist_name || fallbackName || `Checklist ${typeId}`;
-  const tree = mapApiSectionsToTree(sections, typeId, typeName);
-  return { typeId, typeName, tree, checklistDetails };
-};
-
 const getChecklistItemIdFromUiItem = (item) => {
   const raw = String(item?.id ?? "");
   const marker = "_item_";
@@ -289,6 +112,35 @@ const getChecklistItemIdFromUiItem = (item) => {
   if (idx < 0) return null;
   const extracted = raw.slice(idx + marker.length).trim();
   return extracted || null;
+};
+
+/** itemsData for every item of the blocks, from the call's saved values (lookup[typeId][itemId]). */
+const buildItemsDataFromCallChecklist = (blocks, lookup) => {
+  const next = {};
+  blocks.forEach((block) => {
+    const blockTypeId = String(block.typeId);
+    flattenTreeItems(block.tree).forEach((item) => {
+      const checklistItemId = getChecklistItemIdFromUiItem(item);
+      const savedItem = checklistItemId ? lookup?.[blockTypeId]?.[checklistItemId] : null;
+      const backendFiles = dedupeChecklistFilesByNormalizedName(
+        Array.isArray(savedItem?.apiUploadedFiles) ? savedItem.apiUploadedFiles : []
+      );
+      next[item.id] = {
+        checked: savedItem?.checked === true,
+        remarks: savedItem?.remarks ?? "",
+        expiryDate: normalizeExpiryDateForUi(savedItem?.expiryDate ?? ""),
+        apiUploadedFiles: backendFiles,
+        uploadedFiles: backendFiles,
+        // Session-only: hides backend files the user removed; clearing requires backend delete API + refetch.
+        removedFiles: [],
+        requirement: item.requirement ?? null,
+        description: item.description ?? "",
+        // Verify / reject state set from a task card (task_documents; read-only here).
+        review: savedItem?.review ?? null,
+      };
+    });
+  });
+  return next;
 };
 
 function Checklist({
@@ -305,292 +157,63 @@ function Checklist({
     [card?.call_id, card?.callId, formValues?.call_id]
   );
 
-  // Used only when the parent didn't pass `cardDetail`: the drawer's shared call detail.
+  // GET call_file/get_call_detail/{callId}: the drawer's shared copy (no extra request inside
+  // CardForm) — its `checklist[]` carries the selected checklist types, their sections/items
+  // and this call's saved values in one payload.
   const hasCardDetailProp = Boolean(cardDetail && typeof cardDetail === "object");
   const {
     detail: localCallDetail,
     loading: callDetailLoad,
     error: callDetailError,
   } = useCallDetail(currentCallId, { enabled: !hasCardDetailProp });
-  const [checklistTypeOptions, setChecklistTypeOptions] = useState([]);
-  const [selectedChecklistTypeIds, setSelectedChecklistTypeIds] = useState([]);
-  const [checklistBlocks, setChecklistBlocks] = useState([]);
-  const [savedChecklistLookup, setSavedChecklistLookup] = useState({});
-  const [savedChecklistTypeIds, setSavedChecklistTypeIds] = useState([]);
-  const [savedChecklistRows, setSavedChecklistRows] = useState([]);
+  // CardForm's shared copy (when rendered inside the drawer): refreshing it updates every tab.
+  const refetchSharedCallDetail = useSharedCallDetail(currentCallId)?.refetch;
+
+  // Checklist rows re-read after a save (when the parent's call detail can't be refreshed here).
+  const [refreshedRows, setRefreshedRows] = useState(null);
   const [itemsData, setItemsData] = useState({});
   const [openSections, setOpenSections] = useState({});
-  const [, setOpenTypeGroups] = useState({});
-  const [typeLoading, setTypeLoading] = useState(false);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [savedLoading, setSavedLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
-  const [checklistError, setChecklistError] = useState("");
-  const userChangedSelectionRef = useRef(false);
 
-  const effectiveCallDetailLoading = callDetailLoading || callDetailLoad;
-
-  const dataContext = useMemo(
-    () =>
-      buildChecklistDataContext({
-        card,
-        cardDetail: cardDetail ?? localCallDetail,
-        formValues,
-        callDetailLoading: effectiveCallDetailLoading,
-      }),
-    [card, cardDetail, localCallDetail, formValues, effectiveCallDetailLoading]
+  const callDetail = hasCardDetailProp ? cardDetail : localCallDetail;
+  const checklistRows = useMemo(
+    () => refreshedRows ?? (Array.isArray(callDetail?.checklist) ? callDetail.checklist : []),
+    [refreshedRows, callDetail]
   );
-
-  const prerequisiteState = useMemo(() => getPrerequisiteStateFromContext(dataContext), [dataContext]);
-
-  // Reset all checklist state before loading a new call so one call's options/selection
-  // can never leak into another while the new call's data is still in flight.
+  // A newer call detail from the parent supersedes rows we re-read ourselves.
   useEffect(() => {
-    userChangedSelectionRef.current = false;
-    setChecklistTypeOptions([]);
-    setSelectedChecklistTypeIds([]);
-    setChecklistBlocks([]);
-    setSavedChecklistLookup({});
-    setSavedChecklistTypeIds([]);
-    setSavedChecklistRows([]);
-    setItemsData({});
-    setOpenSections({});
-    setOpenTypeGroups({});
-  }, [currentCallId]);
+    setRefreshedRows(null);
+  }, [callDetail]);
 
-  useEffect(() => {
-    let cancelled = false;
-    const loadSavedChecklist = async () => {
-      if (!currentCallId) {
-        setSavedChecklistLookup({});
-        setSavedChecklistTypeIds([]);
-        setSavedChecklistRows([]);
-        return;
-      }
-      setSavedLoading(true);
-      try {
-        const rows = await fetchSavedCallChecklist(currentCallId);
-        if (cancelled) return;
-        setSavedChecklistRows(rows);
-        const normalized = normalizeSavedChecklistLookup(rows);
-        setSavedChecklistLookup(normalized.lookup);
-        setSavedChecklistTypeIds(normalized.typeIds);
-        setChecklistTypeOptions((prev) => mergeSavedChecklistsIntoTypeOptions(prev, rows));
-      } catch {
-        if (!cancelled) {
-          setSavedChecklistLookup({});
-          setSavedChecklistTypeIds([]);
-          setSavedChecklistRows([]);
-        }
-      } finally {
-        if (!cancelled) setSavedLoading(false);
-      }
-    };
-    loadSavedChecklist();
-    return () => {
-      cancelled = true;
-    };
-  }, [currentCallId]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const loadChecklistTypes = async () => {
-      if (!prerequisiteState.canLoadChecklists) {
-        // Prerequisites (call type/port/vessel/barge) missing: still show whatever the
-        // saved-checklist API already resolved for this call, don't wipe it.
-        const savedOptions = mergeSavedChecklistsIntoTypeOptions([], savedChecklistRows);
-        setChecklistTypeOptions(savedOptions);
-        if (!userChangedSelectionRef.current) {
-          setSelectedChecklistTypeIds(
-            savedChecklistTypeIds.filter((id) =>
-              savedOptions.some((option) => String(option.value) === String(id))
-            )
-          );
-        }
-        if (!savedChecklistRows.length) {
-          setSelectedChecklistTypeIds([]);
-          setChecklistBlocks([]);
-          setItemsData({});
-          setOpenSections({});
-          setOpenTypeGroups({});
-        }
-        return;
-      }
-      setTypeLoading(true);
-      setChecklistError("");
-      try {
-        const rowsBySource = await fetchChecklistTypes({
-          vessel_type_id: dataContext.vesselTypeIdForApi,
-          barge_type_id: dataContext.bargeTypeIdForApi,
-          calltype: dataContext.calltypePayload,
-          port_id: dataContext.portIdForApi,
-        });
-        if (cancelled) return;
-        const fetchedOptions = normalizeChecklistTypeOptions(rowsBySource);
-        // Merge with saved-checklist rows so a valid name survives even when
-        // vessel/barge lookups return empty (e.g. type changed, no linkage row).
-        const options = mergeSavedChecklistsIntoTypeOptions(fetchedOptions, savedChecklistRows);
-        setChecklistTypeOptions(options);
-        setSelectedChecklistTypeIds((prev) => {
-          const optionIds = options.map((o) => String(o.value));
-          const optionIdSet = new Set(optionIds);
-          if (userChangedSelectionRef.current) {
-            return prev.filter((id) => optionIdSet.has(String(id))).map(String);
-          }
-          if (savedChecklistTypeIds.length > 0) {
-            const fromSaved = savedChecklistTypeIds
-              .filter((id) => optionIdSet.has(String(id)))
-              .map(String);
-            if (fromSaved.length) return fromSaved;
-          }
-          return optionIds;
-        });
-        if (!cancelled) {
-          if (!rowsBySource.hasUsableData && rowsBySource.hasFailures) {
-            setChecklistError(rowsBySource.errorMessage || "Failed to load checklist types.");
-          } else {
-            setChecklistError("");
-          }
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setChecklistTypeOptions([]);
-          setSelectedChecklistTypeIds([]);
-          setChecklistError(error?.message || "Failed to load checklist types.");
-        }
-      } finally {
-        if (!cancelled) setTypeLoading(false);
-      }
-    };
-    loadChecklistTypes();
-    return () => {
-      cancelled = true;
-    };
-  }, [dataContext, prerequisiteState.canLoadChecklists, savedChecklistTypeIds, savedChecklistRows]);
-
-  useEffect(() => {
-    if (userChangedSelectionRef.current) return;
-    if (!savedChecklistTypeIds.length || !checklistTypeOptions.length) return;
-    const optionIdSet = new Set(checklistTypeOptions.map((o) => String(o.value)));
-    const fromSaved = savedChecklistTypeIds
-      .filter((id) => optionIdSet.has(String(id)))
-      .map(String);
-    if (!fromSaved.length) return;
-    setSelectedChecklistTypeIds((prev) => {
-      const prevKey = [...prev].map(String).sort().join(",");
-      const nextKey = [...fromSaved].sort().join(",");
-      return prevKey === nextKey ? prev : fromSaved;
-    });
-  }, [savedChecklistTypeIds, checklistTypeOptions]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const loadChecklistDetails = async () => {
-      if (selectedChecklistTypeIds.length === 0) {
-        setChecklistBlocks([]);
-        setItemsData({});
-        setOpenSections({});
-        setOpenTypeGroups({});
-        return;
-      }
-      setDetailLoading(true);
-      setChecklistError("");
-      try {
-        const responses = await Promise.all(selectedChecklistTypeIds.map((id) => fetchChecklistById(id)));
-        if (cancelled) return;
-        const optionLabelById = new Map(checklistTypeOptions.map((o) => [String(o.value), o.label]));
-        const blocks = responses.map((payload, index) => {
-          const id = selectedChecklistTypeIds[index];
-          return normalizeChecklistDetailResponse(id, payload, optionLabelById.get(String(id)));
-        });
-        const allSectionIds = blocks.flatMap((b) => collectTreeSectionIds(b.tree));
-
-        setChecklistBlocks(blocks);
-        setOpenSections((prev) =>
-          allSectionIds.reduce((acc, sectionId) => ({ ...acc, [sectionId]: prev[sectionId] ?? true }), {})
-        );
-        setOpenTypeGroups((prev) =>
-          blocks.reduce((acc, b) => ({ ...acc, [b.typeId]: prev[b.typeId] ?? true }), {})
-        );
-        setItemsData((prev) => {
-          const next = {};
-          blocks.forEach((block) => {
-            const blockTypeId = String(block.typeId);
-            const blockItems = flattenTreeItems(block.tree);
-            blockItems.forEach((item) => {
-              const existing = prev[item.id] || {};
-              const checklistItemId = getChecklistItemIdFromUiItem(item);
-              const savedItem = checklistItemId ? savedChecklistLookup?.[blockTypeId]?.[checklistItemId] : null;
-              const apiFiles = (item.uploadedFromApi || []).map((f, idx) =>
-                normalizeBackendFile(f, `${item.id}_${idx}`)
-              );
-              const savedFiles = Array.isArray(savedItem?.apiUploadedFiles) ? savedItem.apiUploadedFiles : [];
-              const removedKeys = Array.isArray(existing.removedFiles)
-                ? [...new Set(existing.removedFiles.filter(Boolean))]
-                : [];
-              const baseBackendRaw = savedFiles.length ? savedFiles : apiFiles;
-              const baseBackendFiles = filterFilesExcludingRemovedBackend(baseBackendRaw, removedKeys);
-              const normalizedLegacy = normalizeUploadedFilesStateEntries(existing.uploadedFiles, item.id);
-              const legacySingle =
-                existing.uploadedFile instanceof File
-                  ? [createLocalChecklistFileEntry(existing.uploadedFile, `${item.id}_legacy`)]
-                  : [];
-              const pendingLocals = [...legacySingle, ...normalizedLegacy].filter(
-                (e) => e?.file instanceof File && e.fromApi !== true
-              );
-              const hasSavedItemBackendState = Array.isArray(savedItem?.apiUploadedFiles);
-              const localsStillPending = hasSavedItemBackendState
-                ? []
-                : filterLocalsNotReflectedOnBackend(pendingLocals, baseBackendFiles);
-              // Keep backend files first so they remain source-of-truth on duplicate names.
-              const mergedFiles = dedupeChecklistFilesByNormalizedName([
-                ...baseBackendFiles,
-                ...localsStillPending,
-              ]);
-
-              next[item.id] = {
-                checked: savedItem ? savedItem.checked === true : existing.checked === true,
-                remarks: savedItem ? savedItem.remarks ?? "" : existing.remarks ?? "",
-                expiryDate: savedItem
-                  ? normalizeExpiryDateForUi(savedItem.expiryDate ?? "")
-                  : normalizeExpiryDateForUi(existing.expiryDate ?? ""),
-                apiUploadedFiles: mergedFiles,
-                uploadedFiles: mergedFiles,
-                // Session-only: hides backend files user removed; clearing requires backend delete API + refetch.
-                removedFiles: removedKeys,
-                requirement: item.requirement ?? null,
-                description: item.description ?? "",
-                // Verify / reject state set from a task card (read-only here).
-                review: savedItem?.review ?? null,
-              };
-            });
-          });
-          return next;
-        });
-      } catch (error) {
-        if (!cancelled) {
-          setChecklistBlocks([]);
-          setItemsData({});
-          setChecklistError(error?.message || "Failed to load checklist details.");
-        }
-      } finally {
-        if (!cancelled) setDetailLoading(false);
-      }
-    };
-    loadChecklistDetails();
-    return () => {
-      cancelled = true;
-    };
-    // checklistTypeOptions intentionally omitted: only read as a label fallback,
-    // adding it would refetch checklist details on every options/label merge.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [savedChecklistLookup, selectedChecklistTypeIds]);
+  const { blocks: checklistBlocks, lookup: savedChecklistLookup } = useMemo(
+    () => mapCallDetailChecklist(checklistRows),
+    [checklistRows]
+  );
 
   // Baseline = last loaded/saved state; it follows itemsData until the user edits,
   // then edits are compared against it so reverting an edit clears the dirty flag.
   const userEditedRef = useRef(false);
   const baselineSnapshotRef = useRef("");
   const latestSnapshotRef = useRef("");
+
+  // New call: drop the previous call's rows/edits so they never leak into this one.
+  useEffect(() => {
+    userEditedRef.current = false;
+    setRefreshedRows(null);
+    setItemsData({});
+    setOpenSections({});
+  }, [currentCallId]);
+
+  // (Re)build form state from the call detail. A background refresh of the shared call detail
+  // (e.g. another tab saved) must not wipe unsaved checklist edits, so it is skipped while dirty.
+  useEffect(() => {
+    if (userEditedRef.current) return;
+    setItemsData(buildItemsDataFromCallChecklist(checklistBlocks, savedChecklistLookup));
+    const allSectionIds = checklistBlocks.flatMap((b) => collectTreeSectionIds(b.tree));
+    setOpenSections((prev) =>
+      allSectionIds.reduce((acc, sectionId) => ({ ...acc, [sectionId]: prev[sectionId] ?? true }), {})
+    );
+  }, [checklistBlocks, savedChecklistLookup]);
 
   useEffect(() => {
     const snapshot = serializeItemsDataForDirtyCheck(itemsData);
@@ -668,6 +291,18 @@ function Checklist({
     return formData;
   }, [currentCallId, checklistBlocks, itemsData]);
 
+  /** Re-read the call detail after a save so files, ticks and review states come from the server. */
+  const reloadChecklistFromCallDetail = useCallback(async () => {
+    if (!currentCallId) return;
+    if (typeof refetchSharedCallDetail === "function") {
+      await refetchSharedCallDetail();
+      return;
+    }
+    const { data } = await callFileService.getCallDetail(currentCallId);
+    const rows = data?.data?.checklist;
+    setRefreshedRows(Array.isArray(rows) ? rows : []);
+  }, [currentCallId, refetchSharedCallDetail]);
+
   const handleSaveConfirm = useCallback(async () => {
     if (!currentCallId) {
       notify("Call ID is missing. Please save general details first.", "error");
@@ -686,19 +321,7 @@ function Checklist({
       baselineSnapshotRef.current = latestSnapshotRef.current;
       onDirtyChange?.(false);
       try {
-        const rows = await fetchSavedCallChecklist(currentCallId);
-        setSavedChecklistRows(rows);
-        const normalized = normalizeSavedChecklistLookup(rows);
-        setSavedChecklistLookup(normalized.lookup);
-        setSavedChecklistTypeIds(normalized.typeIds);
-        setChecklistTypeOptions((prev) => mergeSavedChecklistsIntoTypeOptions(prev, rows));
-        if (!userChangedSelectionRef.current && normalized.typeIds.length > 0) {
-          const optionIdSet = new Set(checklistTypeOptions.map((o) => String(o.value)));
-          const fromSaved = normalized.typeIds
-            .filter((id) => optionIdSet.has(String(id)))
-            .map(String);
-          if (fromSaved.length) setSelectedChecklistTypeIds(fromSaved);
-        }
+        await reloadChecklistFromCallDetail();
       } catch {
         /* save succeeded; refresh is best-effort */
       }
@@ -712,7 +335,7 @@ function Checklist({
     } finally {
       setSaveLoading(false);
     }
-  }, [buildChecklistSaveFormData, checklistBlocks, checklistTypeOptions, currentCallId, onDirtyChange]);
+  }, [buildChecklistSaveFormData, checklistBlocks, currentCallId, onDirtyChange, reloadChecklistFromCallDetail]);
 
   // Items a task card rejected (or asked to re-upload) that still have no replacement file.
   const rejectedSummary = useMemo(() => {
@@ -741,10 +364,12 @@ function Checklist({
     row.classList.add("cl-item-row--flash");
   }, []);
 
-  const isLoading = effectiveCallDetailLoading || typeLoading || detailLoading || savedLoading;
+  // Only the first load shows the spinner; a background refresh keeps the current checklist.
+  const isLoading = !callDetail && !refreshedRows && (callDetailLoading || callDetailLoad);
   const hasChecklistData = checklistBlocks.some((b) => (b.tree || []).length > 0);
+  const showCallDetailError = !isLoading && !hasCardDetailProp && Boolean(callDetailError) && !callDetail;
   // Any empty / error state: the card stretches to fill the panel so its content sits centred.
-  const isEmptyView = !isLoading && (Boolean(callDetailError) || Boolean(checklistError) || !hasChecklistData);
+  const isEmptyView = !isLoading && (showCallDetailError || !hasChecklistData);
 
   return (
     <>
@@ -757,37 +382,17 @@ function Checklist({
       >
         <div className={`checklist-form checklist-form--compact${isEmptyView ? " checklist-form--empty" : ""}`}>
           {isLoading ? <ChecklistLoadingState /> : null}
-          {!isLoading && callDetailError ? (
+          {showCallDetailError ? (
             <ChecklistEmptyState title="Call detail error" message={callDetailError} variant="error" />
           ) : null}
-          {!isLoading &&
-            !callDetailError &&
-            !prerequisiteState.canLoadChecklists &&
-            savedChecklistRows.length === 0 ? (
-            <ChecklistEmptyState
-              title="Checklist not available yet"
-              message="Add the call type, port and vessel or barge in Appointment Details to load checklist types for this call."
-              variant="prerequisite"
-            />
-          ) : null}
-          {!isLoading && prerequisiteState.canLoadChecklists && checklistError ? (
-            <ChecklistEmptyState title="Checklist loading failed" message={checklistError} variant="error" />
-          ) : null}
-          {!isLoading &&
-            prerequisiteState.canLoadChecklists &&
-            !checklistError &&
-            selectedChecklistTypeIds.length === 0 ? (
+          {!isLoading && !showCallDetailError && checklistBlocks.length === 0 ? (
             <ChecklistEmptyState
               title="No checklist selected"
               message="Select one or more checklist types in Appointment Details to see their items here."
               variant="noData"
             />
           ) : null}
-          {!isLoading &&
-            prerequisiteState.canLoadChecklists &&
-            !checklistError &&
-            selectedChecklistTypeIds.length > 0 &&
-            !hasChecklistData ? (
+          {!isLoading && !showCallDetailError && checklistBlocks.length > 0 && !hasChecklistData ? (
             <ChecklistEmptyState
               title="No checklist items"
               message="The selected checklist types don't have any items configured yet."
@@ -795,7 +400,7 @@ function Checklist({
             />
           ) : null}
 
-          {!isLoading && !checklistError && hasChecklistData ? (
+          {!isLoading && hasChecklistData ? (
             <ChecklistRejectedBanner
               pending={rejectedSummary.pending}
               replaced={rejectedSummary.replaced}
@@ -804,7 +409,6 @@ function Checklist({
           ) : null}
 
           {!isLoading &&
-            !checklistError &&
             hasChecklistData &&
             checklistBlocks.map((block) => (
               <div className="checklist-type-group cl-excel-type-group" key={block.typeId}>
@@ -827,7 +431,7 @@ function Checklist({
           {!isViewOnly && !isLoading && hasChecklistData ? (
             <div className="checklist-actions">
               <ChecklistFooterActions
-                disabled={saveLoading || selectedChecklistTypeIds.length === 0}
+                disabled={saveLoading}
                 loading={saveLoading}
                 onSaveConfirm={handleSaveConfirm}
               />

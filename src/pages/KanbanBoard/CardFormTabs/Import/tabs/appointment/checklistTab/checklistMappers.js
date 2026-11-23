@@ -105,11 +105,37 @@ export const isChecklistReviewRejected = (status) =>
   status === CHECKLIST_REVIEW_STATUS.REJECTED || status === CHECKLIST_REVIEW_STATUS.REUPLOAD;
 
 /**
+ * Review state from get_call_detail `checklist[].sections[].items[].task_documents[]`
+ * ({ task_id, task_name, status, status_label, remarks, ... }). A rejected / re-upload
+ * document wins over the others so the item always surfaces what still needs action.
+ */
+const extractTaskDocumentReview = (taskDocuments) => {
+  const docs = (Array.isArray(taskDocuments) ? taskDocuments : [])
+    .map((doc) => ({ doc, status: toStatusCode(doc?.status) }))
+    .filter(({ status }) => status != null && status > 0);
+  if (!docs.length) return null;
+
+  const picked = docs.find(({ status }) => isChecklistReviewRejected(status)) ?? docs[docs.length - 1];
+  const { doc, status } = picked;
+  return {
+    status,
+    statusLabel: firstText(doc?.status_label),
+    reason: firstText(doc?.remarks),
+    taskName: firstText(doc?.task_name),
+    reviewedBy: firstText(doc?.reviewed_by_name, doc?.verified_by_name, doc?.rejected_by_name),
+    reviewedAt: firstText(doc?.reviewed_at, doc?.verified_at, doc?.rejected_at),
+  };
+};
+
+/**
  * Review (verify / reject) state of a call checklist item, as set from a task card
  * (e.g. Custom Bayan rejecting a document with remarks). Reads the item first, then its
  * newest file, accepting the field names the API may use. Returns null when not reviewed.
  */
 export const extractChecklistItemReview = (item) => {
+  const taskDocReview = extractTaskDocumentReview(item?.task_documents);
+  if (taskDocReview) return taskDocReview;
+
   const files = Array.isArray(item?.files) ? item.files : [];
   const latestFile = files[files.length - 1] ?? null;
   const reviewed = item?.review ?? item?.verification ?? null;
@@ -362,7 +388,30 @@ export const getUniqueTaskNamesFromRoles = (roles) => {
   return names;
 };
 
-export const mapItemTaskNamesFromApi = (item) => getUniqueTaskNamesFromRoles(item?.roles);
+/** Task names for the TASK column: item.roles[].tasks[] (checklist master) or item.task_documents[] (get_call_detail). */
+export const mapItemTaskNamesFromApi = (item) => {
+  const fromRoles = getUniqueTaskNamesFromRoles(item?.roles);
+  if (fromRoles.length) return fromRoles;
+  const docs = Array.isArray(item?.task_documents) ? item.task_documents : [];
+  return [...new Set(docs.map((d) => String(d?.task_name ?? "").trim()).filter(Boolean))];
+};
+
+/**
+ * get_call_detail `data.checklist[]` → render blocks + saved-state lookup.
+ * Each row carries both the structure (sections/items) and the call's saved values,
+ * so this single response replaces the type / by-id / saved-checklist calls.
+ */
+export const mapCallDetailChecklist = (rows) => {
+  const list = (Array.isArray(rows) ? rows : []).filter(
+    (row) => row?.checklist_type_id != null && String(row.checklist_type_id).trim() !== ""
+  );
+  const blocks = list.map((row) => {
+    const typeId = String(row.checklist_type_id).trim();
+    const typeName = resolveChecklistTypeName(row, typeId) || `Checklist ${typeId}`;
+    return { typeId, typeName, tree: mapApiSectionsToTree(row.sections, typeId, typeName) };
+  });
+  return { blocks, lookup: normalizeSavedChecklistLookup(list).lookup };
+};
 
 const mapItemToRow = (it, i, sectionId) => {
   const iid = it.checklist_item_id ?? i;
