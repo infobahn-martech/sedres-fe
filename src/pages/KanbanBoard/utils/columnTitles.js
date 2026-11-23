@@ -103,6 +103,11 @@ const APPROVAL_RECEIVED_COLUMN_PATTERN = /^approval\s+received$/i;
 export const isApprovalReceivedColumnTitle = (columnTitle) =>
   APPROVAL_RECEIVED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
 
+const SENT_TO_DA_COLUMN_PATTERN = /^sent\s+to\s+f?da$/i;
+
+export const isSentToDaColumnTitle = (columnTitle) =>
+  SENT_TO_DA_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
+
 /* Operator board L&T "Approval Received": its cards are ticked for the bulk "Upload SCC Documents" (approved
    SCCs and an optional approval email); the cards with a signed SCC then move on to the DA board. */
 export const isLntApprovalReceivedCell = (laneTitle, columnTitle) =>
