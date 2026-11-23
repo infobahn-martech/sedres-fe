@@ -2593,6 +2593,17 @@
   z-index: 1;
 }
 
+// Header-row anchors (e.g. Crew Immigration "Update Status") open over the panel below,
+// whose sticky batch toolbar sits at z-index 5 — lift the anchor above it.
+.gro-card-view .gro-document-header-actions .gro-inward-anchor {
+  z-index: 20;
+}
+
+.gro-card-view .gro-document-header-actions .gro-inward-popover .gro-inward-popover-body {
+  max-height: min(60vh, 460px);
+  overflow-y: auto;
+}
+
 .gro-card-view .gro-inward-popover-field-error,
 .gro-card-view .gro-inward-popover-loading {
   font-size: 12px;

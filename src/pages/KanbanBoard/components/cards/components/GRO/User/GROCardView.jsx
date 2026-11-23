@@ -63,7 +63,7 @@ import {
   resolveGroStageIdFromTaskName,
   resolveGroTimeObjectValueKey,
   filterGroTimeObjectsForBatch,
-  stripGroBatchSuffix,
+  resolveGroTimeObjectBatch,
   resolveGroNowDateTimeParts,
   validateGroRequiredTimeObjects,
   buildGroArrivalTimeObjectsPayload,
@@ -483,31 +483,19 @@ const GROCardView = forwardRef(function GROCardView(
     [timeObjects, buildInwardTimeObjectField]
   );
 
-  // Crew Immigration time objects are configured per batch ("… Commenced - BATCH 1"), so the
-  // Update Status popover only shows the time objects whose label names the selected batch.
-  const crewImmigrationScopedTimeObjects = useMemo(
-    () =>
-      filterGroTimeObjectsForBatch(timeObjects, crewImmigrationBatchFilter, crewImmigrationBatchOptions),
-    [timeObjects, crewImmigrationBatchFilter, crewImmigrationBatchOptions]
-  );
-
-  // Built straight from the batch's own time objects — not by matching ids against the full
-  // list, since batches can share a time_object_id (same "Commenced" object per batch).
+  // Crew Immigration Update Status is one common form: every stage time object, all batches,
+  // labelled exactly as the API sends them ("Crew Immigration Commenced - BATCH 2").
+  // Batches reuse time_object_ids, so fields are keyed by id + batch (resolveGroTimeObjectValueKey).
   const crewImmigrationTimeFields = useMemo(() => {
     const seen = new Set();
-    return crewImmigrationScopedTimeObjects
+    return (Array.isArray(timeObjects) ? timeObjects : [])
       .map(buildInwardTimeObjectField)
       .filter((field) => {
         if (!field || seen.has(field.fieldKey)) return false;
         seen.add(field.fieldKey);
         return true;
-      })
-      .map((field) => ({
-        ...field,
-        // The batch is already in the popover title — keep labels short.
-        label: stripGroBatchSuffix(field.label),
-      }));
-  }, [crewImmigrationScopedTimeObjects, buildInwardTimeObjectField]);
+      });
+  }, [timeObjects, buildInwardTimeObjectField]);
 
   // Per-batch progress for the batch tabs: done (every time field set), progress (some), pending.
   const crewImmigrationBatchStatus = useMemo(() => {
@@ -976,10 +964,6 @@ const GROCardView = forwardRef(function GROCardView(
     setCrewImmigrationView("list");
   }, [activeTab, callId]);
 
-  // The Update Status popover is batch-specific — close it when the batch changes.
-  useEffect(() => {
-    setShowInwardClearance(false);
-  }, [crewImmigrationBatchFilter]);
 
   useEffect(() => {
     setCrewImmigrationPage(1);
@@ -1236,6 +1220,61 @@ const GROCardView = forwardRef(function GROCardView(
     resetInwardClearanceFields();
   };
 
+  // Saves the common Crew Immigration form. The save API takes one batch per request
+  // (`immigration_batch`), so each batch the user filled in is saved in turn; batches left
+  // entirely empty are skipped, and a partly filled batch must have all its required fields.
+  const submitCrewImmigrationStatus = async () => {
+    const groups = new Map();
+    (Array.isArray(timeObjects) ? timeObjects : []).forEach((item) => {
+      const batch = resolveGroTimeObjectBatch(item);
+      if (!groups.has(batch)) groups.set(batch, []);
+      groups.get(batch).push(item);
+    });
+
+    const hasValue = (item) =>
+      String(timeObjectValues?.[resolveGroTimeObjectValueKey(item)]?.date ?? "").trim() !== "";
+    const filledGroups = [...groups.entries()].filter(([, items]) => items.some(hasValue));
+
+    if (filledGroups.length === 0) {
+      notify("Enter at least one time to update.", "warn");
+      return;
+    }
+
+    const errors = filledGroups.reduce(
+      (acc, [, items]) => ({ ...acc, ...validateGroRequiredTimeObjects(items, timeObjectValues) }),
+      {}
+    );
+    if (Object.keys(errors).length > 0) {
+      setTimeObjectErrors(errors);
+      notify("Please fill in all required time fields for each batch you update.", "warn");
+      return;
+    }
+    setTimeObjectErrors({});
+
+    try {
+      let lastRes = null;
+      for (const [batch, items] of filledGroups) {
+        const formData = buildGroArrivalSaveFormData({
+          callId,
+          taskId,
+          timeObjects: items,
+          timeObjectValues,
+          stageId: groStageId,
+          extraStageFields: {},
+        });
+        if (batch) formData.append("immigration_batch", batch);
+        // Sequential on purpose: one batch per request, in order.
+        lastRes = await saveArrivalDocument({ formData });
+      }
+      notify(lastRes?.message || "Crew Immigration status updated successfully.", "success");
+      const freshTaskDetails = await refreshTaskDetails();
+      setShowInwardClearance(false);
+      resetInwardClearanceFields(freshTaskDetails);
+    } catch (err) {
+      notify(groApiErrorMessage(err, "Failed to update Crew Immigration status."), "error");
+    }
+  };
+
   const handleInwardSubmit = async () => {
     if (callId == null || callId === "") {
       notify("Call id is missing.", "error");
@@ -1246,9 +1285,12 @@ const GROCardView = forwardRef(function GROCardView(
       return;
     }
 
-    // On the Crew Immigration tab, Update Status saves only the selected batch's time fields.
-    const isCrewImmigrationBatchSave = activeTab === GRO_ACTIVE_TABS.crewImmigration;
-    const stageTimeObjects = isCrewImmigrationBatchSave ? crewImmigrationScopedTimeObjects : timeObjects;
+    // On the Crew Immigration tab, Update Status is one form covering every batch.
+    if (activeTab === GRO_ACTIVE_TABS.crewImmigration) {
+      await submitCrewImmigrationStatus();
+      return;
+    }
+    const stageTimeObjects = timeObjects;
 
     const timeValidationErrors = validateGroRequiredTimeObjects(stageTimeObjects, timeObjectValues);
     if (Object.keys(timeValidationErrors).length > 0) {
@@ -1268,8 +1310,7 @@ const GROCardView = forwardRef(function GROCardView(
       setStage11TimeObjectErrors({});
     }
 
-    // Batch Update Status carries only time fields — no status / document to validate.
-    if (groStageHasExtraFields(groStageId) && !isCrewImmigrationBatchSave) {
+    if (groStageHasExtraFields(groStageId)) {
       const extraErrors = validateGroExtraStageFields(groStageId, extraStageFields, existingStageFiles);
       if (Object.keys(extraErrors).length > 0) {
         setExtraStageFieldErrors(extraErrors);
@@ -1291,14 +1332,11 @@ const GROCardView = forwardRef(function GROCardView(
       timeObjects: allTimeObjects,
       timeObjectValues: allTimeObjectValues,
       stageId: groStageId,
-      extraStageFields: isCrewImmigrationBatchSave ? {} : extraStageFields,
+      extraStageFields,
     });
 
     if (groStageId === 10) {
       appendGroArrivalStageFieldsToFormData(formData, 11, extraStageFields);
-    }
-    if (isCrewImmigrationBatchSave && crewImmigrationBatchFilter) {
-      formData.append("immigration_batch", crewImmigrationBatchFilter);
     }
 
     try {
@@ -1987,6 +2025,36 @@ const GROCardView = forwardRef(function GROCardView(
                   ) : null}
                 </div>
               ) : null}
+              {isCrewImmigrationTabActive ? (
+                <InwardClearanceToolbar
+                  inwardAnchorRef={inwardAnchorRef}
+                  showMainFileUpload={false}
+                  showInwardClearance={showInwardClearance}
+                  onToggleInwardPopover={() => setShowInwardClearance(!showInwardClearance)}
+                  inwardActionLabel="Update Status"
+                  inwardPopoverTitle="Crew Immigration"
+                  timeObjectFields={crewImmigrationTimeFields}
+                  timeObjectsLoading={timeObjectsLoading}
+                  extraStageFieldsContent={
+                    !timeObjectsLoading && crewImmigrationTimeFields.length === 0 ? (
+                      <p className="gro-inward-popover-label gro-inward-popover-loading">
+                        No time fields configured.
+                      </p>
+                    ) : null
+                  }
+                  onInwardCancel={handleInwardCancel}
+                  onInwardSubmit={handleInwardSubmit}
+                  isSavingInward={isSavingArrivalDocument}
+                  isGroLoadingDisabled={
+                    isGroLoading ||
+                    isSavingArrivalDocument ||
+                    callId == null ||
+                    callId === "" ||
+                    !taskId ||
+                    !isAllGroDocumentsVerified
+                  }
+                />
+              ) : null}
               {(hidePassTabs &&
                 !isCrewImmigrationStage &&
                 !isVesselInwardRegistrationStage &&
@@ -2064,40 +2132,6 @@ const GROCardView = forwardRef(function GROCardView(
                 activeBatch={crewImmigrationBatchFilter}
                 onPrint={handlePrintCrewImmigrationBatch}
                 isPrinting={isGeneratingCrewImmigrationPdf}
-              />
-            }
-            actions={
-              <InwardClearanceToolbar
-                inwardAnchorRef={inwardAnchorRef}
-                showMainFileUpload={false}
-                showInwardClearance={showInwardClearance}
-                onToggleInwardPopover={() => setShowInwardClearance(!showInwardClearance)}
-                inwardActionLabel="Update Status"
-                inwardPopoverTitle={
-                  crewImmigrationBatchFilter
-                    ? `Crew Immigration · ${crewImmigrationBatchFilter}`
-                    : "Crew Immigration"
-                }
-                timeObjectFields={crewImmigrationTimeFields}
-                timeObjectsLoading={timeObjectsLoading}
-                extraStageFieldsContent={
-                  !timeObjectsLoading && crewImmigrationTimeFields.length === 0 ? (
-                    <p className="gro-inward-popover-label gro-inward-popover-loading">
-                      No time fields configured for this batch.
-                    </p>
-                  ) : null
-                }
-                onInwardCancel={handleInwardCancel}
-                onInwardSubmit={handleInwardSubmit}
-                isSavingInward={isSavingArrivalDocument}
-                isGroLoadingDisabled={
-                  isGroLoading ||
-                  isSavingArrivalDocument ||
-                  callId == null ||
-                  callId === "" ||
-                  !taskId ||
-                  !isAllGroDocumentsVerified
-                }
               />
             }
           />

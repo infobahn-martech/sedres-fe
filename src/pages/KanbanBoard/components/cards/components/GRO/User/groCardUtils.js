@@ -626,9 +626,19 @@ export const parseGroStageTimeObjectsResponse = (res) => {
   return [...rows].sort((a, b) => Number(a?.sort_order ?? 0) - Number(b?.sort_order ?? 0));
 };
 
+/** Batch a stage time object belongs to (`batch: "BATCH 2"`), or "" when it has none. */
+export const resolveGroTimeObjectBatch = (item) => String(item?.batch ?? "").trim();
+
+/**
+ * Form-state key of a time object. Crew Immigration batches reuse the same time_object_id
+ * ("Commenced" is id 12 for every batch), so batched objects are keyed by id + batch.
+ */
 export const resolveGroTimeObjectValueKey = (item) => {
   const id = item?.time_object_id;
-  return id != null && String(id).trim() !== "" ? String(id).trim() : resolveGroTimeObjectFieldKey(item);
+  const baseKey =
+    id != null && String(id).trim() !== "" ? String(id).trim() : resolveGroTimeObjectFieldKey(item);
+  const batch = resolveGroTimeObjectBatch(item);
+  return baseKey && batch ? `${baseKey}@${batch}` : baseKey;
 };
 
 // Batch names and labels are compared alphanumerics-only and case-insensitively, so
@@ -665,6 +675,9 @@ export const filterGroTimeObjectsForBatch = (timeObjects, batch, allBatches = []
   const batches = Array.isArray(allBatches) ? allBatches.filter(Boolean) : [];
   const isFirstBatch = batches.length === 0 || batches[0] === batch;
   return list.filter((item) => {
+    // The API tags each batched object with its batch — trust that over the label.
+    const itemBatch = resolveGroTimeObjectBatch(item);
+    if (itemBatch) return compactAlnum(itemBatch) === compactAlnum(batch);
     const label = item?.time_object ?? "";
     if (labelNamesBatch(label, batch)) return true;
     const namesAnyBatch =
@@ -750,7 +763,10 @@ export const applyGroSavedTimeObjectValues = (timeObjectDefs, savedTimeObjects) 
   (Array.isArray(timeObjectDefs) ? timeObjectDefs : []).forEach((item) => {
     const id = item?.time_object_id;
     if (id == null) return;
-    const match = saved.find((s) => String(s?.time_object_id) === String(id));
+    const batch = resolveGroTimeObjectBatch(item);
+    const match = saved.find(
+      (s) => String(s?.time_object_id) === String(id) && resolveGroTimeObjectBatch(s) === batch
+    );
     const parsed = parseGroTimeObjectValue(match?.time_object_value);
     if (parsed) values[resolveGroTimeObjectValueKey(item)] = parsed;
   });
