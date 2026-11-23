@@ -810,6 +810,8 @@ function Checklist({
               <div className="checklist-type-group cl-excel-type-group" key={block.typeId}>
                 <ChecklistTypeBlock
                   typeTitle={block.typeName}
+                  typeId={block.typeId}
+                  callId={currentCallId}
                   sectionTree={block.tree}
                   itemsData={itemsData}
                   onItemChange={handleItemChange}

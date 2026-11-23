@@ -40,6 +40,9 @@ const createChecklist = (data) => Gateway.post('checklist/createchecklist', data
 const updateChecklist = (data) => Gateway.post('checklist/updatechecklist', data);
 /** POST call_checklist/save_call_checklist - data should be FormData */
 const saveCallChecklist = (data) => Gateway.post('call_checklist/save_call_checklist', data);
+/** POST call_checklist/generate_checklist_pdf — body: { call_id, checklist_type_id } */
+const generateChecklistPdf = (payload) =>
+  Gateway.post('call_checklist/generate_checklist_pdf', payload, { responseType: 'blob' });
 
 export default {
     createChecklist,
@@ -53,4 +56,5 @@ export default {
     getChecklistsByPortCall,
     deleteChecklist,
     saveCallChecklist,
+    generateChecklistPdf,
 };

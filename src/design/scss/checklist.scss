@@ -4772,6 +4772,112 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
   }
 }
 
+/* Checklist type header: title + Print / Collapse actions */
+.cl-excel-type-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px 8px 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: #d7dcff;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #4f5bd5;
+    outline-offset: -2px;
+  }
+
+  [data-theme="dark"] &:hover {
+    background: var(--surface-active, var(--surface-hover));
+  }
+}
+
+.cl-excel-type-header-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cl-excel-type-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.cl-type-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #3a44b8;
+  background: #fff;
+  border: 1px solid #c7cdf7;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: #3a44b8;
+    border-color: #3a44b8;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(58, 68, 184, 0.25);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: progress;
+  }
+
+  &--collapse {
+    width: 28px;
+    padding: 0;
+  }
+
+  [data-theme="dark"] & {
+    color: var(--text-primary);
+    background: var(--surface-primary);
+    border-color: var(--border-primary);
+  }
+}
+
+.cl-type-chevron {
+  transition: transform 0.2s ease;
+}
+
+.cl-excel-block.is-collapsed {
+  .cl-type-chevron {
+    transform: rotate(-90deg);
+  }
+
+  .cl-excel-type-title {
+    border-bottom: none;
+  }
+}
+
+.cl-spin {
+  animation: cl-spin 0.8s linear infinite;
+}
+
+@keyframes cl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .cl-excel-table-wrap {
   width: 100%;
   overflow-x: auto;
