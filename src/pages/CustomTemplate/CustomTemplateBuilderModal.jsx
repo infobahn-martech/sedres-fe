@@ -11,7 +11,8 @@ import { getFeaturePreviewKind } from "./templateFeaturePreviews";
 import { alignLayoutToOrder, buildFieldGrid, getReadingOrder, placeFieldsAfterLayout, resolveFieldLayout, sortFieldsByLayout } from "./templateFieldGrid";
 import useFormTemplateReducer from "../../store/FormTemplateReducer";
 import useBillingEntityReducer from "../../store/BillingEntityReducer";
-import { mapBillingEntitiesToOptions } from "../../shared/helpers/callFileFormOptions";
+import usePortReducer from "../../store/PortReducer";
+import { mapBillingEntitiesToOptions, mapPortsToOptions } from "../../shared/helpers/callFileFormOptions";
 import "../../design/css/common/CardForm.css";
 import "../../design/scss/general.scss";
 import "../../design/scss/operations.scss";
@@ -117,6 +118,7 @@ const getTemplateSeed = (template) => ({
     name: template?.name ?? template?.template_name ?? "",
     callTypeId: toIdString(template?.callTypeId ?? template?.call_type_id),
     billingEntityId: toIdString(template?.billingEntityId ?? template?.billing_entity_id),
+    portId: toIdString(template?.portId ?? template?.port_id),
     templateId: template?.templateId ?? template?.template_id ?? null,
 });
 
@@ -755,12 +757,14 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     } = useFormTemplateReducer((s) => s);
     const isEditMode = Boolean(initialTemplate);
     const { getBillingEntities, billingEntities, isLoading: billingEntitiesLoading } = useBillingEntityReducer((s) => s);
+    const { getPorts, ports, isLoading: portsLoading } = usePortReducer((s) => s);
 
     const [templateName, setTemplateName] = useState(() => getTemplateSeed(initialTemplate).name);
     const [nameTouched, setNameTouched] = useState(false);
     const [callTypeId, setCallTypeId] = useState(() => getTemplateSeed(initialTemplate).callTypeId);
     const [callTypeTouched, setCallTypeTouched] = useState(false);
     const [billingEntityId, setBillingEntityId] = useState(() => getTemplateSeed(initialTemplate).billingEntityId);
+    const [portId, setPortId] = useState(() => getTemplateSeed(initialTemplate).portId);
     const [templateId] = useState(() => getTemplateSeed(initialTemplate).templateId);
 
     // Card structure (tabs, subtabs, locked fields, sections) of the selected
@@ -808,6 +812,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         label: String(ct.call_type ?? ""),
     }));
     const billingEntityOptions = mapBillingEntitiesToOptions(billingEntities);
+    const portOptions = mapPortsToOptions(Array.isArray(ports) ? ports : []);
 
     const resolveFieldTypeId = useMemo(() => buildFieldTypeIdResolver(fieldTypes), [fieldTypes]);
     const fieldTypeOptions = useMemo(() => buildFieldTypeOptions(fieldTypes), [fieldTypes]);
@@ -854,7 +859,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         if (groupKey && groupKey === lastUndoGroupRef.current) return;
         lastUndoGroupRef.current = groupKey;
         const snapshot = {
-            templateName, billingEntityId, callTypeId, structure, tabs, hiddenEmailPreviewIds, activeTabId, activeSubTabId,
+            templateName, billingEntityId, portId, callTypeId, structure, tabs, hiddenEmailPreviewIds, activeTabId, activeSubTabId,
         };
         setUndoStack((prev) => [...prev.slice(-(MAX_UNDO_STEPS - 1)), snapshot]);
     };
@@ -866,6 +871,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         lastUndoGroupRef.current = null;
         setTemplateName(snapshot.templateName);
         setBillingEntityId(snapshot.billingEntityId);
+        setPortId(snapshot.portId);
         setCallTypeId(snapshot.callTypeId);
         // Drop any bindings request still in flight for the call type being undone.
         bindingsRequestRef.current += 1;
@@ -920,6 +926,12 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         }
     }, [billingEntities, getBillingEntities]);
 
+    useEffect(() => {
+        if (ports === null) {
+            getPorts({ params: { limit: 1000 } });
+        }
+    }, [ports, getPorts]);
+
     // The field editor's lookups load lazily — opening the builder only needs the
     // call type / billing entity lists; the structure comes from system_bindings.
     const allFields = tabs.flatMap((t) => [
@@ -955,6 +967,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         setCallTypeId(seed.callTypeId);
         setCallTypeTouched(false);
         setBillingEntityId(seed.billingEntityId);
+        setPortId(seed.portId);
         bindingsRequestRef.current += 1;
         setIsLoadingBindings(false);
         setBindingsError(false);
@@ -1496,6 +1509,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
             tabs: tabs.map(buildTabPayload),
         };
         if (billingEntityId) payload.billing_entity_id = Number(billingEntityId);
+        if (portId) payload.port_id = Number(portId);
         if (templateId) payload.template_id = Number(templateId);
 
         saveCardTemplate({
@@ -1637,7 +1651,23 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                 />
                             </div>
 
-                 
+                            <div className="cf-field">
+                                <label>Port</label>
+                                <SearchableSelect
+                                    value={portId}
+                                    onChange={(e) => {
+                                        if (e.target.value === portId) return;
+                                        recordHistory();
+                                        setPortId(e.target.value);
+                                    }}
+                                    options={portOptions}
+                                    placeholder={portsLoading ? "Loading..." : "Select port"}
+                                    disabled={portsLoading}
+                                    className="ctm-billing-select"
+                                    menuPortalTarget={document.body}
+                                    menuPlacement="auto"
+                                />
+                            </div>
                         </div>
 
                         {!tabs.length && !addingTab ? (
