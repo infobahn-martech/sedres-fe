@@ -959,7 +959,7 @@ function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, 
           <button
             type="button"
             className="br-property-add-btn"
-            disabled={selectedRegularFields.length === 0 && selectedTimeUnits.length === 0 && selectedCustomFields.length === 0}
+            disabled={selectedRegularFields.length === 0 && selectedTimeUnits.length === 0 && selectedCustomFields.length === 0 && positionPicks.length === 0}
             onClick={handleAdd}
           >
             Add
@@ -4936,6 +4936,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   const editingConditionIdRef = useRef(null);
   const [whenFields, setWhenFields] = useState([]);
   const [whenDeadline, setWhenDeadline] = useState(EMPTY_WHEN_DEADLINE);
+  const [isWhenDeadlineEditing, setIsWhenDeadlineEditing] = useState(false);
   const [showWhenFieldPicker, setShowWhenFieldPicker] = useState(false);
   const [createActions, setCreateActions] = useState([]);
   const [createCardActions, setCreateCardActions] = useState([]);
@@ -5341,6 +5342,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     setShowPropertyPicker(false);
     setWhenFields([]);
     setWhenDeadline(EMPTY_WHEN_DEADLINE);
+    setIsWhenDeadlineEditing(false);
     setShowWhenFieldPicker(false);
     setCreateActions([]);
     setShowCreateActionPicker(false);
@@ -5447,10 +5449,13 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   ) ?? null;
   // Plain suffix text next to the number ("day(s)", or "day(s) ago" for "was more than"),
   // built from the preselected time unit's own label.
+  const getWhenDeadlineUnitText = (unit) => `${String(unit.unit_label).toLowerCase().replace(/s$/, '')}(s)${whenDeadlineOperator?.operator_key === WHEN_DEADLINE_AGO_OPERATOR_KEY ? ' ago' : ''}`;
   const whenDeadlineUnit = valueTimeUnits.find((unit) => String(unit.time_unit_id) === whenDeadline.timeUnitId);
-  const whenDeadlineUnitText = whenDeadlineUnit
-    ? `${String(whenDeadlineUnit.unit_label).toLowerCase().replace(/s$/, '')}(s)${whenDeadlineOperator?.operator_key === WHEN_DEADLINE_AGO_OPERATOR_KEY ? ' ago' : ''}`
-    : '';
+  const whenDeadlineUnitText = whenDeadlineUnit ? getWhenDeadlineUnitText(whenDeadlineUnit) : '';
+  const whenDeadlineUnitOptions = valueTimeUnits.map((unit) => ({
+    value: String(unit.time_unit_id),
+    label: getWhenDeadlineUnitText(unit),
+  }));
   const savedWhenDeadline = isEditMode && businessRuleDetailsReady && isWhenDeadlineTrigger
     ? (businessRuleDetails.when_fields ?? []).find((wf) => wf.regular_field_id != null || wf.custom_field_id != null)
     : null;
@@ -5597,7 +5602,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       .forEach((cond) => {
         const conditionFieldId = boardDefault?.regular_field_id ?? boardDefault?.field_id;
         if (boardDefault && cond.regular_field_id != null && String(cond.regular_field_id) === String(conditionFieldId)) {
-          boardRows.push({ id: `board-${cond.condition_id}`, boardId: cond.input_value ?? '', joinWord: normalizeConnector(cond.connector) });
+          boardRows.push({ id: `board-${cond.condition_id}`, boardId: cond.input_value ?? '', boardLabel: cond.input_value_label ?? '', joinWord: normalizeConnector(cond.connector) });
           return;
         }
         plainConditions.push(cond);
@@ -7243,7 +7248,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
 
   const handlePickConditionBoard = (rowId, board) => {
     setBoardConditionRows((prev) =>
-      prev.map((row) => (row.id === rowId ? { ...row, boardId: board?.board_id ?? '' } : row))
+      prev.map((row) => (row.id === rowId ? { ...row, boardId: board?.board_id ?? '', boardLabel: '' } : row))
     );
   };
 
@@ -7716,55 +7721,81 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                 </div>
               ) : isWhenDeadlineTrigger ? (
                 whenDeadlineField && (
-                  <div className="business-rule-form-column-card business-rule-form-when-fields">
-                    <div className="business-rule-form-when-deadline-label-row business-rule-form-condition-operator-group br-when-deadline-text">
-                      <button
-                        type="button"
-                        className="business-rule-form-condition-label business-rule-form-condition-label-btn"
-                        onClick={handleOpenWhenFieldPicker}
-                      >
-                        {whenDeadlineSelectedCallTime?.option_label ?? whenDeadlineField.label}
-                      </button>
-                      <InlineTextDropdown
-                        value={whenDeadline.operatorId}
-                        options={whenDeadlineOperators.map((op) => ({
-                          value: String(getOperatorId(op)),
-                          label: op.operator_label,
-                        }))}
-                        placeholder="Select operator"
-                        triggerClassName="br-condition-operator-trigger"
-                        onChange={(operatorId) => setWhenDeadline((prev) => ({ ...prev, operatorId, value: '', timeUnitId: '' }))}
-                      />
-                    </div>
-                    {whenDeadlineCallTimes.length > 0 && (
-                      <div className="business-rule-form-when-deadline-date-from">
-                        <div className="business-rule-form-when-deadline-input-row">
-                          <span className="business-rule-form-condition-label">Date from:</span>
+                  <div className="business-rule-form-column-card business-rule-form-when-fields br-when-deadline-card">
+                    {savedWhenDeadline && !isWhenDeadlineEditing && whenDeadline.value !== '' ? (
+                      <div className="br-when-deadline-summary">
+                        <span className="br-when-deadline-summary-text">
+                          <strong>{whenDeadlineSelectedCallTime?.option_label ?? whenDeadlineField.label}</strong>
+                          {` ${whenDeadlineOperator?.operator_label ?? ''} ${whenDeadline.value} ${whenDeadlineUnitText}`}
+                        </span>
+                        <button
+                          type="button"
+                          className="br-when-deadline-edit-btn"
+                          onClick={() => setIsWhenDeadlineEditing(true)}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="br-when-deadline-header">
+                          <span className="br-when-deadline-title">{whenDeadlineField.label}</span>
+                          <button
+                            type="button"
+                            className="br-when-deadline-close-btn"
+                            aria-label={`Reset ${whenDeadlineField.label}`}
+                            onClick={() => setWhenDeadline((prev) => ({ ...prev, value: '', timeObjectId: '' }))}
+                          >
+                            <FiX size={14} />
+                          </button>
+                        </div>
+                        {whenDeadlineCallTimes.length > 0 && (
                           <InlineTextDropdown
                             value={whenDeadline.timeObjectId}
                             options={whenDeadlineDateFromOptions}
                             placeholder={WHEN_DEADLINE_CARD_DEADLINE_LABEL}
-                            triggerClassName="br-condition-operator-trigger"
+                            triggerClassName="br-when-deadline-select"
+                            triggerSuffix={whenDeadlineSelectedCallTime && <span className="br-when-deadline-badge">Call time</span>}
                             searchable
+                            searchPlaceholder="Search call times..."
                             onChange={(timeObjectId) => setWhenDeadline((prev) => ({ ...prev, timeObjectId }))}
                           />
+                        )}
+                        <div className="br-when-deadline-condition-row">
+                          <InlineTextDropdown
+                            value={whenDeadline.operatorId}
+                            options={whenDeadlineOperators.map((op) => ({
+                              value: String(getOperatorId(op)),
+                              label: op.operator_label,
+                            }))}
+                            placeholder="Select operator"
+                            triggerClassName="br-when-deadline-select"
+                            onChange={(operatorId) => setWhenDeadline((prev) => ({ ...prev, operatorId, value: '', timeUnitId: '' }))}
+                          />
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            className="business-rule-form-when-deadline-input br-when-deadline-amount"
+                            aria-label={`${whenDeadlineField.label} amount`}
+                            value={whenDeadline.value}
+                            onChange={(e) => setWhenDeadline((prev) => ({ ...prev, value: e.target.value.replace(/\D/g, '') }))}
+                          />
+                          <InlineTextDropdown
+                            value={whenDeadline.timeUnitId}
+                            options={whenDeadlineUnitOptions}
+                            placeholder={whenDeadlineUnitText}
+                            triggerClassName="br-when-deadline-select"
+                            onChange={(timeUnitId) => setWhenDeadline((prev) => ({ ...prev, timeUnitId }))}
+                          />
                         </div>
-                        <p className="business-rule-form-when-deadline-date-from-help">
-                          Use a call time (for example ETA) instead of the card's deadline. Cards without that time are skipped.
-                        </p>
-                      </div>
+                        {whenDeadlineSelectedCallTime && (
+                          <p className="br-when-deadline-note">
+                            <FiInfo size={12} aria-hidden />
+                            {`Cards whose call has no ${whenDeadlineSelectedCallTime.option_label} are skipped.`}
+                          </p>
+                        )}
+                      </>
                     )}
-                    <div className="business-rule-form-when-deadline-input-row">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        className="business-rule-form-when-deadline-input"
-                        aria-label={`${whenDeadlineField.label} amount`}
-                        value={whenDeadline.value}
-                        onChange={(e) => setWhenDeadline((prev) => ({ ...prev, value: e.target.value.replace(/\D/g, '') }))}
-                      />
-                      <span className="business-rule-form-when-deadline-suffix">{whenDeadlineUnitText}</span>
-                    </div>
                   </div>
                 )
               ) : triggerConfig?.has_when_fields === '1' && (
@@ -7840,7 +7871,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                             triggerClassName="business-rule-form-condition-value"
                             triggerIconSize={16}
                             panelClassName="br-board-condition-panel"
-                            placeholder={boardName?.trim() || 'Select board'}
+                            placeholder={row.boardLabel || boardName?.trim() || 'Select board'}
                           />
 
                           <div className="business-rule-form-filter-row-actions">
