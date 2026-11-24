@@ -43,15 +43,15 @@ const computeTotal = (unitPrice, quantity, taxPercentage) => {
 // billing entity / port / call type (sales_order/get_default_line_items?entity_id&port_id&call_type_id). The user can edit the quantity / tax of listed items
 // and add more from the port's tariff list (newly added items can be deleted again); nothing is saved
 // until Confirm. On Confirm, items not yet on the sales order are added (sales_order/add_call_line_item)
-// and edited items are updated (sales_order/update_sales_order_item_amount). Skip leaves the sales order as is.
-// readOnly: review-only (no Add Item / edit / Skip) — Confirm still adds the pending default items.
+// and edited items are updated (sales_order/update_sales_order_item_amount). Cancel leaves the sales order as is.
+// readOnly: review-only (no Add Item / edit / Cancel) — Confirm still adds the pending default items.
 // soType: when set, items come from sales_order/get_so_items_by_call/{call_id}?so_type=<soType>
 // (the call's existing sales order) instead of get_default_line_items.
 // initialItems: when set (e.g. the line item a service save just created), these are listed instead;
 // the call's sales order (get_so_items_by_call) is still read for the entity / currency the Add Item form needs.
 // onConfirmItems: draft mode, used before the call exists (no callId). Default line items are listed and
 // edited locally only; Confirm hands the final list to onConfirmItems(items) (which creates the call) instead
-// of writing to a sales order. onSkip (optional) replaces onDone for the Skip button.
+// of writing to a sales order. Cancel (onDone) just closes the modal; in draft mode no call is created.
 function DefaultLineItemsModal({
   callId,
   entityId: entityIdProp,
@@ -64,7 +64,6 @@ function DefaultLineItemsModal({
   title,
   subtitle,
   onConfirmItems,
-  onSkip,
 }) {
   const isDraft = typeof onConfirmItems === "function";
   const [isLoading, setIsLoading] = useState(true);
@@ -743,8 +742,8 @@ function DefaultLineItemsModal({
         <div className="so-doc-modal-footer">
           <div className="so-doc-modal-actions">
             {!readOnly && (
-              <button type="button" className="sales-order-add-form-cancel" onClick={onSkip || onDone} disabled={isApplying}>
-                Skip
+              <button type="button" className="sales-order-add-form-cancel" onClick={onDone} disabled={isApplying}>
+                Cancel
               </button>
             )}
             <button
@@ -781,7 +780,6 @@ DefaultLineItemsModal.propTypes = {
   subtitle: PropTypes.string,
   /** Draft mode: receives the final item list on Confirm (may return a promise). */
   onConfirmItems: PropTypes.func,
-  onSkip: PropTypes.func,
 };
 
 export default DefaultLineItemsModal;

@@ -791,7 +791,7 @@ function GeneralAdd({
       : firstNonEmptyString(editablePreviewFields[fieldName], apiValue);
 
   // Template Add Card: validate, then open the line items modal. The call is only created
-  // (call_file/create_call_file_new) when the user confirms (or skips) the line items.
+  // (call_file/create_call_file_new) when the user confirms the line items; Cancel closes the modal without creating it.
   const getTemplateValueByBinding = (bindingKey) => {
     const field = (templateFields || []).find((f) => f.bindingKeys?.includes(bindingKey));
     const value = field ? templateFieldValues[field.id] : "";
@@ -877,13 +877,6 @@ function GeneralAdd({
       return;
     }
     await createTemplateCallFile(pending, items, []);
-  };
-
-  // Skip: create the call without (further) line items.
-  const handleTemplateLineItemsSkip = async () => {
-    const pending = pendingTemplateCall;
-    if (!pending || isSavingGeneral) return;
-    await createTemplateCallFile(pending, pending.step === "barge" ? pending.salesOrderItems : [], []);
   };
 
   const handleSubmit = async () => {
@@ -2903,7 +2896,6 @@ function GeneralAdd({
                   callTypeId={pendingTemplateCall.lineItemParams.callTypeId}
                   title={pendingTemplateCall.step === "barge" ? "Barge Sales Order Line Items" : undefined}
                   onConfirmItems={handleTemplateLineItemsConfirm}
-                  onSkip={handleTemplateLineItemsSkip}
                   onDone={() => setPendingTemplateCall(null)}
                 />
               )}
