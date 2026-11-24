@@ -31,6 +31,7 @@ import DocumentListModal from "./DocumentListModal";
 import UploadInvoiceModal from "@/components/UploadInvoiceModal";
 import { compressPdfFiles } from "@/shared/utils/compressPdf";
 import { isApprovalRequestedColumnTitle, isApprovalReceivedColumnTitle, isSentToDaColumnTitle, isLntSwimlane, isSubseaSwimlane, isBgpSwimlane } from "@/pages/KanbanBoard/utils/columnTitles";
+import { SO_TYPE_OPTIONS, VERIFIED_ITEM_STATUS, areAllSoItemsVerifiedForCall } from "@/pages/KanbanBoard/utils/soItemsVerification";
 import SeApprovalUploadModal from "@/pages/KanbanBoard/components/board/SeApprovalUploadModal";
 import CustomModal from "@/components/CustomModal";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
@@ -214,7 +215,6 @@ const isThirdParty = (value) => value === 1 || value === "1" || value === true;
 // between: ticking the Action-column checkbox must end on "Verified", un-ticking on
 // "Completed". Compared through normalizeItemStatus so casing/padding from the API can't make
 // a correct response read as a mismatch.
-const VERIFIED_ITEM_STATUS = "Verified";
 const COMPLETED_ITEM_STATUS = "Completed";
 const normalizeItemStatus = (value) => {
   const raw = String(value ?? "").trim();
@@ -370,7 +370,6 @@ SalesOrderPagination.propTypes = {
 };
 
 // so_type values for sales_order/get_so_items_by_call (role_id 1 / 2 only).
-const SO_TYPE_OPTIONS = ["Marine", "Husbandry"];
 
 const SalesOrderList = ({
   card,
@@ -1951,7 +1950,8 @@ const SalesOrderList = ({
       ) {
         onCloseCard?.();
       } else if (allVerified && isAtApprovalRequestedColumn && (isLntSwimlane({ title: card?.workflow_name }) || isLntSwimlane({ title: soCustomerName }))) {
-        onCloseCard?.();
+        // The list shows one SO type at a time; the card closes only once Marine and Husbandry are both fully verified.
+        if (await areAllSoItemsVerifiedForCall(callId)) onCloseCard?.();
       }
     } catch (err) {
       const msg =
