@@ -28,6 +28,7 @@ import useLamprellUaePoApprovalStore from "@/store/lamprellUaePoApprovalStore";
 import useAlertReducer from "@/store/AlertReducer";
 import { isApprovalReceivedColumnTitle, isApprovalRequestedColumnTitle, isLntSwimlane, isSubseaSwimlane, isBgpSwimlane, isMcDermottWorkflow, isZamilWorkflow, isSubseaWorkflow, isColumnBeforeArchive, isLamprellUaePoReceivedColumn, isLntWorkflow, isLntReceivedFromOps, isLntSubmittedToDa, isLntInvoiceIssued, isLntReadyToSubmit, isDaSupervisorWorkflow, isMultiCardDispatchProofColumn, isUploadedToPortalColumnTitle, isDaDefaultWorkflow, isLamprellAlgihazWorkflowTitle } from "../../utils/columnTitles";
 import { needsExportApprovalCheck } from "../../utils/cardHelpers";
+import useAllSoItemsVerified from "../../hooks/useAllSoItemsVerified";
 import { sanitizeSwimlaneColorCode, pickForegroundOnSwimlaneBackground } from "../../../EditWorkflows/workflow.utils";
 import "@/design/scss/pages/kanban-board/swimlaneBoard.scss";
 
@@ -299,6 +300,22 @@ export default function WorkflowColumns({
   );
 
   const shouldShowSwimlaneTitle = swimlaneOrder.length > 1;
+
+  /* "Send SCC for approval" stays disabled until every Marine and Husbandry line item of each ticked L&T card
+     in "Approval Requested" is verified. */
+  const sccTickedCallIds = useMemo(() => {
+    const lntLanes = swimlaneOrder.filter((laneId) => isLntSwimlane(workflow.swimlanes?.[laneId]));
+    const approvalColKeys = (workflow.columnOrder ?? []).filter((colKey) =>
+      isApprovalRequestedColumnTitle(workflow.columns?.[colKey]?.title)
+    );
+    return lntLanes
+      .flatMap((laneId) => approvalColKeys.flatMap((colKey) => getSwimlaneColumnCards(workflow, laneId, colKey)))
+      .filter((card) => selectedActionCardIds?.includes(card.id))
+      .map((card) => card.callId ?? cardsById?.[card.id]?.callId)
+      .filter(Boolean)
+      .map(String);
+  }, [workflow, swimlaneOrder, selectedActionCardIds, cardsById]);
+  const allSoItemsVerifiedByCallId = useAllSoItemsVerified(sccTickedCallIds, sccTickedCallIds.length > 0);
 
   /* Swimlanes start closed: track the lanes the user has opened, so lanes that arrive later
      (board reload, new swimlane) are closed by default too. */
@@ -839,6 +856,11 @@ export default function WorkflowColumns({
                     }
                     actionIcon={hasInvoiceButton ? INVOICE_ACTION_BUTTONS[invoiceButton].icon : undefined}
                     secondaryAction={hasInvoiceButton ? sendSubmissionAction : undefined}
+                    actionDisabled={
+                      hasInvoiceButton &&
+                      invoiceButton === "sendSccForApproval" &&
+                      invoiceButtonCards.some((card) => allSoItemsVerifiedByCallId[String(card.callId)] !== true)
+                    }
                     onActionClick={
                       hasInvoiceButton
                         ? () => invoiceActionHandlers[invoiceButton]?.(invoiceButtonCards)

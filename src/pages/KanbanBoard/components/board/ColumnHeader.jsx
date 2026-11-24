@@ -38,6 +38,7 @@ export default function ColumnHeader({
   actionLabel,
   actionIcon,
   onActionClick,
+  actionDisabled = false,
   secondaryAction,
 }) {
   const columnColor = column.color || "#2A00FF";
@@ -99,6 +100,7 @@ export default function ColumnHeader({
           <button
             type="button"
             className="column-action"
+            disabled={actionDisabled}
             onClick={(e) => {
               /* The header itself collapses the column — keep that off this button. */
               e.stopPropagation();
@@ -146,6 +148,7 @@ ColumnHeader.propTypes = {
   actionLabel: PropTypes.string,
   actionIcon: PropTypes.node,
   onActionClick: PropTypes.func,
+  actionDisabled: PropTypes.bool,
   secondaryAction: PropTypes.shape({
     label: PropTypes.string.isRequired,
     icon: PropTypes.node.isRequired,
