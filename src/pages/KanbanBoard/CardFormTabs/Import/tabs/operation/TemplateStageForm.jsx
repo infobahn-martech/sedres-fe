@@ -14,6 +14,7 @@ import {
   buildTemplateFieldDisplay,
   findTimeObjectRowForField,
   flattenTimeObjects,
+  getTemplateOperationSubtabs,
   normalizeTemplateKey,
   getTemplateFieldType,
   hasExistingTemplateFile,
@@ -183,6 +184,20 @@ const placeSaberFieldUnderSelect = (fields) => {
   if (controllerIndex < 0) return fields;
   rest.splice(controllerIndex + 1, 0, saberField);
   return rest;
+};
+
+// Weather Detail text as it appears in the composer HTML.
+const toWeatherDetailHtml = (text) => escapeHtml(text).replace(/\r?\n/g, "<br>");
+
+// Swaps the last occurrence of the previous Weather Detail text in the email body for the new one,
+// so the preview follows typing instantly (get_call_detail rebinds it on blur / Enter).
+const replaceWeatherDetailInMessage = (message, prevText, nextText) => {
+  const html = String(message ?? "");
+  const prevHtml = toWeatherDetailHtml(prevText);
+  if (!html || !prevHtml.trim()) return null;
+  const index = html.lastIndexOf(prevHtml);
+  if (index < 0) return null;
+  return html.slice(0, index) + toWeatherDetailHtml(nextText) + html.slice(index + prevHtml.length);
 };
 
 const isWeatherForecastField = (field) => normalizeTemplateKey(field?.field_key) === "weather_forecast";
@@ -450,6 +465,49 @@ function TemplateStageForm({
     }
   };
 
+  // Weather Detail blur / Enter → GET call_file/get_call_detail/{callId}?weather_detail=<value>
+  // (with the current saber / weather_forecast). The response rebinds this stage's fields and the
+  // email template; the user's unsaved field edits are kept.
+  const weatherDetailRequestSeqRef = useRef(0);
+  const lastWeatherDetailRequestRef = useRef(null);
+  // Latest typed Weather Detail, so a late response doesn't roll the preview back.
+  const latestWeatherDetailRef = useRef(null);
+  const refreshCallDetailForWeatherDetail = async (weatherDetail) => {
+    const resolvedCallId = String(callId ?? "").trim();
+    if (!resolvedCallId || isViewOnly) return;
+    const params = { ...JSON.parse(triggerParamsKey), weather_detail: String(weatherDetail ?? "") };
+    const requestKey = JSON.stringify(params);
+    if (requestKey === lastWeatherDetailRequestRef.current) return;
+    lastWeatherDetailRequestRef.current = requestKey;
+    const seq = ++weatherDetailRequestSeqRef.current;
+    try {
+      const { data } = await callFileService.getCallDetail(resolvedCallId, params);
+      if (!aliveRef.current || seq !== weatherDetailRequestSeqRef.current) return;
+      const freshDetail = data?.data ?? null;
+      const freshStage = (getTemplateOperationSubtabs(freshDetail) || []).find(
+        (tab) => String(tab.tabId) === String(stage?.tabId)
+      );
+      if (!freshDetail || !freshStage) return;
+      setFreshData({ detail: freshDetail, stage: freshStage });
+      if (freshStage.emailTemplate && reportTypeRef.current === "arrival") {
+        // An explicit weather detail change re-applies the template even over composer edits.
+        reportTouchedRef.current = false;
+        setReportDraft((prev) => {
+          const next = mergeReportTemplate(prev, extractReportTemplateFields(freshStage.emailTemplate));
+          const latest = latestWeatherDetailRef.current;
+          if (latest === null || latest === params.weather_detail) return next;
+          const message = replaceWeatherDetailInMessage(next.message, params.weather_detail, latest);
+          return message === null ? next : { ...next, message };
+        });
+      }
+    } catch (error) {
+      if (seq === weatherDetailRequestSeqRef.current) lastWeatherDetailRequestRef.current = null;
+      if (aliveRef.current && seq === weatherDetailRequestSeqRef.current) {
+        notify(getApiErrorMessage(error, "Failed to refresh the call detail."), "error");
+      }
+    }
+  };
+
   // On open (and after the call detail refreshes), bind the weather map for the saved value.
   const initialWeatherForecast = triggerFields.weather_forecast
     ? JSON.parse(triggerParamsKey).weather_forecast ?? ""
@@ -507,6 +565,15 @@ function TemplateStageForm({
     isBadWeatherSelected && isTimeObjectField(field) && !recheckedTimeObjectIds.has(String(field.field_id));
 
   const setFieldValue = (fieldId, value) => {
+    const changedField = fields.find((item) => String(item.field_id) === String(fieldId));
+    if (changedField && isWeatherDetailField(changedField)) {
+      const prevText = getValue(fieldId);
+      latestWeatherDetailRef.current = String(value ?? "");
+      setReportDraft((prev) => {
+        const message = replaceWeatherDetailInMessage(prev.message, prevText, value);
+        return message === null ? prev : { ...prev, message };
+      });
+    }
     setEdits((prev) => ({ ...prev, [fieldId]: value }));
     clearError(fieldId);
     if (weatherForecastField && String(fieldId) === String(weatherForecastField.field_id)) {
@@ -985,7 +1052,25 @@ function TemplateStageForm({
       return <FormInput type={type} value={String(value ?? "")} onChange={(e) => setFieldValue(id, e.target.value)} disabled={disabled} />;
     }
     if (type === "textarea") {
-      return <FormTextarea value={String(value ?? "")} onChange={(e) => setFieldValue(id, e.target.value)} disabled={disabled} />;
+      const isWeatherDetail = isWeatherDetailField(field);
+      return (
+        <FormTextarea
+          value={String(value ?? "")}
+          onChange={(e) => setFieldValue(id, e.target.value)}
+          onBlur={isWeatherDetail ? (e) => refreshCallDetailForWeatherDetail(e.target.value) : undefined}
+          onKeyDown={
+            isWeatherDetail
+              ? (e) => {
+                  // Enter submits the weather detail; Shift+Enter still adds a new line.
+                  if (e.key !== "Enter" || e.shiftKey || e.nativeEvent?.isComposing) return;
+                  e.preventDefault();
+                  refreshCallDetailForWeatherDetail(e.currentTarget.value);
+                }
+              : undefined
+          }
+          disabled={disabled}
+        />
+      );
     }
     if (type === "radio") {
       return (
