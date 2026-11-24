@@ -159,7 +159,7 @@ BoardStructureControls.propTypes = valuePropTypes;
 
 // Position: chosen on the Board Minimap (column, or column + swimlane). Each pick is one entry
 // "column_id", "column_id:swimlane_id" or ":swimlane_id" (a swimlane picked without a column).
-function PositionValue({ value, defaultBoardId = '', allowLaneOnly = false, onChange }) {
+function PositionValue({ value, savedLabel = '', defaultBoardId = '', allowLaneOnly = false, onChange }) {
   const [showMinimap, setShowMinimap] = useState(false);
   const [minimapBoardId, setMinimapBoardId] = useState('');
   const { boardPickerWorkspaces: workspaces, boardWorkflowsByBoard, swimlanesByWorkflow, getBoardWorkflows } = useBusinessRuleReducer((s) => s);
@@ -179,6 +179,9 @@ function PositionValue({ value, defaultBoardId = '', allowLaneOnly = false, onCh
   // already loaded (ids are all that is stored); an entry whose board is not loaded shows its ids.
   const describeEntry = (entry) => {
     const [columnId, laneId] = entry.split(POSITION_SEPARATOR);
+    // The label the backend saved with the rule; used when the board's workflows cannot be loaded
+    // (e.g. no access to the board). A label equal to the raw id carries no name, so it is ignored.
+    const nameFromSavedLabel = savedLabel && savedLabel !== entry && entries.length === 1 ? savedLabel : '';
     const found = Object.entries(boardWorkflowsByBoard).flatMap(([boardId, wfs]) => wfs.map((wf) => ({ boardId, wf })))
       .find(({ wf }) => (columnId
         ? (wf.stages ?? []).some((stage) => flattenAllColumns(stage.columns ?? [])
@@ -193,9 +196,9 @@ function PositionValue({ value, defaultBoardId = '', allowLaneOnly = false, onCh
       : null;
     return {
       boardId: found?.boardId ?? '',
-      place: found ? `[${workspace?.workspace_name ?? ''}][${board?.board_name ?? ''}]` : '',
+      place: [workspace?.workspace_name, board?.board_name].filter(Boolean).map((name) => `[${name}]`).join(''),
       workflow: found ? `[${found.wf.workflow_name}]` : '',
-      column: columnId ? (column?.column_name ?? `Column #${columnId}`) : ANY_CELL_LABEL,
+      column: columnId ? (column?.column_name ?? (nameFromSavedLabel || `Column #${columnId}`)) : ANY_CELL_LABEL,
       lane: laneId ? (lane?.swimlane_name ?? `Lane #${laneId}`) : ANY_LANE_LABEL,
     };
   };
@@ -286,6 +289,7 @@ function PositionValue({ value, defaultBoardId = '', allowLaneOnly = false, onCh
 
 PositionValue.propTypes = {
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  savedLabel: PropTypes.string,
   defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   allowLaneOnly: PropTypes.bool,
   onChange: PropTypes.func.isRequired,
@@ -410,14 +414,15 @@ function BoardStructureToggle({ level, value, onChange }) {
 
 BoardStructureToggle.propTypes = valuePropTypes;
 
-function BoardStructureValue({ level, value, defaultBoardId, allowLaneOnlyPosition = false, onChange }) {
-  if (level === 'position') return <PositionValue value={value} defaultBoardId={defaultBoardId} allowLaneOnly={allowLaneOnlyPosition} onChange={onChange} />;
+function BoardStructureValue({ level, value, savedLabel, defaultBoardId, allowLaneOnlyPosition = false, onChange }) {
+  if (level === 'position') return <PositionValue value={value} savedLabel={savedLabel} defaultBoardId={defaultBoardId} allowLaneOnly={allowLaneOnlyPosition} onChange={onChange} />;
   if (MINIMAP_LEVEL_PROPS[level]) return <MinimapStructureValue level={level} value={value} defaultBoardId={defaultBoardId} onChange={onChange} />;
   return <BoardStructureToggle level={level} value={value} onChange={onChange} />;
 }
 
 BoardStructureValue.propTypes = {
   ...valuePropTypes,
+  savedLabel: PropTypes.string,
   defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   allowLaneOnlyPosition: PropTypes.bool,
 };
