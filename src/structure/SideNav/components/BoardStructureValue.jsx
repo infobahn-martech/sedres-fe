@@ -278,6 +278,7 @@ function PositionValue({ value, defaultBoardId = '', allowLaneOnly = false, onCh
         onPick={handlePick}
         onClose={() => setShowMinimap(false)}
         allowStagePick
+        allowLaneOnly={allowLaneOnly}
       />
     </div>
   );

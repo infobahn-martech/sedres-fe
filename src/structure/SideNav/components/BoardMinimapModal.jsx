@@ -39,7 +39,7 @@ ColorFill.propTypes = { color: PropTypes.string };
 // With workflowOnly only the workflow title bar is selectable. With allowStagePick a stage band
 // picks every column of that stage.
 function BoardMinimapModal({
-  show, value, boardId, onBoardChange, onPick, onClose, columnOnly = false, laneOnly = false, workflowOnly = false, allowStagePick = false,
+  show, value, boardId, onBoardChange, onPick, onClose, columnOnly = false, laneOnly = false, workflowOnly = false, allowStagePick = false, allowLaneOnly = true,
 }) {
   const {
     boardPickerWorkspaces: workspaces, getBoardPickerWorkspaces, boardWorkflowsByBoard, boardWorkflowsStatus, getBoardWorkflows,
@@ -154,7 +154,7 @@ function BoardMinimapModal({
   });
 
   const columnPickable = !laneOnly && !workflowOnly;
-  const lanePickable = !columnOnly && !workflowOnly;
+  const lanePickable = !columnOnly && !workflowOnly && allowLaneOnly;
   const pickHeader = columnPickable ? (workflow, column) => pick(workflow, column, null) : undefined;
 
   const handlePickBoard = (board) => {
@@ -385,6 +385,7 @@ BoardMinimapModal.propTypes = {
   laneOnly: PropTypes.bool,
   workflowOnly: PropTypes.bool,
   allowStagePick: PropTypes.bool,
+  allowLaneOnly: PropTypes.bool,
 };
 
 export default BoardMinimapModal;

@@ -2,13 +2,16 @@ import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { FiPlus, FiTrash2, FiX } from 'react-icons/fi';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
+import useKanbanManagementReducer, { isKanbanManagementRowDisabled } from '../../../store/KanbanManagementReducer';
 import BusinessRuleFieldValue from './BusinessRuleFieldValue';
 import MoveTargetAction from './MoveTargetAction';
 import ThenFieldPickerModal from './ThenFieldPickerModal';
 import RelativeFilterBox from './RelativeFilterBox';
+import DeadlineActionValue, { DeadlineModeDropdown } from './DeadlineActionValue';
+import InlineTextDropdown from './InlineTextDropdown';
 import CreateCardActionCard from './CreateCardActionCard';
 import '../../../design/scss/business-rule-generic-action.scss';
-import { EMPTY_CREATE_CARD, EMPTY_GENERIC_ACTION_VALUE, NONE_FIELD_CHECKED, getActionFilterKind, getGenericFieldKey, isCreateCardsAction, isCustomGenericField } from './genericThenAction';
+import { DEFAULT_LIST_MODE, EMPTY_CREATE_CARD, EMPTY_DEADLINE, LIST_MODE_CHOICES, EMPTY_GENERIC_ACTION_VALUE, NONE_FIELD_CHECKED, getActionFilterKind, getGenericFieldKey, hasSetToPhrase, isCreateCardsAction, isCustomGenericField, isRemoveStickersField, isRepeatableAction, isSetColorField, isSetDeadlineField, isSetTagsField, isTitleInCardAction } from './genericThenAction';
 
 const OPTION_FIELD_TYPES = ['dropdown', 'radio', 'multiselect', 'checkbox'];
 
@@ -21,12 +24,18 @@ function GenericActionFields({ action, value, defaultBoardId, startOpen = false,
   const { thenActionFieldsByType, getThenActionFieldsByType, fieldDetailsByKey, getFieldDetails } = useBusinessRuleReducer((s) => s);
   const entry = thenActionFieldsByType[String(action.action_type_id)];
   const [showFieldPicker, setShowFieldPicker] = useState(false);
+  const { cardStickers, cardStickersLoading, fetchKanbanCardStickers } = useKanbanManagementReducer((s) => s);
 
   useEffect(() => {
     if (action.action_type_id != null) getThenActionFieldsByType(action.action_type_id);
   }, [action.action_type_id]);
 
   const fields = entry && !entry.isLoading ? [...entry.regularFields, ...entry.customFields] : [];
+  const hasRemoveStickersField = fields.some(isRemoveStickersField);
+
+  useEffect(() => {
+    if (hasRemoveStickersField && cardStickers.length === 0 && !cardStickersLoading) fetchKanbanCardStickers({ limit: 200 });
+  }, [hasRemoveStickersField]);
 
   useEffect(() => {
     fields.forEach((field) => {
@@ -71,6 +80,19 @@ function GenericActionFields({ action, value, defaultBoardId, startOpen = false,
   const setField = (key, next) => onChange({ ...value, fields: { ...value.fields, [key]: next } });
 
   const getDetails = (field) => {
+    if (isSetColorField(field)) return { ...field, field_type: 'color', has_input_value: 1 };
+    if (isSetTagsField(field)) return { ...field, field_type: 'tags', has_input_value: 1 };
+    if (isRemoveStickersField(field)) {
+      return {
+        ...field,
+        field_type: 'dropdown',
+        has_input_value: 1,
+        option_source: undefined,
+        options: cardStickers.filter((s) => !isKanbanManagementRowDisabled(s.status)).map((s) => ({
+          option_value: s.sticker_id, option_label: s.label, color_code: s.color_code, icon_name: s.icon,
+        })),
+      };
+    }
     const detailsKey = isCustomGenericField(field) ? `custom-${field.custom_field_id}` : `regular-${field.regular_field_id}`;
     return fieldDetailsByKey[detailsKey] ?? field;
   };
@@ -147,10 +169,12 @@ function GenericActionFields({ action, value, defaultBoardId, startOpen = false,
   const addedKeys = Object.keys(value.fields);
   const addedFields = fields.filter((f) => addedKeys.includes(getGenericFieldKey(f)));
 
+  const getInitialFieldValue = (f) => (f.field_type === 'none' && !isRemoveStickersField(f) ? NONE_FIELD_CHECKED : '');
+
   const handleAddFields = (picked) => {
     const next = { ...value.fields };
     picked.forEach((f) => {
-      next[getGenericFieldKey(f)] = f.field_type === 'none' ? NONE_FIELD_CHECKED : '';
+      next[getGenericFieldKey(f)] = getInitialFieldValue(f);
     });
     onChange({ ...value, fields: next });
   };
@@ -158,8 +182,17 @@ function GenericActionFields({ action, value, defaultBoardId, startOpen = false,
   const omitKey = (obj, key) => Object.fromEntries(Object.entries(obj ?? {}).filter(([k]) => k !== key));
 
   const handleRemoveField = (key) => {
-    onChange({ ...value, fields: omitKey(value.fields, key), extraValues: omitKey(value.extraValues, key) });
+    onChange({
+      ...value,
+      fields: omitKey(value.fields, key),
+      extraValues: omitKey(value.extraValues, key),
+      deadlines: omitKey(value.deadlines, key),
+      listModes: omitKey(value.listModes, key),
+    });
   };
+
+  const getDeadline = (key) => ({ ...EMPTY_DEADLINE, ...(value.deadlines?.[key] ?? {}) });
+  const setDeadline = (key, next) => onChange({ ...value, deadlines: { ...value.deadlines, [key]: { ...getDeadline(key), ...next } } });
 
   // A field's lines: the first is its main value, the others were added under it with AND.
   const getLines = (key) => [value.fields[key] ?? '', ...(value.extraValues?.[key] ?? [])];
@@ -192,10 +225,36 @@ function GenericActionFields({ action, value, defaultBoardId, startOpen = false,
             </button>
 
             <div className="br-link-card-header">
-              <span className="br-sticker-action-label">{field.field_label}</span>
+              {field.field_type === 'none' && !isRemoveStickersField(field) ? (
+                <button
+                  type="button"
+                  className="business-rule-form-condition-label-btn br-sticker-action-label"
+                  onClick={() => setShowFieldPicker(true)}
+                >
+                  {field.field_label}
+                </button>
+              ) : (
+                <span className="br-sticker-action-label">{field.field_label}</span>
+              )}
+              {hasSetToPhrase(field) && <span className="br-generic-field-title-suffix">to</span>}
+              {isSetTagsField(field) && (
+                <InlineTextDropdown
+                  value={value.listModes?.[key] ?? DEFAULT_LIST_MODE}
+                  options={LIST_MODE_CHOICES}
+                  triggerClassName="business-rule-form-condition-label-btn br-condition-value-text d-inline-flex align-items-center"
+                  onChange={(mode) => onChange({ ...value, listModes: { ...value.listModes, [key]: mode } })}
+                />
+              )}
+              {isSetDeadlineField(field) && (
+                <DeadlineModeDropdown mode={getDeadline(key).mode} onChange={(mode) => setDeadline(key, { mode })} />
+              )}
             </div>
 
-            {field.field_type !== 'none' && getLines(key).map((line, index) => (
+            {isSetDeadlineField(field) && (
+              <DeadlineActionValue value={getDeadline(key)} onChange={(next) => setDeadline(key, next)} />
+            )}
+
+            {!isSetDeadlineField(field) && (field.field_type !== 'none' || isRemoveStickersField(field)) && getLines(key).map((line, index) => (
               <div key={index} className="br-link-card-value-row br-generic-action">
                 <div className="br-generic-action-value">
                   <BusinessRuleFieldValue
@@ -234,7 +293,7 @@ function GenericActionFields({ action, value, defaultBoardId, startOpen = false,
           Add new action
         </button>
         {addedFields.length > 1 && (
-          <button type="button" className="business-rule-form-add-link" onClick={() => onChange({ ...value, fields: {}, extraValues: {} })}>
+          <button type="button" className="business-rule-form-add-link" onClick={() => onChange({ ...value, fields: {}, extraValues: {}, deadlines: {}, listModes: {} })}>
             Clear all
           </button>
         )}
@@ -305,14 +364,14 @@ GenericInstance.propTypes = {
 // An action that moves a card to a board position can be added again, each time with its own target
 // and filter (value.more holds the extra ones): "Add new move action". The link's verb is the first
 // word of the action's own action_code (move_parent_card -> move).
-function GenericThenActionEditor({ action, value, defaultBoardId, renderPropertyPicker, onChange, allowRepeat = true }) {
+function GenericThenActionEditor({ action, title, value, defaultBoardId, renderPropertyPicker, onChange, allowRepeat = true }) {
   const more = value.more ?? [];
-  const canRepeat = allowRepeat && Number(action.has_board_position) === 1 && !isCreateCardsAction(action);
+  const canRepeat = allowRepeat && isRepeatableAction(action);
   const verb = String(action.action_code ?? '').split('_')[0];
 
   // A move with a parent / child filter reads like the update card: each target is a card holding
   // "Move parent to", its link and the filter box, and "Add new move action" sits under the cards.
-  if (canRepeat && getActionFilterKind(action)) {
+  if (isTitleInCardAction(action, allowRepeat)) {
     const cards = [value, ...more];
     const setCard = (index, next) => (index === 0
       ? onChange({ ...next, more })
@@ -335,6 +394,7 @@ function GenericThenActionEditor({ action, value, defaultBoardId, renderProperty
             >
               <FiX size={14} />
             </button>
+            <h5 className="business-rule-form-action-title">{title}</h5>
             <GenericInstance
               inCard
               action={action}
@@ -404,6 +464,7 @@ GenericThenActionEditor.propTypes = {
   ...editorPropTypes,
   renderPropertyPicker: PropTypes.func,
   allowRepeat: PropTypes.bool,
+  title: PropTypes.string,
 };
 
 export default GenericThenActionEditor;

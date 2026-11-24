@@ -1,4 +1,4 @@
-import { ACTION_GROUP_TYPE_TO_SECTION_ID } from './businessRulesData';
+import { ACTION_GROUP_TYPE_TO_SECTION_ID, DEADLINE_MODE_OPTIONS, LIST_UPDATE_MODE_OPTIONS } from './businessRulesData';
 import { normalizeConnector } from './businessRuleFieldUtils';
 
 export const EMPTY_BOARD_POSITION = { boardId: '', workflowId: '', columnId: '', swimlaneId: '' };
@@ -7,7 +7,16 @@ export const EMPTY_BOARD_POSITION = { boardId: '', workflowId: '', columnId: '',
 export const NONE_FIELD_CHECKED = '1';
 
 // extraValues: more lines added under one field with AND, sent as repeated field_key + field_value pairs.
-export const EMPTY_GENERIC_ACTION_VALUE = { thenActionId: null, title: '', fields: {}, extraValues: {}, position: EMPTY_BOARD_POSITION, cards: [], noFields: false, filterConditions: [], more: [] };
+// "Set deadline": relative / absolute mode, the days (relative) or date (absolute) and the non-working days.
+// Kept per field key in value.deadlines, since it needs more than one value.
+export const EMPTY_DEADLINE = { mode: DEADLINE_MODE_OPTIONS[0].key, days: '0', date: '', nonWorkingDays: [] };
+
+// "Set tags" append / replace mode, kept per field key in value.listModes. The picker lists replace
+// first and opens on it.
+export const DEFAULT_LIST_MODE = LIST_UPDATE_MODE_OPTIONS[1].key;
+export const LIST_MODE_CHOICES = [...LIST_UPDATE_MODE_OPTIONS].reverse().map((mode) => ({ value: mode.key, label: mode.label }));
+
+export const EMPTY_GENERIC_ACTION_VALUE = { thenActionId: null, title: '', fields: {}, extraValues: {}, deadlines: {}, listModes: {}, position: EMPTY_BOARD_POSITION, cards: [], noFields: false, filterConditions: [], more: [] };
 
 // One card of the recurring "Create cards" action.
 export const EMPTY_CREATE_CARD = { thenActionId: null, title: '', fields: {}, position: EMPTY_BOARD_POSITION };
@@ -20,14 +29,45 @@ export const isCreateCardsAction = (action) => action?.group_type === CREATE_CAR
 
 const CREATE_CARDS_RESERVED_KEYS = ['card_title', 'target_board_id', 'target_workflow_id', 'target_column_id', 'target_swimlane_id'];
 
+// "Remove stickers" comes from the catalog as a field with no value control; the stickers to
+// remove are picked from the board-management sticker list, like the Remove stickers update action.
+export const REMOVE_STICKERS_FIELD_KEY = 'remove_stickers';
+
+export const isRemoveStickersField = (field) => field.field_key === REMOVE_STICKERS_FIELD_KEY;
+
 export const isCustomGenericField = (field) => field.custom_field_id != null && field.regular_field_id == null;
+
+// "Set color" is picked with the colour picker (swatch + hex) instead of a text box; the key is the
+// Set color update option's own key.
+export const SET_COLOR_FIELD_KEY = 'set_color';
+
+export const isSetColorField = (field) => !isCustomGenericField(field) && field.field_key === SET_COLOR_FIELD_KEY;
+
+// "Set deadline" is drawn with its own mode / days / non-working-days controls; the key is the
+// Set deadline update option's own key.
+export const SET_DEADLINE_FIELD_KEY = 'set_deadline';
+
+export const isSetDeadlineField = (field) => !isCustomGenericField(field) && field.field_key === SET_DEADLINE_FIELD_KEY;
+
+// "Set X" fields read as "Set X to [value]" ("Set description to", "Set title to", "Set type to"),
+// except the ones that carry their own wording: Set deadline ("to a relative date"), Set tags
+// ("replace") and Set blocker.
+export const SET_TAGS_FIELD_KEY = 'set_tags';
+
+export const isSetTagsField = (field) => !isCustomGenericField(field) && field.field_key === SET_TAGS_FIELD_KEY;
+
+const SET_FIELD_KEYS_WITHOUT_TO = [SET_DEADLINE_FIELD_KEY, SET_TAGS_FIELD_KEY, 'set_blocker'];
+
+export const hasSetToPhrase = (field) => !isCustomGenericField(field)
+  && String(field.field_key ?? '').startsWith('set_')
+  && !SET_FIELD_KEYS_WITHOUT_TO.includes(field.field_key);
 
 // A card field (Create card) is sent under its own property_key; other fields under field_key.
 export const getGenericFieldKey = (field) => (isCustomGenericField(field) ? `custom-${field.custom_field_id}` : (field.property_key ?? field.field_key));
 
 // Trigger actions whose group_type has no dedicated section; they are drawn by
 // GenericThenActionEditor from the backend's own field catalog.
-export const isGenericTriggerAction = (action) => !ACTION_GROUP_TYPE_TO_SECTION_ID[action.group_type];
+export const isGenericTriggerAction =(action) => !ACTION_GROUP_TYPE_TO_SECTION_ID[action.group_type];
 
 const POSITION_PROPERTY_KEY = {
   boardId: 'target_board_id',
@@ -56,6 +96,17 @@ const FILTER_KINDS = [
 ];
 
 export const getActionFilterKind = (action) => FILTER_KINDS.find((k) => Number(action?.[k.flag]) === 1) ?? null;
+
+// An action that is added once per target card (a move to a board position, or any action with a
+// parent / child / relative filter, e.g. "Update the parent card details") can be added again.
+export const isRepeatableAction = (action) => !isCreateCardsAction(action)
+  && (Number(action?.has_board_position) === 1 || Boolean(getActionFilterKind(action)));
+
+// A repeatable action with a filter draws one card per target; the action's title is drawn
+// inside each card instead of above the section.
+export const isTitleInCardAction = (action, allowRepeat = true) => allowRepeat
+  && isRepeatableAction(action)
+  && Boolean(getActionFilterKind(action));
 
 // Filter rows of an action: one entry per filled-in row.
 const buildFilterConditions = (rows = []) => rows
@@ -113,6 +164,19 @@ export const buildGenericThenActions = (triggerActions, genericActionValues) => 
     [value, ...(value.more ?? [])].forEach((instance) => {
       const properties = [];
       Object.entries(instance.fields).forEach(([key, fieldValue]) => {
+        if (key === SET_DEADLINE_FIELD_KEY) {
+          // Same properties as the Set deadline update action (deadline_mode / deadline_days /
+          // deadline_date / non_working_days); the field value is the days or the date.
+          const deadline = { ...EMPTY_DEADLINE, ...(instance.deadlines?.[key] ?? {}) };
+          const isRelative = deadline.mode === DEADLINE_MODE_OPTIONS[0].key;
+          properties.push(asProperty('field_key', key));
+          properties.push(asProperty('field_value', isRelative ? String(deadline.days) : deadline.date));
+          properties.push(asProperty('deadline_mode', deadline.mode));
+          properties.push({ property_key: 'deadline_days', property_value: Number(deadline.days) || 0, property_value_type: 'number' });
+          properties.push(asProperty('deadline_date', deadline.date));
+          properties.push(asProperty('non_working_days', deadline.nonWorkingDays.join(', ')));
+          return;
+        }
         if (fieldValue === '' || fieldValue == null) return;
         if (key.startsWith('custom-')) {
           properties.push({ custom_field_id: Number(key.slice('custom-'.length)), property_value: fieldValue });
@@ -124,6 +188,8 @@ export const buildGenericThenActions = (triggerActions, genericActionValues) => 
           properties.push(asProperty('field_key', key));
           properties.push(asProperty('field_value', extra));
         });
+        // Same list_mode property as the Set tags update action.
+        if (key === SET_TAGS_FIELD_KEY) properties.push(asProperty('list_mode', instance.listModes?.[key] ?? DEFAULT_LIST_MODE));
       });
       Object.entries(POSITION_PROPERTY_KEY).forEach(([stateKey, propertyKey]) => {
         if (instance.position[stateKey]) properties.push(asProperty(propertyKey, instance.position[stateKey]));
@@ -165,6 +231,8 @@ export const parseGenericThenAction = (savedAction, groupType) => {
   const savedFilterConditions = FILTER_KINDS.map((k) => savedAction[k.requestKey]).find((list) => Array.isArray(list) && list.length > 0) ?? [];
   const fields = {};
   const extraValues = {};
+  const deadline = { ...EMPTY_DEADLINE };
+  let listMode = DEFAULT_LIST_MODE;
   const position = { ...EMPTY_BOARD_POSITION };
   let pendingKey = null;
 
@@ -177,6 +245,13 @@ export const parseGenericThenAction = (savedAction, groupType) => {
     if (prop.custom_field_id != null) {
       fields[`custom-${prop.custom_field_id}`] = String(prop.property_value ?? '');
       return;
+    }
+    if (prop.property_key === 'list_mode') listMode = String(prop.property_value ?? '') || listMode;
+    if (prop.property_key === 'deadline_mode') deadline.mode = String(prop.property_value ?? '') || deadline.mode;
+    if (prop.property_key === 'deadline_days') deadline.days = String(prop.property_value ?? '0');
+    if (prop.property_key === 'deadline_date') deadline.date = String(prop.property_value ?? '');
+    if (prop.property_key === 'non_working_days') {
+      deadline.nonWorkingDays = String(prop.property_value ?? '').split(',').map((v) => v.trim()).filter(Boolean);
     }
     if (prop.property_key === 'field_key') {
       flushPending();
@@ -202,6 +277,8 @@ export const parseGenericThenAction = (savedAction, groupType) => {
     thenActionId: savedAction.then_action_id ?? null,
     fields,
     extraValues,
+    deadlines: fields[SET_DEADLINE_FIELD_KEY] !== undefined ? { [SET_DEADLINE_FIELD_KEY]: deadline } : {},
+    listModes: fields[SET_TAGS_FIELD_KEY] !== undefined ? { [SET_TAGS_FIELD_KEY]: listMode } : {},
     position,
     noFields: (savedAction.properties ?? []).length === 0 && savedFilterConditions.length === 0,
     filterConditions: parseFilterConditions(savedFilterConditions),

@@ -34,6 +34,85 @@
   }
 }
 
+// Field cards of the THEN column (Add stickers, Set blocker, ...): one label size, one dropdown
+// trigger (font, icon / text / chevron gap) and one spacing between cards, rows and values.
+.business-rule-form-column--then {
+  .br-link-card-list {
+    gap: 8px;
+  }
+
+  .br-link-card {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .br-link-card-value-row {
+    gap: 8px;
+  }
+
+  .br-sticker-action-label {
+    font-size: 13px;
+  }
+
+  // The "to" after a field title ("Set description to") is plain body text, not the blue title.
+  .br-generic-field-title-suffix {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-primary);
+  }
+
+  // Colour value ("Set color to"): plain swatch + hex + arrow like the other dropdown values.
+  .br-color-condition-trigger {
+    padding: 0;
+    gap: 6px;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 400;
+  }
+
+  .br-condition-value-text {
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.4;
+  }
+
+  // Compact option list of those dropdowns: sized to its options, small text and tight rows
+  // instead of the shared 260px panel with a tall filter box.
+  .br-condition-operator-panel {
+    right: auto;
+    width: max-content;
+    min-width: 180px;
+    max-width: 260px;
+    padding: 8px;
+    gap: 4px;
+
+    .board-minimap-picker-scroll {
+      gap: 0;
+    }
+
+    .board-minimap-picker-search {
+      padding: 6px 12px;
+
+      input {
+        font-size: 12px;
+      }
+    }
+
+    .br-condition-operator-option {
+      padding: 6px 10px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .br-inline-dropdown-group {
+      padding: 6px 10px 2px;
+      font-size: 12px;
+    }
+  }
+}
+
 // Value box of a field card (Add the card to a batch, ...): fills the row like the Link the
 // card input, with the delete button on its right.
 .br-generic-action-value {

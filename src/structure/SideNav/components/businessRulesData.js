@@ -45,13 +45,6 @@ export const ACTION_GROUP_TYPE_TO_SECTION_ID = {
   link_card: 'link',
   send_notifications: 'notify',
   invoke_web_service: 'invoke',
-  // update_parent_card/update_child_card get their own dedicated, repeatable section
-  // (like 'create') instead of reusing the flat same-card 'update' chip list — they need
-  // a per-instance nested "if parent/child card matches this filter" sub-picker that the
-  // plain update_card flow never needed, so reusing 'update' would have meant restructuring
-  // its already-working flat shape just for this cross-card case.
-  update_parent_card: 'update_related',
-  update_child_card: 'update_related',
   // Recurring-schedule triggers (e.g. "Recurring create cards") carry their own
   // dedicated "execute" section, rendered with a time+timezone picker instead of
   // an add/remove action list since there's exactly one schedule per rule.
