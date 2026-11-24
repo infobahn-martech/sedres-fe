@@ -473,10 +473,8 @@ const NewStickerModal = ({
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="new-blocker-tag-fields-inline">
-            <div className="new-blocker-field new-blocker-field-label-with-availability">
+            <div className="new-blocker-field new-blocker-field-full">
               <label className="new-blocker-label" htmlFor="new-sticker-label-input">
                 Label
               </label>
@@ -492,25 +490,6 @@ const NewStickerModal = ({
                 }}
               />
               {labelError && <span className="new-blocker-error-text">Label is required</span>}
-            </div>
-
-            <div className="new-blocker-field new-blocker-field-availability">
-              <label className="new-blocker-label" htmlFor="new-sticker-availability-select">
-                Availability
-              </label>
-              <select
-                id="new-sticker-availability-select"
-                className="new-blocker-select"
-                value={availability}
-                onChange={(e) => setAvailability(e.target.value)}
-                aria-required
-              >
-                {TAG_AVAILABILITY_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
 

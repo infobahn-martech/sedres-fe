@@ -57,13 +57,6 @@ const StickerIconSwatch = ({ color_code, iconKey }) => {
   );
 };
 
-const availabilityDotClass = (level) => {
-  const normalized = String(level ?? '').trim().toLowerCase();
-  if (normalized === 'global') return 'is-global';
-  if (normalized === 'auto') return 'is-auto';
-  return '';
-};
-
 const ACTION_MENU_GAP = 4;
 const ACTION_MENU_MIN_HEIGHT = 150;
 const ACTION_MENU_PORTAL_Z = 10700;
@@ -428,11 +421,6 @@ const StickersModal = ({ show, onClose }) => {
                   </th>
                   <th>
                     <div className="blockers-th-content">
-                      <span>Availability level</span>
-                    </div>
-                  </th>
-                  <th>
-                    <div className="blockers-th-content">
                       <span>Boards</span>
                     </div>
                   </th>
@@ -444,14 +432,14 @@ const StickersModal = ({ show, onClose }) => {
               <tbody>
                 {cardStickersLoading ? (
                   <tr>
-                    <td colSpan="5" className="tags-modal-loading-cell">
+                    <td colSpan="4" className="tags-modal-loading-cell">
                       Loading stickers…
                     </td>
                   </tr>
                 ) : pageStickers.length === 0 ? (
                   <tr>
                     <td
-                      colSpan="5"
+                      colSpan="4"
                       style={{ textAlign: 'center', padding: '40px', color: '#999' }}
                     >
                       No stickers found
@@ -465,14 +453,6 @@ const StickersModal = ({ show, onClose }) => {
                       </td>
                       <td>
                         <span className="blockers-label-text">{row.label}</span>
-                      </td>
-                      <td>
-                        <span className="blockers-availability-cell">
-                          <span className={`blockers-availability-dot ${availabilityDotClass(row.availabilityLevel)}`} />
-                          <span className={`blockers-availability-text ${availabilityDotClass(row.availabilityLevel)}`}>
-                            {row.availabilityLevel}
-                          </span>
-                        </span>
                       </td>
                       <td>
                         {row.boardsRaw && row.boardsRaw.length > 0 ? (

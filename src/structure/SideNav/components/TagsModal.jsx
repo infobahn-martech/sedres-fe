@@ -21,13 +21,6 @@ const TagColorSwatch = ({ color }) => (
   />
 );
 
-const availabilityDotClass = (level) => {
-  const normalized = String(level ?? '').trim().toLowerCase();
-  if (normalized === 'global') return 'is-global';
-  if (normalized === 'auto') return 'is-auto';
-  return '';
-};
-
 const ACTION_MENU_GAP = 4;
 const ACTION_MENU_MIN_HEIGHT = 150;
 const ACTION_MENU_PORTAL_Z = 10700;
@@ -380,11 +373,6 @@ const TagsModal = ({ show, onClose }) => {
                   </th>
                   <th>
                     <div className="blockers-th-content">
-                      <span>Availability level</span>
-                    </div>
-                  </th>
-                  <th>
-                    <div className="blockers-th-content">
                       <span>Boards</span>
                     </div>
                   </th>
@@ -396,13 +384,13 @@ const TagsModal = ({ show, onClose }) => {
               <tbody>
                 {tagsLoading ? (
                   <tr>
-                    <td colSpan="5" className="tags-modal-loading-cell">
+                    <td colSpan="4" className="tags-modal-loading-cell">
                       Loading tags…
                     </td>
                   </tr>
                 ) : pageTags.length === 0 ? (
                   <tr>
-                    <td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                    <td colSpan="4" style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
                       No tags found
                     </td>
                   </tr>
@@ -414,14 +402,6 @@ const TagsModal = ({ show, onClose }) => {
                       </td>
                       <td>
                         <span className="blockers-label-text">{tag.label}</span>
-                      </td>
-                      <td>
-                        <span className="blockers-availability-cell">
-                          <span className={`blockers-availability-dot ${availabilityDotClass(tag.availabilityLevel)}`} />
-                          <span className={`blockers-availability-text ${availabilityDotClass(tag.availabilityLevel)}`}>
-                            {tag.availabilityLevel}
-                          </span>
-                        </span>
                       </td>
                       <td>
                         {tag.boardsRaw && tag.boardsRaw.length > 0 ? (
