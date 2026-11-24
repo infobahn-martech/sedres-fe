@@ -1957,7 +1957,11 @@ const GROCardView = forwardRef(function GROCardView(
                     {dynamicUploadButtonLabel}
                   </button>
                   {showDynamicUploadModal ? (
-                    <div className="gro-inward-popover gro-upload-popover--wide" role="dialog" aria-label={dynamicUploadTitle}>
+                    <div
+                      className={`gro-inward-popover${isCrewImmigrationStage ? " gro-upload-popover--wide" : ""}`}
+                      role="dialog"
+                      aria-label={dynamicUploadTitle}
+                    >
                       <div className="gro-inward-popover-header">{dynamicUploadTitle}</div>
                       <form onSubmit={handleDynamicUploadSubmit}>
                         <div className="gro-inward-popover-body">
@@ -1968,7 +1972,10 @@ const GROCardView = forwardRef(function GROCardView(
                               </span>
                             </div>
                           ) : (
-                            <div className="gro-upload-popover-grid">
+                            <div
+                              className={isCrewImmigrationStage ? "gro-upload-popover-grid" : undefined}
+                              style={isCrewImmigrationStage ? undefined : { display: "contents" }}
+                            >
                             {dynamicUploadTimeFields.map((field) => (
                               <div
                                 key={field.fieldKey}

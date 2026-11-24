@@ -2395,6 +2395,11 @@
   box-shadow: 0 4px 14px rgba(0, 54, 140, 0.28);
 }
 
+/* Popover-open forces accent text (!important); keep it readable on the dark hover fill. */
+.gro-card-view .gro-stage-upload-icon-btn.gro-pass-segment--popover-open:hover {
+  color: var(--text-inverse, #ffffff) !important;
+}
+
 .gro-card-view .gro-stage-upload-icon-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px rgba(0, 54, 140, 0.25);
