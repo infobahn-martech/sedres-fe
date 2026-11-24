@@ -5148,3 +5148,29 @@ $gro-supervisor-control-border: #d0d5dd;
   border-color: var(--border-strong, rgba(255, 255, 255, 0.16));
   background: transparent;
 }
+
+/* Upload Signed Document popover — wider, with fields laid out two per row. */
+.gro-card-view .gro-inward-popover.gro-upload-popover--wide {
+  width: min(960px, calc(100vw - 40px));
+}
+
+.gro-card-view .gro-upload-popover-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+
+.gro-card-view .gro-upload-popover-grid > .gro-inward-popover-field {
+  margin: 0;
+  min-width: 0;
+}
+
+.gro-card-view .gro-upload-popover-grid > .gro-upload-popover-grid-full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 560px) {
+  .gro-card-view .gro-upload-popover-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

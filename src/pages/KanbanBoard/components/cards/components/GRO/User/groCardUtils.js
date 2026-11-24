@@ -721,9 +721,12 @@ export const buildGroArrivalTimeObjectsPayload = (timeObjects, timeObjectValues)
       if (timeObjectId == null || String(timeObjectId).trim() === "") return null;
       const valueKey = resolveGroTimeObjectValueKey(item);
       const parts = timeObjectValues?.[valueKey] ?? { date: "", time: "" };
+      const batch = resolveGroTimeObjectBatch(item);
       return {
         time_object_id: Number(timeObjectId),
         time_object_value: formatGroTimeObjectValue(parts),
+        // Crew Immigration batches reuse time_object_ids, so each row says which batch it is for.
+        ...(batch ? { batch } : {}),
       };
     })
     .filter(Boolean);
