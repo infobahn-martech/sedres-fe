@@ -2,10 +2,10 @@
     "status": "success",
     "data": {
         "call": {
-            "call_id": "586",
+            "call_id": "598",
             "call_type_id": "1",
             "call_type": "Import Call",
-            "appointment_type": "Vessel",
+            "appointment_type": "Tug and Barge",
             "port_id": "1",
             "port": "Jubail",
             "main_billing_entity_id": "24",
@@ -13,29 +13,22 @@
             "assigned_operator_id": "85",
             "assigned_operator": "Infobahn Operator",
             "created_by": "83",
-            "time_objects": [
-                {
-                    "time_object_id": "11",
-                    "time_object": "Actual Time of Arrival",
-                    "field_key": "ATA",
-                    "time_object_value": "2026-11-23 00:00:00"
-                }
-            ]
+            "time_objects": []
         },
         "vessel": {
-            "vessel_id": "101",
-            "vessel_name": "AESEN GALAXY",
+            "vessel_id": "113",
+            "vessel_name": "IRON TIDE",
             "vessel_type_id": null,
-            "tug_type_id": null,
-            "vessel_owner": "AESEN OFFSHORE SUPPORT PTE. LTD",
-            "vessel_principal": "SAIPEM",
+            "tug_type_id": "3",
+            "vessel_owner": "REBEKKA MARINE LTD",
+            "vessel_principal": "ZAMIL",
             "vessel_manager": null
         },
         "task": {
-            "card_id": "957",
-            "task_id": "2",
-            "task_name": "Crew Immigration",
-            "stage_id": "7",
+            "card_id": "983",
+            "task_id": "7",
+            "task_name": "Vessel Inward Registration",
+            "stage_id": "6",
             "is_first_column": false,
             "assigned_user_id": null,
             "assigned_user_name": null,
@@ -46,110 +39,44 @@
                     "name": "GRO user"
                 }
             ],
+            "is_vessel_registration_uploaded": true,
             "details": {
-                "immigration_status": "Pending",
-                "immigration_remarks": null,
-                "immigration_doc": "",
-                "immigration_doc_url": null
+                "vessel_registration_doc": null
             },
             "documents": [
                 {
                     "document_id": null,
-                    "call_task_document_id": "372",
-                    "document_name": "Crew Immigration Letter - BATCH 2",
-                    "file_name": "586_957_Crew_Immigration_BATCH_2.pdf",
-                    "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Task Docs\/586_957_Crew_Immigration_BATCH_2.pdf",
+                    "call_task_document_id": "384",
+                    "document_name": "Vessel Registration",
+                    "file_name": "598_983_Vessel_Registration.pdf",
+                    "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Task Docs\/598_983_Vessel_Registration.pdf",
                     "status": "2",
                     "remarks": null,
                     "uploaded_by": "13",
                     "uploaded_by_user": "GRO Supervisor",
-                    "uploaded_at": "2026-11-23 11:26:29"
+                    "uploaded_at": "2026-11-24 09:17:13"
                 },
                 {
-                    "document_id": null,
-                    "call_task_document_id": "371",
-                    "document_name": "Crew Immigration Letter - BATCH 1",
-                    "file_name": "586_957_Crew_Immigration_BATCH_1.pdf",
-                    "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Task Docs\/586_957_Crew_Immigration_BATCH_1.pdf",
-                    "status": "2",
-                    "remarks": null,
-                    "uploaded_by": "13",
-                    "uploaded_by_user": "GRO Supervisor",
-                    "uploaded_at": "2026-11-23 14:17:49"
-                },
-                {
-                    "document_id": "3749",
-                    "call_task_document_id": "366",
-                    "document_name": "Crew list ",
+                    "document_id": "4268",
+                    "call_task_document_id": "378",
+                    "document_name": "Vessel Registry certificate",
                     "file_name": "pdf-sample_0_(1).pdf",
                     "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/pdf-sample_0_(1).pdf",
                     "status": "2",
                     "remarks": "",
                     "uploaded_by": "83",
                     "uploaded_by_user": "Infobahn Test",
-                    "uploaded_at": "2026-11-23 10:17:49"
-                },
-                {
-                    "document_id": "3750",
-                    "call_task_document_id": "367",
-                    "document_name": "Crew passports and Saudi Visa copies",
-                    "file_name": "pdf-sample_0_(1).pdf",
-                    "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/pdf-sample_0_(1).pdf",
-                    "status": "2",
-                    "remarks": "",
-                    "uploaded_by": "83",
-                    "uploaded_by_user": "Infobahn Test",
-                    "uploaded_at": "2026-11-23 08:44:09"
-                },
-                {
-                    "document_id": "3751",
-                    "call_task_document_id": "368",
-                    "document_name": "Crew List split into two - for Immigration visit",
-                    "file_name": "pdf-sample_0.pdf",
-                    "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/pdf-sample_0.pdf",
-                    "status": "2",
-                    "remarks": "",
-                    "uploaded_by": "83",
-                    "uploaded_by_user": "Infobahn Test",
-                    "uploaded_at": "2026-11-23 08:44:09"
+                    "uploaded_at": "2026-11-24 08:38:07"
                 }
             ],
             "stage_time_objects": [
                 {
-                    "time_object_id": "12",
-                    "time_object": "Crew Immigration Commenced - BATCH 1",
-                    "field_key": "CIC_2",
+                    "time_object_id": "13",
+                    "time_object": "Vessel Inward Formalities Completed",
+                    "field_key": "VIFC",
                     "is_required": "1",
                     "sort_order": "1",
-                    "time_object_value": "2026-11-25 02:00:00",
-                    "batch": "BATCH 1"
-                },
-                {
-                    "time_object_id": "20",
-                    "time_object": "Crew Immigration Completed - BATCH 1",
-                    "field_key": "CIC_3",
-                    "is_required": "1",
-                    "sort_order": "2",
-                    "time_object_value": "2026-11-26 00:00:00",
-                    "batch": "BATCH 1"
-                },
-                {
-                    "time_object_id": "12",
-                    "time_object": "Crew Immigration Commenced - BATCH 2",
-                    "field_key": "CIC_2",
-                    "is_required": "1",
-                    "sort_order": "1",
-                    "time_object_value": null,
-                    "batch": "BATCH 2"
-                },
-                {
-                    "time_object_id": "20",
-                    "time_object": "Crew Immigration Completed - BATCH 2",
-                    "field_key": "CIC_3",
-                    "is_required": "1",
-                    "sort_order": "2",
-                    "time_object_value": null,
-                    "batch": "BATCH 2"
+                    "time_object_value": null
                 }
             ]
         }
