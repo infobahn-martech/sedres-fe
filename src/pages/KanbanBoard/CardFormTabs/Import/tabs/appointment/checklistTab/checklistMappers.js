@@ -464,6 +464,13 @@ const mapItemToRow = (it, i, sectionId) => {
     || rawCopyOnly === 1
     || String(rawCopyOnly) === "1"
     || String(rawCopyOnly).toLowerCase() === "true";
+  // Document Req.: the item can't be ticked by hand — it is done only once a document is uploaded.
+  const rawInfoOnly = dd.require_info_only;
+  const requireInfoOnlyFromApi =
+    rawInfoOnly === true
+    || rawInfoOnly === 1
+    || String(rawInfoOnly) === "1"
+    || String(rawInfoOnly).toLowerCase() === "true";
   const req = mapDocumentDetailsToRequirement(it);
   let requirement =
     req.variant !== "none" && req.label
@@ -513,6 +520,7 @@ const mapItemToRow = (it, i, sectionId) => {
     fullLabel: fullLabel || title,
     requirement,
     requireCopyOnlyFromApi,
+    requireInfoOnlyFromApi,
     expiryDateRequired: String(it.expiry_date_reqd) === "1" || it.expiry_date_reqd === 1,
     taskNames: mapItemTaskNamesFromApi(it),
     uploadedFromApi,

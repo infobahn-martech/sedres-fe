@@ -127,7 +127,10 @@ const buildItemsDataFromCallChecklist = (blocks, lookup) => {
         Array.isArray(savedItem?.apiUploadedFiles) ? savedItem.apiUploadedFiles : []
       );
       next[item.id] = {
-        checked: savedItem?.checked === true,
+        // Document Req. items are done only while a document is uploaded.
+        checked: item.requireInfoOnlyFromApi
+          ? backendFiles.length > 0
+          : savedItem?.checked === true,
         remarks: savedItem?.remarks ?? "",
         expiryDate: normalizeExpiryDateForUi(savedItem?.expiryDate ?? ""),
         apiUploadedFiles: backendFiles,
@@ -237,7 +240,16 @@ function Checklist({
 
   const handleSelectAll = (sectionId, checked) => {
     userEditedRef.current = true;
-    const itemIds = collectItemIdsUnderSectionInBlocks(checklistBlocks, sectionId);
+    // Document Req. items follow their upload, so "select all" leaves them alone.
+    const documentRequiredIds = new Set(
+      checklistBlocks
+        .flatMap((b) => flattenTreeItems(b.tree))
+        .filter((it) => it.requireInfoOnlyFromApi)
+        .map((it) => it.id)
+    );
+    const itemIds = collectItemIdsUnderSectionInBlocks(checklistBlocks, sectionId).filter(
+      (itemId) => !documentRequiredIds.has(itemId)
+    );
     setItemsData((prev) => {
       const next = { ...prev };
       itemIds.forEach((itemId) => {

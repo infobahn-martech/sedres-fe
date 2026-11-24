@@ -220,6 +220,7 @@ const ChecklistItemRow = ({
     uploadedFromApi = [],
     requirement,
     requireCopyOnlyFromApi,
+    requireInfoOnlyFromApi = false,
     taskNames = [],
   } = item;
   const displayTaskNames = Array.isArray(taskNames) ? taskNames.filter(Boolean) : [];
@@ -232,10 +233,13 @@ const ChecklistItemRow = ({
   const uploadFilesRef = useRef(null);
   const [moreUploadFilesOpen, setMoreUploadFilesOpen] = useState(false);
 
-  const checked = itemData?.checked === true;
   const rowFiles = Array.isArray(uploadedFiles) ? uploadedFiles : [];
   const referenceFiles = Array.isArray(uploadedFromApi) ? uploadedFromApi : [];
   const uploadColumnFiles = filterUploadColumnFiles(rowFiles, referenceFiles);
+  // Document Req. items: the tick follows the upload (ticked only while a document is uploaded)
+  // and can't be changed by hand.
+  const isDocumentRequired = requireInfoOnlyFromApi === true;
+  const checked = isDocumentRequired ? uploadColumnFiles.length > 0 : itemData?.checked === true;
   const itemRootBackendUrl = getItemRootBackendPreviewUrl(item);
   const urlFromList = (list) => {
     const arr = Array.isArray(list) ? list : [];
@@ -306,6 +310,7 @@ const ChecklistItemRow = ({
   };
 
   const handleCheckedChange = (e) => {
+    if (isDocumentRequired) return;
     const next = e.target.checked;
     pushChange({ checked: next });
   };
@@ -344,7 +349,15 @@ const ChecklistItemRow = ({
       if (key && !removedNext.includes(key)) removedNext.push(key);
     }
     setUploadedFiles(next);
-    pushChange({ uploadedFiles: next, apiUploadedFiles: nextApiFiles, removedFiles: removedNext });
+    pushChange({
+      uploadedFiles: next,
+      apiUploadedFiles: nextApiFiles,
+      removedFiles: removedNext,
+      // Document Req.: removing the last uploaded document un-ticks the item.
+      ...(isDocumentRequired
+        ? { checked: filterUploadColumnFiles(next, referenceFiles).length > 0 }
+        : {}),
+    });
   };
 
   const handleBrowseClick = () => fileInputRef.current?.click();
@@ -547,9 +560,14 @@ const ChecklistItemRow = ({
             type="checkbox"
             checked={checked}
             onChange={handleCheckedChange}
-            disabled={isViewOnly}
+            disabled={isViewOnly || isDocumentRequired}
             className="checklist-checkbox"
             aria-label="Mark checklist item done"
+            title={
+              isDocumentRequired
+                ? "Document required — ticked automatically when a document is uploaded"
+                : undefined
+            }
           />
           <span className="checklist-checkbox-custom checklist-checkbox-custom--table">
             {checked ? <span className="checkmark">✓</span> : null}
