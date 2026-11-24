@@ -5640,6 +5640,8 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
         id: `cond-val-${cond.condition_id}`,
         conditionId: cond.condition_id ?? null,
         value: cond.input_value ?? '',
+        savedValue: cond.input_value ?? '',
+        savedLabel: cond.input_value_label ?? '',
         timeUnitId: cond.time_unit_id != null ? String(cond.time_unit_id) : '',
         joinWord: normalizeConnector(cond.connector),
       });
@@ -8039,6 +8041,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                                 details={details}
                                 operator={selectedOperator}
                                 value={v.value}
+                                savedLabel={v.value === v.savedValue ? v.savedLabel : ''}
                                 timeUnitId={v.timeUnitId}
                                 timeUnits={valueTimeUnits}
                                 label={cond.fieldLabel}

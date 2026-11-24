@@ -38,7 +38,11 @@ function MoveTargetAction({ position, title = 'Move card to', defaultBoardId = '
   const lane = (workflow?.swimlanes ?? swimlanesByWorkflow[String(position.workflowId)] ?? EMPTY_LIST)
     .find((l) => String(l.swimlane_id) === String(position.swimlaneId));
 
-  const label = [board?.board_name, workflow?.workflow_name, column?.column_name, lane?.swimlane_name].filter(Boolean).join(' / ');
+  const workspace = (workspaces ?? EMPTY_LIST).find((w) => (w.boards ?? EMPTY_LIST).some((b) => String(b.board_id) === String(position.boardId)));
+
+  // Read as "[workspace][board][workflow] COLUMN | LANE", the same way a picked Position is shown in AND.
+  const placeLabel = [workspace?.workspace_name, board?.board_name, workflow?.workflow_name].filter(Boolean).map((name) => `[${name}]`).join('');
+  const label = [placeLabel, column?.column_name, lane?.swimlane_name && `| ${lane.swimlane_name}`].filter(Boolean).join(' ');
 
   const handleRemove = () => {
     onChange({ ...EMPTY_BOARD_POSITION });
