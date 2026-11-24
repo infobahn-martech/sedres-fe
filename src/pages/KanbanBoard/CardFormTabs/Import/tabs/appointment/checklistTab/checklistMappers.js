@@ -465,7 +465,7 @@ const mapItemToRow = (it, i, sectionId) => {
     || String(rawCopyOnly) === "1"
     || String(rawCopyOnly).toLowerCase() === "true";
   // Document Req.: the item can't be ticked by hand — it is done only once a document is uploaded.
-  const rawInfoOnly = dd.require_info_only;
+  const rawInfoOnly = dd.document_required;
   const requireInfoOnlyFromApi =
     rawInfoOnly === true
     || rawInfoOnly === 1

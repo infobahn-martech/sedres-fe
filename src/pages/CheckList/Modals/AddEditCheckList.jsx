@@ -139,7 +139,7 @@ function mapItemToApi(item, options = {}) {
     remove_files: removeFiles,
     document_details: {
       require_copy_only: !!doc?.is_copy_required,
-      require_info_only: !!doc?.is_info_required,
+      document_required: !!doc?.is_info_required,
       description: doc?.description ?? ""
     }
   };
@@ -787,8 +787,8 @@ function mapApiToForm(data) {
     document_details: {
       is_copy_required: item.document_details?.require_copy_only || false,
       is_info_required:
-        item.document_details?.require_info_only == "1" ||
-        item.document_details?.require_info_only === true,
+        item.document_details?.document_required == "1" ||
+        item.document_details?.document_required === true,
       required_copy_only: null,
       existing_files: mapUploadedFilesToForm(item.document_details?.uploaded_files),
       remove_files: [],
