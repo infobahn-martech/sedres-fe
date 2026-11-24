@@ -1573,10 +1573,14 @@ const GROCardView = forwardRef(function GROCardView(
 
   const vesselRegSignedDocInfo = useMemo(() => {
     if (!isCrewImmigrationStage) return resolveGroDocumentByName(taskDetails, "Vessel Registration");
+    // mergeGroDetailFileUrls already folds immigration_doc + immigration_doc_url into { file_name, file_url }.
+    const doc = taskDetails?.immigration_doc;
+    if (doc && typeof doc === "object" && doc.file_url) {
+      return { file_url: doc.file_url, file_name: doc.file_name || doc.file_url.split("/").pop() };
+    }
     const url = String(taskDetails?.immigration_doc_url ?? "").trim();
     if (!url) return null;
-    const name = String(taskDetails?.immigration_doc ?? "").trim() || url.split("/").pop();
-    return { file_url: url, file_name: name };
+    return { file_url: url, file_name: url.split("/").pop() };
   }, [taskDetails, isCrewImmigrationStage]);
 
   const openDynamicUploadModal = useCallback(() => {
@@ -1604,10 +1608,6 @@ const GROCardView = forwardRef(function GROCardView(
     async (e) => {
       e?.preventDefault?.();
       if (isDynamicUploadSubmitting) return;
-      if (!dynamicUploadFile && !vesselRegSignedDocInfo) {
-        notify("Please select a file to upload.", "warn");
-        return;
-      }
       if (callId == null || callId === "") {
         notify("Call id is missing.", "error");
         return;
@@ -1617,15 +1617,7 @@ const GROCardView = forwardRef(function GROCardView(
         return;
       }
 
-      if (dynamicUploadShowsTimeFields) {
-        const timeValidationErrors = validateGroRequiredTimeObjects(timeObjects, timeObjectValues);
-        if (Object.keys(timeValidationErrors).length > 0) {
-          setTimeObjectErrors(timeValidationErrors);
-          notify("Please fill in all required time fields.", "warn");
-          return;
-        }
-        setTimeObjectErrors({});
-      }
+      setTimeObjectErrors({});
 
       const formData = new FormData();
       formData.append("call_id", String(callId));
@@ -1662,7 +1654,6 @@ const GROCardView = forwardRef(function GROCardView(
     [
       isDynamicUploadSubmitting,
       dynamicUploadFile,
-      vesselRegSignedDocInfo,
       callId,
       taskId,
       timeObjects,
@@ -1952,10 +1943,41 @@ const GROCardView = forwardRef(function GROCardView(
                       <div className="gro-inward-popover-header">{dynamicUploadTitle}</div>
                       <form onSubmit={handleDynamicUploadSubmit}>
                         <div className="gro-inward-popover-body">
+                          {!dynamicUploadShowsTimeFields ? null : timeObjectsLoading ? (
+                            <div className="gro-inward-popover-field">
+                              <span className="gro-inward-popover-label gro-inward-popover-loading">
+                                Loading time fields…
+                              </span>
+                            </div>
+                          ) : (
+                            dynamicUploadTimeFields.map((field) => (
+                              <div
+                                key={field.fieldKey}
+                                className={`gro-inward-popover-field gro-inward-popover-datetime-full${field.error ? " gro-inward-popover-field--error" : ""}`}
+                              >
+                                <span className="gro-inward-popover-label">
+                                  {field.label}
+                                </span>
+                                <div className="gro-inward-popover-datetime-row">
+                                  <DateTimePickerField
+                                    dateValue={field.pickerParts?.date ?? ""}
+                                    timeValue={field.pickerParts?.time ?? ""}
+                                    onDateTimeChange={field.onDateTimeChange}
+                                    placeholder="DD/MM/YYYY HH:mm"
+                                    popperClassName="gro-inward-datetime-popper"
+                                    disabled={isDynamicUploadSubmitting}
+                                    hasError={Boolean(field.error)}
+                                  />
+                                </div>
+                                {field.error ? (
+                                  <span className="gro-inward-popover-field-error">{field.error}</span>
+                                ) : null}
+                              </div>
+                            ))
+                          )}
                           <div className="gro-inward-popover-field">
                             <span className="gro-inward-popover-label">
-                              Signed Document{" "}
-                              <span className="text-danger">*</span>
+                              Signed Document
                             </span>
                             <div className="gro-premium-upload">
                               <input
@@ -1992,39 +2014,6 @@ const GROCardView = forwardRef(function GROCardView(
                               )}
                             </div>
                           </div>
-                          {!dynamicUploadShowsTimeFields ? null : timeObjectsLoading ? (
-                            <div className="gro-inward-popover-field">
-                              <span className="gro-inward-popover-label gro-inward-popover-loading">
-                                Loading time fields…
-                              </span>
-                            </div>
-                          ) : (
-                            dynamicUploadTimeFields.map((field) => (
-                              <div
-                                key={field.fieldKey}
-                                className={`gro-inward-popover-field gro-inward-popover-datetime-full${field.error ? " gro-inward-popover-field--error" : ""}`}
-                              >
-                                <span className="gro-inward-popover-label">
-                                  {field.label}
-                                  {field.isRequired ? <span className="text-danger"> *</span> : null}
-                                </span>
-                                <div className="gro-inward-popover-datetime-row">
-                                  <DateTimePickerField
-                                    dateValue={field.pickerParts?.date ?? ""}
-                                    timeValue={field.pickerParts?.time ?? ""}
-                                    onDateTimeChange={field.onDateTimeChange}
-                                    placeholder="DD/MM/YYYY HH:mm"
-                                    popperClassName="gro-inward-datetime-popper"
-                                    disabled={isDynamicUploadSubmitting}
-                                    hasError={Boolean(field.error)}
-                                  />
-                                </div>
-                                {field.error ? (
-                                  <span className="gro-inward-popover-field-error">{field.error}</span>
-                                ) : null}
-                              </div>
-                            ))
-                          )}
                         </div>
                         <div className="gro-inward-popover-footer">
                           <button
