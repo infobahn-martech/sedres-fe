@@ -139,6 +139,7 @@ function mapItemToApi(item, options = {}) {
     remove_files: removeFiles,
     document_details: {
       require_copy_only: !!doc?.is_copy_required,
+      require_info_only: !!doc?.is_info_required,
       description: doc?.description ?? ""
     }
   };
@@ -485,6 +486,7 @@ function createSectionItemPayload() {
     expiry_date_reqd: false,
     document_details: {
       is_copy_required: false,
+      is_info_required: false,
       required_copy_only: null,
       existing_files: [],
       remove_files: [],
@@ -503,6 +505,7 @@ function createSubSectionItemPayload() {
     expiry_date_reqd: false,
     document_details: {
       is_copy_required: false,
+      is_info_required: false,
       required_copy_only: null,
       existing_files: [],
       remove_files: [],
@@ -783,6 +786,9 @@ function mapApiToForm(data) {
     _initialTaskOptions: buildTaskSelectOptionsFromItemRoles(item),
     document_details: {
       is_copy_required: item.document_details?.require_copy_only || false,
+      is_info_required:
+        item.document_details?.require_info_only == "1" ||
+        item.document_details?.require_info_only === true,
       required_copy_only: null,
       existing_files: mapUploadedFilesToForm(item.document_details?.uploaded_files),
       remove_files: [],
@@ -1020,6 +1026,7 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
               <span>Role</span>
               <span>Tasks</span>
               <span>Description</span>
+              <span>Document Req.</span>
               <span>Expiry Req.</span>
               <span>Copy Req.</span>
               <span>File</span>
@@ -1060,6 +1067,14 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
                     placeholder="Description"
                     {...register(`sections.${sectionIndex}.items.${itemIndex}.description`)}
                   />
+                  <label className="checklist-checkbox-pill" htmlFor={`info_required_${sectionIndex}_${itemIndex}`}>
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id={`info_required_${sectionIndex}_${itemIndex}`}
+                      {...register(`sections.${sectionIndex}.items.${itemIndex}.document_details.is_info_required`)}
+                    />
+                  </label>
                   <label className="checklist-checkbox-pill" htmlFor={`expiry_date_reqd_${sectionIndex}_${itemIndex}`}>
                     <input
                       className="form-check-input"
@@ -1157,6 +1172,7 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
               <span>Role</span>
               <span>Tasks</span>
               <span>Description</span>
+              <span>Document Req.</span>
               <span>Expiry Req.</span>
               <span>Copy Req.</span>
               <span>File</span>
@@ -1197,6 +1213,17 @@ export function CheckListModal({ showModal, closeModal, callTypesOptions, onSucc
                     placeholder="Description"
                     {...register(`sections.${sectionIndex}.sub_sections.${subSectionIndex}.items.${itemIndex}.description`)}
                   />
+                  <label
+                    className="checklist-checkbox-pill"
+                    htmlFor={`info_required_${sectionIndex}_${subSectionIndex}_${itemIndex}`}
+                  >
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id={`info_required_${sectionIndex}_${subSectionIndex}_${itemIndex}`}
+                      {...register(`sections.${sectionIndex}.sub_sections.${subSectionIndex}.items.${itemIndex}.document_details.is_info_required`)}
+                    />
+                  </label>
                   <label
                     className="checklist-checkbox-pill"
                     htmlFor={`expiry_date_reqd_${sectionIndex}_${subSectionIndex}_${itemIndex}`}
