@@ -303,6 +303,29 @@ function Checklist({
     setRefreshedRows(extractCallDetailChecklistRows(data?.data));
   }, [currentCallId, refetchSharedCallDetail]);
 
+  // Opening the Check List sub-tab always re-reads GET call_file/get_call_detail/{callId}, so the
+  // checklist renders from fresh server data rather than the copy loaded when the card opened.
+  // (callFileService shares an identical in-flight request, so this never doubles up.)
+  const [openFetchLoading, setOpenFetchLoading] = useState(false);
+  const reloadOnOpenRef = useRef(reloadChecklistFromCallDetail);
+  reloadOnOpenRef.current = reloadChecklistFromCallDetail;
+  useEffect(() => {
+    if (!currentCallId) return undefined;
+    let cancelled = false;
+    setOpenFetchLoading(true);
+    reloadOnOpenRef
+      .current()
+      .catch(() => {
+        /* the existing call detail (if any) stays on screen */
+      })
+      .finally(() => {
+        if (!cancelled) setOpenFetchLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentCallId]);
+
   const handleSaveConfirm = useCallback(async () => {
     if (!currentCallId) {
       notify("Call ID is missing. Please save general details first.", "error");
@@ -365,7 +388,9 @@ function Checklist({
   }, []);
 
   // Only the first load shows the spinner; a background refresh keeps the current checklist.
-  const isLoading = !callDetail && !refreshedRows && (callDetailLoading || callDetailLoad);
+  // Opening the sub-tab also shows it until the fresh get_call_detail response arrives.
+  const isLoading =
+    openFetchLoading || (!callDetail && !refreshedRows && (callDetailLoading || callDetailLoad));
   const hasChecklistData = checklistBlocks.some((b) => (b.tree || []).length > 0);
   const showCallDetailError = !isLoading && !hasCardDetailProp && Boolean(callDetailError) && !callDetail;
   // Any empty / error state: the card stretches to fill the panel so its content sits centred.
