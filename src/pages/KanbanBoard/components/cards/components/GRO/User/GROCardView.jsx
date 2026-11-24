@@ -1285,8 +1285,8 @@ const GROCardView = forwardRef(function GROCardView(
       return;
     }
 
-    // On the Crew Immigration tab, Update Status is one form covering every batch.
-    if (activeTab === GRO_ACTIVE_TABS.crewImmigration) {
+    // On the Crew Immigration card (any tab), Update Status is one form covering every batch.
+    if (hidePassTabs && isCrewImmigrationStage) {
       await submitCrewImmigrationStatus();
       return;
     }
@@ -1555,21 +1555,29 @@ const GROCardView = forwardRef(function GROCardView(
     [isGeneratingCrewImmigrationPdf, callId, cardId, taskId, userRoleId, refreshGroDocuments]
   );
 
-  // Upload Signed Document is only offered on the Vessel Inward Registration card, and only
-  // once the vessel registration has been uploaded (task.is_vessel_registration_uploaded).
-  const hasVesselRegistrationDoc = useMemo(() => {
-    const flag = taskDetails?.is_vessel_registration_uploaded;
-    return flag === true || flag === 1 || flag === "1" || flag === "true";
-  }, [taskDetails]);
-
-  const showDynamicUploadIcon = isVesselInwardRegistrationStage && hasVesselRegistrationDoc;
-
-  const dynamicUploadTitle = "Upload Signed Document";
-
-  const vesselRegSignedDocInfo = useMemo(
-    () => resolveGroDocumentByName(taskDetails, "Vessel Registration"),
+  // The upload button is offered on the Vessel Inward Registration and Crew Immigration cards,
+  // once the task's document has been generated (task.generated_document.status === "generated").
+  const hasGeneratedDocument = useMemo(
+    () => String(taskDetails?.generated_document?.status ?? "").trim().toLowerCase() === "generated",
     [taskDetails]
   );
+
+  const showDynamicUploadIcon =
+    (isVesselInwardRegistrationStage || isCrewImmigrationStage) && hasGeneratedDocument;
+
+  const dynamicUploadButtonLabel = "Upload Signed Document";
+  const dynamicUploadTitle = "Upload Signed Document";
+  const dynamicUploadShowsTimeFields = true;
+  // Crew Immigration's popover lists every batch's time fields (same as its Update Status form).
+  const dynamicUploadTimeFields = isCrewImmigrationStage ? crewImmigrationTimeFields : inwardTimeObjectFields;
+
+  const vesselRegSignedDocInfo = useMemo(() => {
+    if (!isCrewImmigrationStage) return resolveGroDocumentByName(taskDetails, "Vessel Registration");
+    const url = String(taskDetails?.immigration_doc_url ?? "").trim();
+    if (!url) return null;
+    const name = String(taskDetails?.immigration_doc ?? "").trim() || url.split("/").pop();
+    return { file_url: url, file_name: name };
+  }, [taskDetails, isCrewImmigrationStage]);
 
   const openDynamicUploadModal = useCallback(() => {
     setDynamicUploadType("vessel_inward_registration");
@@ -1609,24 +1617,31 @@ const GROCardView = forwardRef(function GROCardView(
         return;
       }
 
-      const timeValidationErrors = validateGroRequiredTimeObjects(timeObjects, timeObjectValues);
-      if (Object.keys(timeValidationErrors).length > 0) {
-        setTimeObjectErrors(timeValidationErrors);
-        notify("Please fill in all required time fields.", "warn");
-        return;
+      if (dynamicUploadShowsTimeFields) {
+        const timeValidationErrors = validateGroRequiredTimeObjects(timeObjects, timeObjectValues);
+        if (Object.keys(timeValidationErrors).length > 0) {
+          setTimeObjectErrors(timeValidationErrors);
+          notify("Please fill in all required time fields.", "warn");
+          return;
+        }
+        setTimeObjectErrors({});
       }
-      setTimeObjectErrors({});
 
       const formData = new FormData();
       formData.append("call_id", String(callId));
       formData.append("task_id", String(taskId));
       if (dynamicUploadFile) {
-        formData.append("vessel_registration_doc", dynamicUploadFile);
+        formData.append(
+          isCrewImmigrationStage ? "immigration_doc" : "vessel_registration_doc",
+          dynamicUploadFile
+        );
       }
-      formData.append(
-        "time_objects",
-        JSON.stringify(buildGroArrivalTimeObjectsPayload(timeObjects, timeObjectValues))
-      );
+      if (dynamicUploadShowsTimeFields) {
+        formData.append(
+          "time_objects",
+          JSON.stringify(buildGroArrivalTimeObjectsPayload(timeObjects, timeObjectValues))
+        );
+      }
 
       setIsDynamicUploadSubmitting(true);
       try {
@@ -1655,6 +1670,8 @@ const GROCardView = forwardRef(function GROCardView(
       saveArrivalDocument,
       refreshTaskDetails,
       resetInwardClearanceFields,
+      dynamicUploadShowsTimeFields,
+      isCrewImmigrationStage,
     ]
   );
 
@@ -1923,12 +1940,12 @@ const GROCardView = forwardRef(function GROCardView(
                   <button
                     type="button"
                     className={`gro-stage-upload-icon-btn${showDynamicUploadModal ? " gro-pass-segment--popover-open" : ""}`}
-                    title="Upload Signed Document"
-                    aria-label="Upload Signed Document"
+                    title={dynamicUploadTitle}
+                    aria-label={dynamicUploadTitle}
                     aria-expanded={showDynamicUploadModal}
                     onClick={showDynamicUploadModal ? closeDynamicUploadModal : openDynamicUploadModal}
                   >
-                    Upload Signed Document
+                    {dynamicUploadButtonLabel}
                   </button>
                   {showDynamicUploadModal ? (
                     <div className="gro-inward-popover" role="dialog" aria-label={dynamicUploadTitle}>
@@ -1936,7 +1953,10 @@ const GROCardView = forwardRef(function GROCardView(
                       <form onSubmit={handleDynamicUploadSubmit}>
                         <div className="gro-inward-popover-body">
                           <div className="gro-inward-popover-field">
-                            <span className="gro-inward-popover-label">Signed Document <span className="text-danger">*</span></span>
+                            <span className="gro-inward-popover-label">
+                              Signed Document{" "}
+                              <span className="text-danger">*</span>
+                            </span>
                             <div className="gro-premium-upload">
                               <input
                                 ref={dynamicUploadFileInputRef}
@@ -1972,14 +1992,14 @@ const GROCardView = forwardRef(function GROCardView(
                               )}
                             </div>
                           </div>
-                          {timeObjectsLoading ? (
+                          {!dynamicUploadShowsTimeFields ? null : timeObjectsLoading ? (
                             <div className="gro-inward-popover-field">
                               <span className="gro-inward-popover-label gro-inward-popover-loading">
                                 Loading time fields…
                               </span>
                             </div>
                           ) : (
-                            inwardTimeObjectFields.map((field) => (
+                            dynamicUploadTimeFields.map((field) => (
                               <div
                                 key={field.fieldKey}
                                 className={`gro-inward-popover-field gro-inward-popover-datetime-full${field.error ? " gro-inward-popover-field--error" : ""}`}
@@ -2027,36 +2047,6 @@ const GROCardView = forwardRef(function GROCardView(
                     </div>
                   ) : null}
                 </div>
-              ) : null}
-              {isCrewImmigrationTabActive ? (
-                <InwardClearanceToolbar
-                  inwardAnchorRef={inwardAnchorRef}
-                  showMainFileUpload={false}
-                  showInwardClearance={showInwardClearance}
-                  onToggleInwardPopover={() => setShowInwardClearance(!showInwardClearance)}
-                  inwardActionLabel="Update Status"
-                  inwardPopoverTitle="Crew Immigration"
-                  timeObjectFields={crewImmigrationTimeFields}
-                  timeObjectsLoading={timeObjectsLoading}
-                  extraStageFieldsContent={
-                    !timeObjectsLoading && crewImmigrationTimeFields.length === 0 ? (
-                      <p className="gro-inward-popover-label gro-inward-popover-loading">
-                        No time fields configured.
-                      </p>
-                    ) : null
-                  }
-                  onInwardCancel={handleInwardCancel}
-                  onInwardSubmit={handleInwardSubmit}
-                  isSavingInward={isSavingArrivalDocument}
-                  isGroLoadingDisabled={
-                    isGroLoading ||
-                    isSavingArrivalDocument ||
-                    callId == null ||
-                    callId === "" ||
-                    !taskId ||
-                    !isAllGroDocumentsVerified
-                  }
-                />
               ) : null}
               {(hidePassTabs &&
                 !isCrewImmigrationStage &&
