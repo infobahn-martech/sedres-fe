@@ -1,17 +1,16 @@
 import { getStoredRoleId } from './localStorage';
+import { ROLES } from '../constants/roles';
 
 /**
  * Third-party portal roles that get a dashboard-only experience: their own
  * landing dashboard, a 2-item sidebar (Dashboard + Invoice Management), and a
- * navbar stripped down to Help/Notifications/Profile. Distinct from
- * rolePermissions.js's ROLE_IDS.VENDOR ("6"), which is the existing generic
- * Vendor Portal role.
+ * navbar stripped down to Help/Notifications/Profile.
  */
 export const VENDOR_ROLES = {
-  INHOUSE_DRIVER: 15,
-  TRANSPORT_COMPANY: 16,
-  HOTEL: 17,
-  MEDICAL: 18,
+  INHOUSE_DRIVER: Number(ROLES.INHOUSE_DRIVER),
+  TRANSPORT_COMPANY: Number(ROLES.TRANSPORT_COMPANY),
+  HOTEL: Number(ROLES.HOTEL),
+  HOSPITAL: Number(ROLES.HOSPITAL),
 };
 
 const VENDOR_DASHBOARD_CONFIG = {
@@ -30,7 +29,7 @@ const VENDOR_DASHBOARD_CONFIG = {
     dashboardPath: '/hotel-portal/dashboard',
     invoicesPath: '/hotel-portal/invoices',
   },
-  [VENDOR_ROLES.MEDICAL]: {
+  [VENDOR_ROLES.HOSPITAL]: {
     portal: 'medical',
     dashboardPath: '/medical-portal/dashboard',
     invoicesPath: '/medical-portal/invoices',

@@ -35,13 +35,14 @@ import { SO_TYPE_OPTIONS, VERIFIED_ITEM_STATUS, areAllSoItemsVerifiedForCall } f
 import SeApprovalUploadModal from "@/pages/KanbanBoard/components/board/SeApprovalUploadModal";
 import CustomModal from "@/components/CustomModal";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
+import { ROLES } from "@/shared/constants/roles";
 
 const BP_CURRENCY_OPTIONS = ["SAR", "USD", "EURO"];
 const USD_TO_SAR_RATE = 3.75;
 const SALES_ORDER_PAGE_SIZE = 10;
 /* users/get_users_by_role roles listed in the DA Supervisor / DA Coordinator multi-selects. */
-const DA_SUPERVISOR_ROLE_ID = 22;
-const DA_COORDINATOR_ROLE_ID = 26;
+const DA_SUPERVISOR_ROLE_ID = Number(ROLES.DA_SUPERVISOR);
+const DA_COORDINATOR_ROLE_ID = Number(ROLES.DA_COORDINATOR);
 
 /* Session-level request cache for lookup lists (users by role, vendors) that don't change while
    the board is open — without it every Sales Order tab mount (tab switch, card reopen) refired

@@ -1,6 +1,17 @@
-/** Sedres desk roles: GRO User (4), CC User (9), MWP User (10), GRO Supervisor (6), MWP Supervisor (8), CC Supervisor (5), Coordinator Transport (19), Taxi Boat Operator (20), Taxi Boat Captain (21). */
+import { ROLES, hasRole } from "../constants/roles";
 
-const DESK_START_TASK_ROLE_IDS = new Set([4, 5, 6, 8, 9, 10, 19, 20, 21]);
+/** Desk roles that call task_card/start_task when dragging a card from To Do → In Progress. */
+const DESK_START_TASK_ROLE_IDS = [
+  ROLES.GRO_USER,
+  ROLES.CUSTOM_CLEARANCE_SUPERVISOR,
+  ROLES.GRO_SUPERVISOR,
+  ROLES.MWP_SUPERVISOR,
+  ROLES.CUSTOM_CLEARANCE_USER,
+  ROLES.MWP_USER,
+  ROLES.TRANSPORT_COORDINATOR,
+  ROLES.TAXI_BOAT_OPERATOR,
+  ROLES.TAXI_BOAT_CAPTAIN,
+];
 
 export function normalizeRoleId(roleId) {
   if (roleId === undefined || roleId === null) return null;
@@ -8,41 +19,34 @@ export function normalizeRoleId(roleId) {
   return s === "" ? null : s;
 }
 
+/** GRO User, Custom Clearance User, MWP User and GRO Supervisor. */
 export function isGROUserRole(roleId) {
-  return (
-    roleId === "4" ||
-    roleId === 4 ||
-    roleId === "9" ||
-    roleId === 9 ||
-    roleId === "10" ||
-    roleId === 10 ||
-    roleId === "6" ||
-    roleId === 6
+  return hasRole(
+    roleId,
+    ROLES.GRO_USER,
+    ROLES.CUSTOM_CLEARANCE_USER,
+    ROLES.MWP_USER,
+    ROLES.GRO_SUPERVISOR
   );
 }
 
+/** GRO Supervisor and MWP Supervisor. */
 export function isGROSupervisorRole(roleId) {
-  return (
-    roleId === "6" || roleId === 6 ||
-    roleId === "8" || roleId === 8
-  );
+  return hasRole(roleId, ROLES.GRO_SUPERVISOR, ROLES.MWP_SUPERVISOR);
 }
 
 export function isMWPSupervisorRole(roleId) {
-  return roleId === "8" || roleId === 8;
+  return hasRole(roleId, ROLES.MWP_SUPERVISOR);
 }
 
 export function isCustomClearanceSupervisorRole(roleId) {
-  return roleId === "5" || roleId === 5;
+  return hasRole(roleId, ROLES.CUSTOM_CLEARANCE_SUPERVISOR);
 }
 
-/** Port-level oversight roles — Port Manager (1, absorbed the deleted Port Supervisor role 3's permissions), CEO (23), DA (22, granted the same permissions as role 1 per explicit user confirmation) — see the same supervisor-flavored GRO card view as GRO Supervisor when opening a GRO Workflow card. */
+/** Port-level oversight roles: Port Manager, CEO and DA Supervisor. They see the
+ * supervisor-flavored GRO card view when opening a GRO Workflow card. */
 export function isPortSupervisorRole(roleId) {
-  return (
-    roleId === "1" || roleId === 1 ||
-    roleId === "23" || roleId === 23 ||
-    roleId === "22" || roleId === 22
-  );
+  return hasRole(roleId, ROLES.PORT_MANAGER, ROLES.CEO, ROLES.DA_SUPERVISOR);
 }
 
 export function collectUserRoleIdCandidates(user) {
@@ -64,10 +68,9 @@ export function getFirstUserRoleId(user) {
   return candidates.length > 0 ? candidates[0] : null;
 }
 
-/** Roles that call task_card/start_task when dragging a card from To Do → In Progress. */
+/** Desk roles that call task_card/start_task when dragging a card from To Do → In Progress. */
 export function isDeskStartTaskRole(roleId) {
-  const n = Number(roleId);
-  return Number.isFinite(n) && DESK_START_TASK_ROLE_IDS.has(n);
+  return hasRole(roleId, ...DESK_START_TASK_ROLE_IDS);
 }
 
 export function userHasDeskStartTaskRole(user) {

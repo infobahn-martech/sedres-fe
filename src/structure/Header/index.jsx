@@ -29,11 +29,8 @@ import { useThemeStore } from '../../store/themeStore';
 import useCardModalStore from '../../store/cardModalStore';
 import NavTabButton from '../../components/NavTabButton';
 import ModalErrorBoundary from '../../components/ModalErrorBoundary';
-import { isRestrictedBoardUser, isPortOperatorUser } from '../../shared/helpers/restrictedBoardUser';
-import { isVendorRole, getRoleId } from '../../shared/helpers/vendorDashboardRoles';
-import { hasMasterModuleAccess } from '../../shared/helpers/roleMasterMenuAccess';
-import usePermissions from '../../shared/hooks/usePermissions';
-import { PERMISSION_MODULES } from '../../shared/constants/permissions';
+import { isRestrictedBoardUser } from '../../shared/helpers/restrictedBoardUser';
+import { getNavbarAccess } from '../../shared/helpers/navbarAccess';
 
 // Pointer travel (px) before a press on the quick tools button counts as a drag, not a click.
 const QUICK_FAB_DRAG_THRESHOLD = 4;
@@ -100,32 +97,8 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const authData = useAuthReducer((state) => state.authData);
   const userProfile = useAuthReducer((state) => state.userProfile);
   const restrictedBoardUser = isRestrictedBoardUser(userProfile);
-  const portOperatorUser = isPortOperatorUser(userProfile);
-  const { hasModule } = usePermissions();
-  const vendorDashboardUser = isVendorRole(getRoleId());
-  // Roles configured in roleMasterMenuAccess get the Master Module icon even when otherwise restricted.
-  const roleMasterModuleUser = hasMasterModuleAccess(userProfile);
-  const userRoleId =
-    userProfile?.role_id ||
-    userProfile?.roleId ||
-    userProfile?.role?.role_id ||
-    userProfile?.user?.role_id ||
-    userProfile?.data?.role_id;
-  const isPortManagerRole = String(userRoleId) === '1';
-  const isPortSupervisorRole = String(userRoleId) === '23';
-  // DA (22) granted the same settings-icon access as Port Manager, per
-  // explicit user confirmation.
-  const isDARole = String(userRoleId) === '22';
-  // Settings icon: legacy admin roles OR the SETTINGS module permission
-  // (so custom roles get it when granted). Tools has its own icon visible to everyone.
-  const showKanbanSettingsItems =
-    !activePortal &&
-    !restrictedBoardUser &&
-    (isPortManagerRole || isPortSupervisorRole || isDARole || hasModule(PERMISSION_MODULES.SETTINGS));
-  // Kanban board routes show Tools in the kanban sidebar instead (mirrors SideNav's board-route check).
-  // While a card is open, the quick actions panel offers the tools directly.
-  const isKanbanBoardRoute = pathname.startsWith('/kanban-board/') || pathname === '/compact';
-  const showHeaderTools = Boolean(activePortal) || !isKanbanBoardRoute;
+  // Every navbar visibility rule lives in shared/helpers/navbarAccess.js.
+  const navbarAccess = getNavbarAccess({ user: userProfile, pathname, activePortal });
 
   const handleQuickToolSelect = (tool) => {
     setShowQuickActions(false);
@@ -395,15 +368,14 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     setImageError(false);
   }, [resolvedAvatar]);
 
-  // RIGHT — User + Icons (GRO / Custom Clearance / vendor-dashboard roles skip module shortcuts; still show help, alerts, profile)
+  // RIGHT — User + Icons (visibility rules: shared/helpers/navbarAccess.js)
   const rightSection = (
     <div className="right-section">
-      {showHeaderTools && <ToolsMenu variant="header" onSelect={setActiveTool} />}
+      {navbarAccess.showTools && <ToolsMenu variant="header" onSelect={setActiveTool} />}
 
-      {(roleMasterModuleUser || (!restrictedBoardUser && !vendorDashboardUser)) && (
+      {navbarAccess.showMasterModule && (
         <>
-          {(roleMasterModuleUser || !portOperatorUser) && (
-            <>
+          <>
               <HeaderTooltip id="master-module" place="bottom" content="Master Module" />
               <NavTabButton
                 className="icon-btn icon-btn-hide-mobile"
@@ -459,8 +431,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
               >
                 <FiNavigation />
               </NavTabButton> */}
-            </>
-          )}
+          </>
           {/* <HeaderTooltip id="board" place="bottom" content="Board" />
           <NavTabButton
             className="icon-btn icon-btn-hide-mobile"
@@ -474,7 +445,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
           </NavTabButton> */}
         </>
       )}
-      {!vendorDashboardUser && (
+      {navbarAccess.showKpiDashboard && (
         <>
           <HeaderTooltip id="kpi-dashboard" place="bottom" content="KPI Dashboard" />
           <NavTabButton
@@ -525,7 +496,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
         )}
       </div>
 
-      {showKanbanSettingsItems && (
+      {navbarAccess.showSettings && (
         <div className="settings-btn-wrapper" ref={settingsDropdownRef}>
           <HeaderTooltip id="settings" place="bottom" content="Settings" />
           <button
@@ -662,7 +633,7 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
 
       </div>
 
-      {!restrictedBoardUser && !vendorDashboardUser && <AdvancedSearch />}
+      {navbarAccess.showSearch && <AdvancedSearch />}
 
       {!isCardModalOpen && rightSection}
     </div>

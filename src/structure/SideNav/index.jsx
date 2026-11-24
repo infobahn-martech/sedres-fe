@@ -58,6 +58,7 @@ import { hasKanbanFullSidebar } from '../../shared/helpers/restrictedBoardUser';
 import { isMasterMenuAllowed, filterMasterSubMenus } from '../../shared/helpers/roleMasterMenuAccess';
 import usePermissions from '../../shared/hooks/usePermissions';
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from '../../shared/constants/permissions';
+import { ROLES, hasRole } from '../../shared/constants/roles';
 
 function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
   const { pathname } = useLocation();
@@ -115,7 +116,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
     userProfile?.role?.role_id ||
     userProfile?.user?.role_id ||
     userProfile?.data?.role_id;
-  const isPortSupervisorRole = String(userRoleId) === '23';
+  const isCeoRole = hasRole(userRoleId, ROLES.CEO);
   const { hasPermission, hasAnyPermission, hasModule } = usePermissions();
   // User Management → Users is fully migrated to the new permission system:
   // the backend permission response is authoritative here, no legacy OR.
@@ -152,7 +153,7 @@ function SideNav({ isMobileMenuOpen, onCloseMobileMenu, activePortal = null }) {
 
   // On Station: legacy full-sidebar roles OR the ON_STATION module permission,
   // so custom roles (new role_ids) get it when granted in Permissions.
-  const canViewOnStation = kanbanFullSidebar || isPortSupervisorRole || hasModule(PERMISSION_MODULES.ON_STATION);
+  const canViewOnStation = kanbanFullSidebar || isCeoRole || hasModule(PERMISSION_MODULES.ON_STATION);
 
   const kanbanBoardIcons = useMemo(() => {
     // Add is driven purely by KANBAN_CARD/ADD_CARD permissions (it already was

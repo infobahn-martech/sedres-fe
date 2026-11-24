@@ -19,6 +19,7 @@ import "@/design/scss/pages/kanban-board/taxi-boat-card.scss";
 import "@/design/scss/pages/kanban-board/taxi-boat-service-scenarios.scss";
 import GroSummaryCard, { GroSummaryFieldCard } from "../GRO/User/GroSummaryCard";
 import CardTabListLoading from "@/components/CardTabListLoading";
+import { ROLES } from "@/shared/constants/roles";
 
 const CREW_CHANGE_SERVICES = ["Crew Change"];
 const MATERIAL_SERVICES   = ["Material Delivery", "Provision Delivery", "Garbage Collection"];
@@ -1594,8 +1595,8 @@ ThirdPartyServiceListing.propTypes = {
   vesselName:  PropTypes.string,
 };
 
-const TAXI_BOAT_OPERATOR_ROLE_ID = "20";
-const TAXI_BOAT_CAPTAIN_ROLE_ID = "21";
+const TAXI_BOAT_OPERATOR_ROLE_ID = ROLES.TAXI_BOAT_OPERATOR;
+const TAXI_BOAT_CAPTAIN_ROLE_ID = ROLES.TAXI_BOAT_CAPTAIN;
 
 function TaxiBoatCardView({ card, userRoleId = null }) {
   const serviceType = card?.typeOfService ?? "—";

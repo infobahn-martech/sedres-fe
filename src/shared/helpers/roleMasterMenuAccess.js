@@ -1,4 +1,5 @@
 import { getStoredRoleId } from './localStorage';
+import { ROLES } from '../constants/roles';
 import { collectUserRoleIdCandidates, normalizeRoleId } from './groUserRoles';
 import { ROUTE_PATHS } from '../../router/paths';
 
@@ -12,20 +13,17 @@ import { ROUTE_PATHS } from '../../router/paths';
  * `true` shows the whole menu; an array shows only those submenus.
  */
 export const ROLE_MASTER_MENUS = {
-  // Coordinator Transport
-  '19': {
+  [ROLES.TRANSPORT_COORDINATOR]: {
     Dashboard: true,
     'Transport Management': true,
     Settings: ['My Accounts', 'Logout'],
   },
-  // Inhouse Driver
-  '15': {
+  [ROLES.INHOUSE_DRIVER]: {
     Dashboard: true,
     'Trip Management': true,
     Settings: ['My Accounts', 'Logout'],
   },
-  // Transport Company
-  '16': {
+  [ROLES.TRANSPORT_COMPANY]: {
     Dashboard: true,
     'Order Management': true,
     'Invoice Management': true,

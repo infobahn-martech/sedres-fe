@@ -43,6 +43,7 @@ import {
   MINIMAL_CARD_TOOLTIP_ID,
 } from "@/pages/KanbanBoard/utils/cardDisplayHelpers";
 import { downloadRemoteFile } from "@/shared/utils/utils";
+import { ROLES } from "@/shared/constants/roles";
 import {
   isApprovalReceivedColumnTitle,
   isLamprellUaePoReceivedColumn,
@@ -743,7 +744,7 @@ const getCompanyIcon = (cardId, cardName, entityLogo) => {
 };
 
 // Taxi Boat Captain (21) / Taxi Boat Operator (20): show card_name here instead of task_name.
-const TAXI_BOAT_ROLE_IDS = new Set(["20", "21"]);
+const TAXI_BOAT_ROLE_IDS = new Set([ROLES.TAXI_BOAT_OPERATOR, ROLES.TAXI_BOAT_CAPTAIN]);
 
 function ApiCardTaskLine({ card }) {
   const roleId = card.workflow_role_id != null ? String(card.workflow_role_id) : "";

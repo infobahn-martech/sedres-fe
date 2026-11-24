@@ -8,6 +8,7 @@ import userService from "@/services/userService";
 import useAlertReducer from "@/store/AlertReducer";
 import useAuthReducer from "@/store/AuthReducer";
 import { getFirstUserRoleId } from "@/shared/helpers/groUserRoles";
+import { ROLES } from "@/shared/constants/roles";
 import "@/design/scss/husbandry-crew-coordinators.scss";
 
 // Visual styling lives in husbandry-crew-coordinators.scss (classNamePrefix based).
@@ -18,7 +19,7 @@ const SELECT_STYLES = {
 };
 
 /* users/get_users_by_role role listed as Crew Coordinator options. */
-const CREW_COORDINATOR_ROLE_ID = 25;
+const CREW_COORDINATOR_ROLE_ID = Number(ROLES.CREW_COORDINATOR);
 
 // Session cache so reopening the tab/card doesn't refetch the role's users; a failed
 // request is dropped so the next mount retries.
@@ -153,7 +154,7 @@ const CrewCoordinatorsSelect = ({ callId, value = [], onChange, assigned = null 
 
 // Only Port Manager (role_id 1) and Port Operator (role_id 2) see / manage Crew Coordinators.
 // Gated in a wrapper so other roles don't mount the select (no users fetch either).
-const CREW_COORDINATOR_EDITOR_ROLE_IDS = ["1", "2"];
+const CREW_COORDINATOR_EDITOR_ROLE_IDS = [ROLES.PORT_MANAGER, ROLES.PORT_OPERATOR];
 
 const RoleGatedCrewCoordinatorsSelect = (props) => {
   const userProfile = useAuthReducer((state) => state.userProfile);

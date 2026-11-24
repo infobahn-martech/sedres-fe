@@ -1,16 +1,24 @@
 import { getItem } from './localStorage';
+import { ROLES } from '../constants/roles';
 import {
   collectUserRoleIdCandidates,
   isGROUserRole,
   normalizeRoleId,
 } from './groUserRoles';
 
-/** Sedres desk roles — limited board/workspace access (includes Taxi Boat Operator 20, Taxi Boat Captain 21).
- * DA (22) removed per explicit user confirmation — DA now gets the same
- * unrestricted workspaces/header access as role 1 (Port Manager). Route access
- * to kanban boards is instead covered via hasUnrestrictedRouteAccess in
- * rolePermissions.js, so removing DA here doesn't break board navigation. */
-export const SEDRES_RESTRICTED_ROLE_IDS = new Set(['4', '5', '6', '8', '9', '10', '19', '20', '21']);
+/** Sedres desk roles: limited to workspaces and kanban boards.
+ * DA Supervisor (22) is not here; it gets unrestricted route access in rolePermissions.js. */
+export const SEDRES_RESTRICTED_ROLE_IDS = new Set([
+  ROLES.GRO_USER,
+  ROLES.CUSTOM_CLEARANCE_SUPERVISOR,
+  ROLES.GRO_SUPERVISOR,
+  ROLES.MWP_SUPERVISOR,
+  ROLES.CUSTOM_CLEARANCE_USER,
+  ROLES.MWP_USER,
+  ROLES.TRANSPORT_COORDINATOR,
+  ROLES.TAXI_BOAT_OPERATOR,
+  ROLES.TAXI_BOAT_CAPTAIN,
+]);
 
 function isSedresRestrictedBoardRoleId(roleId) {
   const normalized = normalizeRoleId(roleId);
@@ -19,14 +27,13 @@ function isSedresRestrictedBoardRoleId(roleId) {
   return SEDRES_RESTRICTED_ROLE_IDS.has(normalized);
 }
 
-/** Port Operator — hide Master Module / Vendor shortcuts in header */
-export const PORT_OPERATOR_ROLE_ID = '2';
+export const PORT_OPERATOR_ROLE_ID = ROLES.PORT_OPERATOR;
 
 /** Port Manager — full Kanban sidebar (Add, On Station, Edit Workflow, Outlook, Settings) */
-export const KANBAN_FULL_SIDEBAR_ROLE_ID = '1';
+export const KANBAN_FULL_SIDEBAR_ROLE_ID = ROLES.PORT_MANAGER;
 
-/** DA — granted the same full Kanban sidebar as Port Manager, per explicit user confirmation */
-export const DA_ROLE_ID = '22';
+/** DA Supervisor — same full Kanban sidebar as Port Manager */
+export const DA_ROLE_ID = ROLES.DA_SUPERVISOR;
 
 /** Fallback landing path for restricted users when a route isn't allowed — not a specific board. */
 export const RESTRICTED_USER_FALLBACK_PATH = '/workspaces';

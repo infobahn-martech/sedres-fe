@@ -1,3 +1,5 @@
+import { ROLES } from "@/shared/constants/roles";
+
 export const OPERATION_TABS = {
   CREW_IMMIGRATION: "crewImmigration",
   PRE_ARRIVAL: "preArrival",
@@ -27,9 +29,9 @@ export const OPERATION_STAGE_IDS = {
 };
 
 /** Role IDs from `users/get_users_by_role` / `task_documents.role_id` (document handling). */
-export const PRE_ARRIVAL_GRO_ROLE_ID = 4;
-export const PRE_ARRIVAL_CUSTOM_CLEARANCE_ROLE_ID = 5;
-export const PRE_ARRIVAL_MWP_USER_ROLE_ID = 10;
+export const PRE_ARRIVAL_GRO_ROLE_ID = Number(ROLES.GRO_USER);
+export const PRE_ARRIVAL_CUSTOM_CLEARANCE_ROLE_ID = Number(ROLES.CUSTOM_CLEARANCE_SUPERVISOR);
+export const PRE_ARRIVAL_MWP_USER_ROLE_ID = Number(ROLES.MWP_USER);
 
 /** API expects integers on save; UI keeps human-readable option values. */
 export const PRE_ARRIVAL_SABER_STATUS_SAVE_VALUE = {
