@@ -366,7 +366,8 @@ GenericInstance.propTypes = {
 // word of the action's own action_code (move_parent_card -> move).
 function GenericThenActionEditor({ action, title, value, defaultBoardId, renderPropertyPicker, onChange, allowRepeat = true }) {
   const more = value.more ?? [];
-  const canRepeat = allowRepeat && isRepeatableAction(action);
+  const hasFirstTarget = Object.values(value.position ?? {}).some(Boolean);
+  const canRepeat = allowRepeat && isRepeatableAction(action) && (hasFirstTarget || more.length > 0);
   const verb = String(action.action_code ?? '').split('_')[0];
 
   // A move with a parent / child filter reads like the update card: each target is a card holding
