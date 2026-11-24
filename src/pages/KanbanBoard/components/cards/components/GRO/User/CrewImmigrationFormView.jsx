@@ -8,7 +8,8 @@ import translateService from "@/services/translateService";
 import { getImmigrationCrewList } from "@/services/cgAndZwailpassService";
 import { formatGregorianDate, formatHijriDate } from "./groArabicDate";
 import { GroFieldTableSkeletonRows, GroLetterPreviewSkeleton } from "./GroCardViewSkeleton";
-import GroAiTranslationNotice from "./GroAiTranslationNotice";
+import GroTranslationModeBar from "./GroTranslationModeBar";
+import { TRANSLATION_MODES, translationDirections, useGroTranslationMode } from "./groTranslationMode";
 import {
   parseCrewImmigrationTemplates,
   extractCrewImmigrationPlaceholders,
@@ -26,12 +27,25 @@ const SANITIZE_CONFIG = {
   ALLOW_DATA_ATTR: false,
 };
 
-// English text -> Arabic translation, shared by every section so each text is translated once.
-const translationCache = new Map();
-const pendingTranslations = new Set();
+// Translations shared by every section so each text is translated once, per direction.
+const TRANSLATORS = {
+  toArabic: {
+    cache: new Map(),
+    pending: new Set(),
+    request: (text) => translateService.translateToArabic(text),
+  },
+  toEnglish: {
+    cache: new Map(),
+    pending: new Set(),
+    request: (text) => translateService.translateToEnglish(text),
+  },
+};
 
-/** Debounced English->Arabic translation of `texts`; returns a lookup for the results. */
-function useArabicTranslations(texts) {
+const hasArabicLetters = (value) => /[؀-ۿ]/.test(String(value ?? ""));
+
+/** Debounced translation of `texts` in `direction`; returns a lookup for the results. */
+function useTranslations(texts, direction) {
+  const { cache, pending, request } = TRANSLATORS[direction];
   const [, setVersion] = useState(0);
   const mountedRef = useRef(true);
   const textsKey = texts.join("\u0001");
@@ -46,31 +60,35 @@ function useArabicTranslations(texts) {
   useEffect(() => {
     const timer = setTimeout(() => {
       textsKey.split("\u0001").forEach((text) => {
-        if (!text || translationCache.has(text) || pendingTranslations.has(text)) return;
-        pendingTranslations.add(text);
-        translateService
-          .translateToArabic(text)
+        if (!text || cache.has(text) || pending.has(text)) return;
+        pending.add(text);
+        request(text)
           .then((res) => {
             const translated = res?.data?.data?.translated_value;
-            if (translated) translationCache.set(text, translated);
+            if (translated) cache.set(text, translated);
           })
           .catch(() => {})
           .finally(() => {
-            pendingTranslations.delete(text);
+            pending.delete(text);
             if (mountedRef.current) setVersion((v) => v + 1);
           });
       });
     }, TRANSLATE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [textsKey]);
+  }, [textsKey, cache, pending, request]);
 
-  return (text) => translationCache.get(text) ?? "";
+  return (text) => cache.get(String(text ?? "").trim()) ?? "";
 }
 
+/**
+ * Arabic for an English value. Text without Latin letters (numbers, dates) is copied as-is;
+ * otherwise the AI translation when `translate` is given, or "" when translation is off.
+ */
 const toArabicValue = (english, translate) => {
   const text = String(english ?? "").trim();
   if (!text) return "";
-  return needsArabicTranslation(text) ? translate(text) : text;
+  if (!needsArabicTranslation(text)) return text;
+  return translate ? translate(text) : "";
 };
 
 const formatHijriFromValue = (value) => {
@@ -108,22 +126,39 @@ function CrewImmigrationTemplateSection({
   crew,
   onPreviewHtml,
   headerAction = null,
+  translationMode = TRANSLATION_MODES.EN_TO_AR,
+  translationBar = null,
 }) {
   const html = template?.more_description ?? "";
   const { fieldKeys, crewKeys } = useMemo(() => extractCrewImmigrationPlaceholders(html), [html]);
+  const { enToAr, arToEn } = translationDirections(translationMode);
 
   const [englishOverrides, setEnglishOverrides] = useState({});
   const [arabicOverrides, setArabicOverrides] = useState({});
   const [crewOverrides, setCrewOverrides] = useState({});
+  // Field key -> the column the user typed in last ("en" | "ar"); that column drives the other.
+  const [lastEdited, setLastEdited] = useState({});
 
   // A new batch is a new letter — drop manual edits made for the previous one.
   useEffect(() => {
     setEnglishOverrides({});
     setArabicOverrides({});
     setCrewOverrides({});
+    setLastEdited({});
   }, [crew, html]);
 
-  const englishValues = useMemo(() => {
+  const handleEnglishChange = (key, value) => {
+    setEnglishOverrides((prev) => ({ ...prev, [key]: value }));
+    setLastEdited((prev) => (prev[key] === "en" ? prev : { ...prev, [key]: "en" }));
+  };
+
+  const handleArabicChange = (key, value) => {
+    setArabicOverrides((prev) => ({ ...prev, [key]: value }));
+    setLastEdited((prev) => (prev[key] === "ar" ? prev : { ...prev, [key]: "ar" }));
+  };
+
+  // English as typed (or prefilled), before any Arabic -> English translation.
+  const englishBase = useMemo(() => {
     const out = {};
     fieldKeys.forEach((key) => {
       out[key] = englishOverrides[key] ?? String(autoValues?.[key] ?? "");
@@ -146,21 +181,53 @@ function CrewImmigrationTemplateSection({
     [crew, crewKeys]
   );
 
-  const textsToTranslate = useMemo(() => {
-    const texts = Object.values(englishValues).filter(needsArabicTranslation);
+  const uniqueSorted = (texts) => Array.from(new Set(texts.map((t) => String(t).trim()))).sort();
+
+  // English -> Arabic: English-driven fields and the crew `_ar` columns.
+  const textsToArabic = useMemo(() => {
+    if (!enToAr) return [];
+    const texts = fieldKeys
+      .filter((key) => lastEdited[key] !== "ar")
+      .map((key) => englishBase[key])
+      .filter(needsArabicTranslation);
     crewSourceRows.forEach((row) => {
       crewKeys.forEach((key) => {
         if (/_ar$/.test(key) && needsArabicTranslation(row[key])) texts.push(row[key]);
       });
     });
-    return Array.from(new Set(texts.map((t) => t.trim()))).sort();
-  }, [englishValues, crewSourceRows, crewKeys]);
+    return uniqueSorted(texts);
+  }, [enToAr, fieldKeys, lastEdited, englishBase, crewSourceRows, crewKeys]);
 
-  const translate = useArabicTranslations(textsToTranslate);
+  // Arabic -> English: fields whose Arabic column was typed last.
+  const textsToEnglish = useMemo(() => {
+    if (!arToEn) return [];
+    return uniqueSorted(
+      fieldKeys
+        .filter((key) => lastEdited[key] === "ar" && hasArabicLetters(arabicOverrides[key]))
+        .map((key) => arabicOverrides[key])
+    );
+  }, [arToEn, fieldKeys, lastEdited, arabicOverrides]);
 
+  const translateToArabic = useTranslations(textsToArabic, "toArabic");
+  const translateToEnglish = useTranslations(textsToEnglish, "toEnglish");
+
+  const englishValues = {};
   const arabicValues = {};
   fieldKeys.forEach((key) => {
-    arabicValues[key] = arabicOverrides[key] ?? toArabicValue(englishValues[key], translate);
+    const typedArabic = arabicOverrides[key];
+    const arabicDriven = lastEdited[key] === "ar";
+
+    if (arabicDriven && arToEn && String(typedArabic ?? "").trim()) {
+      englishValues[key] = hasArabicLetters(typedArabic)
+        ? translateToEnglish(typedArabic) || englishBase[key]
+        : String(typedArabic).trim();
+    } else {
+      englishValues[key] = englishBase[key];
+    }
+
+    if (arabicDriven) arabicValues[key] = typedArabic ?? "";
+    else if (enToAr) arabicValues[key] = toArabicValue(englishBase[key], translateToArabic);
+    else arabicValues[key] = typedArabic ?? toArabicValue(englishBase[key], null);
   });
 
   const crewRows = crewSourceRows.map((row, index) => {
@@ -168,7 +235,7 @@ function CrewImmigrationTemplateSection({
     crewKeys.forEach((key) => {
       const overrideKey = `${index}:${key}`;
       if (crewOverrides[overrideKey] != null) out[key] = crewOverrides[overrideKey];
-      else if (/_ar$/.test(key)) out[key] = toArabicValue(row[key], translate);
+      else if (/_ar$/.test(key)) out[key] = toArabicValue(row[key], enToAr ? translateToArabic : null);
       else out[key] = row[key];
     });
     return out;
@@ -179,9 +246,16 @@ function CrewImmigrationTemplateSection({
   fieldKeys.forEach((key) => {
     previewValues[key] = arabicValues[key] || englishValues[key];
   });
+  const previewCrewRows = crewRows.map((row, index) => {
+    const out = { ...row };
+    crewKeys.forEach((key) => {
+      if (!out[key]) out[key] = crewSourceRows[index]?.[key] ?? "";
+    });
+    return out;
+  });
 
   const previewHtml = DOMPurify.sanitize(
-    renderCrewImmigrationTemplate(html, previewValues, crewRows),
+    renderCrewImmigrationTemplate(html, previewValues, previewCrewRows),
     SANITIZE_CONFIG
   );
 
@@ -206,8 +280,7 @@ function CrewImmigrationTemplateSection({
 
       <div className="gro-crew-immigration-bulk-body">
         <div className="gro-crew-immigration-bulk-left">
-          <p className="gro-crew-immigration-bulk-section-title">Fields</p>
-          <GroAiTranslationNotice />
+          {translationBar}
           <div className="gro-crew-immigration-bulk-table-wrap">
             <table className="gro-crew-immigration-bulk-table">
               <thead>
@@ -235,9 +308,7 @@ function CrewImmigrationTemplateSection({
                           lang="ar"
                           className="gro-crew-immigration-bulk-input"
                           value={arabicValues[key] ?? ""}
-                          onChange={(e) =>
-                            setArabicOverrides((prev) => ({ ...prev, [key]: e.target.value }))
-                          }
+                          onChange={(e) => handleArabicChange(key, e.target.value)}
                           placeholder={humanizePlaceholder(key)}
                         />
                       </td>
@@ -246,9 +317,7 @@ function CrewImmigrationTemplateSection({
                           type="text"
                           className="gro-crew-immigration-bulk-input"
                           value={englishValues[key] ?? ""}
-                          onChange={(e) =>
-                            setEnglishOverrides((prev) => ({ ...prev, [key]: e.target.value }))
-                          }
+                          onChange={(e) => handleEnglishChange(key, e.target.value)}
                           placeholder={humanizePlaceholder(key)}
                         />
                       </td>
@@ -317,7 +386,6 @@ function CrewImmigrationTemplateSection({
         </div>
 
         <div className="gro-crew-immigration-bulk-right">
-          <p className="gro-crew-immigration-bulk-section-title">Document Preview</p>
           <div className="bulk-pass-arabic-preview" aria-readonly="true" aria-label="Document preview (read only)">
             <div className="bulk-pass-arabic-paper gro-crew-imm-form-paper" dir="rtl">
               <div
@@ -336,6 +404,9 @@ CrewImmigrationTemplateSection.propTypes = {
   templateKey: PropTypes.string.isRequired,
   onPreviewHtml: PropTypes.func,
   headerAction: PropTypes.node,
+  translationMode: PropTypes.oneOf(Object.values(TRANSLATION_MODES)),
+  /** Translation mode picker shown under "Fields" (shared by every section). */
+  translationBar: PropTypes.node,
   template: PropTypes.shape({
     template_name: PropTypes.string,
     description: PropTypes.string,
@@ -364,6 +435,11 @@ export default function CrewImmigrationFormView({
   const isControlled = controlledBatch !== undefined;
   const activeBatch = isControlled ? controlledBatch : ownBatch;
   const [vesselData, setVesselData] = useState(null);
+  // One choice for every letter (Entry / Return); English -> Arabic matches the earlier behaviour.
+  const [translationMode, setTranslationMode] = useGroTranslationMode(
+    "gro.translationMode.Crew Immigration",
+    TRANSLATION_MODES.EN_TO_AR
+  );
 
   useEffect(() => {
     if (!portId) return undefined;
@@ -559,6 +635,10 @@ export default function CrewImmigrationFormView({
             template={template}
             autoValues={autoValues}
             crew={crew}
+            translationMode={translationMode}
+            translationBar={
+              <GroTranslationModeBar mode={translationMode} onChange={setTranslationMode} />
+            }
           />
         ))
       )}

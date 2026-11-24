@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useMemo, forwardRef, useImperativeHandle }
 import PropTypes from "prop-types";
 import { FiPrinter } from "react-icons/fi";
 import VesselBoardingArabicPreview from "./VesselBoardingArabicPreview";
-import GroAiTranslationNotice from "./GroAiTranslationNotice";
+import GroTranslationModeBar from "./GroTranslationModeBar";
+import { TRANSLATION_MODES, translationDirections, useGroTranslationMode } from "./groTranslationMode";
 import { GroFieldTableSkeletonRows, GroLetterPreviewSkeleton } from "./GroCardViewSkeleton";
 import { extractVesselRegTemplateFields, matchVesselApiFieldKey } from "./vesselRegTemplateFields";
 import groService from "@/services/groService";
@@ -22,7 +23,6 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
     portId,
     callId,
     templateType = "Vessel Registration",
-    sectionTitle = "Vessel Particulars",
   },
   ref
 ) {
@@ -38,6 +38,11 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
   const [translationTick, setTranslationTick] = useState(0);
   // Bumped on every edit of a field, so a response that arrives after a newer edit is dropped.
   const editSeqRef = useRef({});
+  const [translationMode, setTranslationMode] = useGroTranslationMode(
+    `gro.translationMode.${templateType}`,
+    TRANSLATION_MODES.AUTO
+  );
+  const { enToAr, arToEn } = translationDirections(translationMode);
 
   useEffect(() => {
     if (!portId) {
@@ -77,8 +82,14 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
     editSeqRef.current = {};
   }, [templateData]);
 
+  // Every edit bumps the field's sequence (dropping in-flight results); it is only translated
+  // when the selected mode translates in that direction.
   const queueTranslation = (fieldKey, text, toArabic) => {
     editSeqRef.current[fieldKey] = (editSeqRef.current[fieldKey] ?? 0) + 1;
+    if (!(toArabic ? enToAr : arToEn)) {
+      delete pendingTranslationsRef.current[fieldKey];
+      return;
+    }
     pendingTranslationsRef.current[fieldKey] = { text, toArabic };
     setTranslationTick((t) => t + 1);
   };
@@ -154,6 +165,28 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
     Object.entries(prefill).forEach(([fieldKey, value]) => queueTranslation(fieldKey, value, true));
   }, [vesselData, vesselFields]);
 
+  // Switching to a translating mode fills the blanks on the target side from the values already
+  // there (e.g. prefilled English entered while in "Type manually"); typed values are never replaced.
+  const arabicValuesRef = useRef(arabicValues);
+  arabicValuesRef.current = arabicValues;
+  const lastModeRef = useRef(translationMode);
+  useEffect(() => {
+    if (lastModeRef.current === translationMode) return;
+    lastModeRef.current = translationMode;
+    const english = fieldValuesRef.current;
+    const arabic = arabicValuesRef.current;
+    const hasText = (v) => String(v ?? "").trim() !== "";
+    vesselFields.forEach(({ fieldKey }) => {
+      if (enToAr && hasText(english[fieldKey]) && !hasText(arabic[fieldKey])) {
+        queueTranslation(fieldKey, english[fieldKey], true);
+      } else if (arToEn && hasText(arabic[fieldKey]) && !hasText(english[fieldKey])) {
+        queueTranslation(fieldKey, arabic[fieldKey], false);
+      }
+    });
+    // Runs only when the mode changes; current values are read from refs on purpose.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translationMode]);
+
   useImperativeHandle(
     ref,
     () => ({
@@ -176,8 +209,7 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
     <div className="gro-crew-immigration-panel gro-vir-panel">
       <div className="gro-crew-immigration-bulk-body gro-vir-body">
         <div className="gro-crew-immigration-bulk-left gro-vir-col">
-          <p className="gro-crew-immigration-bulk-section-title">{sectionTitle}</p>
-          <GroAiTranslationNotice />
+          <GroTranslationModeBar mode={translationMode} onChange={setTranslationMode} />
           <div className="gro-crew-immigration-bulk-table-wrap gro-vir-scroll">
             <table className="gro-crew-immigration-bulk-table gro-vir-table">
               <thead>
@@ -229,9 +261,8 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
         </div>
 
         <div className="gro-crew-immigration-bulk-right gro-vir-col">
-          <div className="gro-vessel-reg-preview-header">
-            <p className="gro-crew-immigration-bulk-section-title">Document Preview</p>
-            {onSave ? (
+          {onSave ? (
+          <div className="gro-vessel-reg-preview-header gro-vessel-reg-preview-header--actions">
             <div className="gro-vessel-reg-preview-actions gro-crew-imm-print-actions">
               <button
                 type="button"
@@ -251,8 +282,8 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
                 {isSaving ? "Generating PDF…" : "Print"}
               </button>
             </div>
-            ) : null}
           </div>
+          ) : null}
           {templateLoading ? (
             <div className="gro-vir-scroll gro-vir-preview" role="status" aria-live="polite">
               <span className="visually-hidden">Loading document preview…</span>
@@ -279,7 +310,6 @@ VesselInwardRegistrationView.propTypes = {
   portId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   templateType: PropTypes.string,
-  sectionTitle: PropTypes.string,
 };
 
 VesselInwardRegistrationView.displayName = "VesselInwardRegistrationView";
