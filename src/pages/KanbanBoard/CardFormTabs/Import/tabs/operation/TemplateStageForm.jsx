@@ -190,7 +190,7 @@ const placeSaberFieldUnderSelect = (fields) => {
 const toWeatherDetailHtml = (text) => escapeHtml(text).replace(/\r?\n/g, "<br>");
 
 // Swaps the last occurrence of the previous Weather Detail text in the email body for the new one,
-// so the preview follows typing instantly (get_call_detail rebinds it on blur / Enter).
+// so the preview follows typing instantly (get_call_detail rebinds it once typing pauses).
 const replaceWeatherDetailInMessage = (message, prevText, nextText) => {
   const html = String(message ?? "");
   const prevHtml = toWeatherDetailHtml(prevText);
@@ -465,13 +465,15 @@ function TemplateStageForm({
     }
   };
 
-  // Weather Detail blur / Enter → GET call_file/get_call_detail/{callId}?weather_detail=<value>
+  // Weather Detail change (debounced) → GET call_file/get_call_detail/{callId}?weather_detail=<value>
   // (with the current saber / weather_forecast). The response rebinds this stage's fields and the
   // email template; the user's unsaved field edits are kept.
   const weatherDetailRequestSeqRef = useRef(0);
   const lastWeatherDetailRequestRef = useRef(null);
   // Latest typed Weather Detail, so a late response doesn't roll the preview back.
   const latestWeatherDetailRef = useRef(null);
+  const weatherDetailDebounceRef = useRef(null);
+  useEffect(() => () => clearTimeout(weatherDetailDebounceRef.current), []);
   const refreshCallDetailForWeatherDetail = async (weatherDetail) => {
     const resolvedCallId = String(callId ?? "").trim();
     if (!resolvedCallId || isViewOnly) return;
@@ -569,6 +571,9 @@ function TemplateStageForm({
     if (changedField && isWeatherDetailField(changedField)) {
       const prevText = getValue(fieldId);
       latestWeatherDetailRef.current = String(value ?? "");
+      // get_call_detail once typing pauses.
+      clearTimeout(weatherDetailDebounceRef.current);
+      weatherDetailDebounceRef.current = setTimeout(() => refreshCallDetailForWeatherDetail(value), 500);
       setReportDraft((prev) => {
         const message = replaceWeatherDetailInMessage(prev.message, prevText, value);
         return message === null ? prev : { ...prev, message };
@@ -1052,25 +1057,7 @@ function TemplateStageForm({
       return <FormInput type={type} value={String(value ?? "")} onChange={(e) => setFieldValue(id, e.target.value)} disabled={disabled} />;
     }
     if (type === "textarea") {
-      const isWeatherDetail = isWeatherDetailField(field);
-      return (
-        <FormTextarea
-          value={String(value ?? "")}
-          onChange={(e) => setFieldValue(id, e.target.value)}
-          onBlur={isWeatherDetail ? (e) => refreshCallDetailForWeatherDetail(e.target.value) : undefined}
-          onKeyDown={
-            isWeatherDetail
-              ? (e) => {
-                  // Enter submits the weather detail; Shift+Enter still adds a new line.
-                  if (e.key !== "Enter" || e.shiftKey || e.nativeEvent?.isComposing) return;
-                  e.preventDefault();
-                  refreshCallDetailForWeatherDetail(e.currentTarget.value);
-                }
-              : undefined
-          }
-          disabled={disabled}
-        />
-      );
+      return <FormTextarea value={String(value ?? "")} onChange={(e) => setFieldValue(id, e.target.value)} disabled={disabled} />;
     }
     if (type === "radio") {
       return (
