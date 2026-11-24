@@ -1492,18 +1492,21 @@ const GROCardView = forwardRef(function GROCardView(
 
       const pdfRes = await groService.getVesselRegPdf(callTaskDocumentId);
       const url = (pdfRes?.data?.data ?? pdfRes?.data ?? {})?.file_url;
+      if (url) window.open(url, "_blank", "noopener,noreferrer");
+      // get_vessel_reg_pdf succeeded — re-bind the card (documents, status, header) from
+      // get_call_detail_by_id so it reflects the generated PDF.
+      await refreshTaskDetails();
       if (!url) {
         notify("Vessel Registration PDF generated, but the file is not available to download.", "warn");
         return;
       }
-      window.open(url, "_blank", "noopener,noreferrer");
       notify("Vessel Registration PDF downloaded.", "success");
     } catch (err) {
       notify(groApiErrorMessage(err, "Failed to generate Vessel Registration PDF."), "error");
     } finally {
       setIsGeneratingVesselPdf(false);
     }
-  }, [isGeneratingVesselPdf, callId, cardId, taskId, userRoleId, applyCallDetailResponse]);
+  }, [isGeneratingVesselPdf, callId, cardId, taskId, userRoleId, applyCallDetailResponse, refreshTaskDetails]);
 
   const handlePrintCrewImmigrationBatch = useCallback(
     async ({ batchName, entryHtml, returnHtml }) => {
