@@ -1,5 +1,5 @@
 import { useForm, Controller } from "react-hook-form";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Quill from "quill";
 import QuillTableBetter from "quill-table-better";
 import "quill/dist/quill.snow.css";
@@ -13,6 +13,8 @@ import "../../../design/scss/modal-designs.scss";
 import "../../../design/scss/form-designs.scss";
 import "../../../design/scss/pages/report-template/modals/AddEditReportTemplate.scss";
 import PremiumSelect from "../../../components/form/PremiumSelect";
+import DynamicFieldPicker from "../components/DynamicFieldPicker";
+import useReportPlaceholderFields from "../hooks/useReportPlaceholderFields";
 
 // Register once at module level using the same Quill instance that quill-table-better uses
 if (!Quill.__tableBetterRegistered) {
@@ -401,10 +403,15 @@ function attachImageControls(quill, notifyChange) {
 // and calls onChange(html) on every text-change. Mirrors the pattern used in
 // the CG Pass / Vessel Registration template modals for the same Quill v2 +
 // quill-table-better combo — this modal is left-to-right only (no RTL toggle).
-function QuillEditor({ value, onChange, placeholder }) {
+// apiRef (optional) receives { insertText(text) }, which inserts at the last caret
+// position the editor had (or replaces the last selection), e.g. a dynamic field token.
+function QuillEditor({ value, onChange, placeholder, apiRef }) {
   const containerRef = useRef(null);
   const quillRef = useRef(null);
   const lastHtmlRef = useRef("");
+  // Last non-null selection. Opening the field picker moves focus out of the editor
+  // (Quill then reports a null selection), so the caret is remembered here.
+  const lastRangeRef = useRef(null);
 
   useEffect(() => {
     if (!containerRef.current || quillRef.current) return;
@@ -473,10 +480,35 @@ function QuillEditor({ value, onChange, placeholder }) {
     };
     quill.on(Quill.events.TEXT_CHANGE, syncChange);
 
+    const trackSelection = (range) => {
+      if (range) lastRangeRef.current = range;
+    };
+    quill.on(Quill.events.SELECTION_CHANGE, trackSelection);
+
+    if (apiRef) {
+      apiRef.current = {
+        insertText: (text) => {
+          if (!text) return;
+          const docEnd = Math.max(0, quill.getLength() - 1);
+          const saved = lastRangeRef.current;
+          const index = saved ? Math.min(saved.index, docEnd) : docEnd;
+          const length = saved ? Math.min(saved.length, docEnd - index) : 0;
+          if (length > 0) quill.deleteText(index, length, Quill.sources.USER);
+          quill.insertText(index, text, Quill.sources.USER);
+          quill.focus();
+          const caret = index + text.length;
+          quill.setSelection(caret, 0, Quill.sources.SILENT);
+          lastRangeRef.current = { index: caret, length: 0 };
+        },
+      };
+    }
+
     const detachImageControls = attachImageControls(quill, syncChange);
 
     return () => {
       quill.off(Quill.events.TEXT_CHANGE, syncChange);
+      quill.off(Quill.events.SELECTION_CHANGE, trackSelection);
+      if (apiRef) apiRef.current = null;
       detachImageControls();
       // Quill inserts its toolbar as a DOM sibling *before* the container element
       // (not inside it), and quill-table-better creates its row/column picker and
@@ -501,6 +533,8 @@ function QuillEditor({ value, onChange, placeholder }) {
     lastHtmlRef.current = incoming;
     const delta = quill.clipboard.convert({ html: incoming });
     quill.setContents(delta, Quill.sources.SILENT);
+    // Content was replaced (e.g. edit-mode load) — an old caret may no longer be valid.
+    lastRangeRef.current = null;
   }, [value]);
 
   return (
@@ -557,8 +591,62 @@ export function ReportTemplatesModal({
     handleSubmit,
     control,
     reset,
-    formState: { errors },
+    setValue,
+    getValues,
+    watch,
+    formState: { errors, isSubmitted },
   } = useForm({ defaultValues });
+
+  // ---- Dynamic fields (Insert Field pickers on Subject and Body) ----
+  // Fields depend on the selected call type; they're only requested once a picker is opened.
+  const selectedCallTypeId = watch("call_type_id");
+  const [fieldsRequested, setFieldsRequested] = useState(false);
+  const placeholderFields = useReportPlaceholderFields({
+    callTypeId: selectedCallTypeId,
+    enabled: fieldsRequested,
+  });
+  const requestFields = useCallback(() => setFieldsRequested(true), []);
+
+  const subjectInputRef = useRef(null);
+  const bodyEditorApiRef = useRef(null);
+
+  // Inserts the token at the Subject's cursor (replacing any selected text).
+  const insertIntoSubject = (field) => {
+    const textarea = subjectInputRef.current;
+    const current = String(getValues("subject") ?? "");
+    const start = textarea ? textarea.selectionStart ?? current.length : current.length;
+    const end = textarea ? textarea.selectionEnd ?? start : start;
+    const next = current.slice(0, start) + field.token + current.slice(end);
+    setValue("subject", next, { shouldDirty: true, shouldValidate: isSubmitted });
+    const caret = start + field.token.length;
+    requestAnimationFrame(() => {
+      if (!textarea) return;
+      textarea.focus();
+      textarea.setSelectionRange(caret, caret);
+    });
+  };
+
+  const insertIntoBody = (field) => {
+    bodyEditorApiRef.current?.insertText(field.token);
+  };
+
+  const renderFieldPicker = (onSelect, ariaLabel) => (
+    <DynamicFieldPicker
+      groups={placeholderFields.groups}
+      status={placeholderFields.status}
+      error={placeholderFields.error}
+      hasCallType={placeholderFields.hasCallType}
+      onOpen={requestFields}
+      onRetry={placeholderFields.retry}
+      onSelect={onSelect}
+      ariaLabel={ariaLabel}
+    />
+  );
+
+  const { ref: subjectRegisterRef, ...subjectRegister } = register("subject", {
+    required: "Subject is required",
+    validate: (value) => value?.trim()?.length > 0 || "Subject is required",
+  });
 
   useEffect(() => {
     if (showModal?.template_id) {
@@ -730,17 +818,21 @@ export function ReportTemplatesModal({
           <div className="mb-lg-3 mb-sm-0">
             <div className="form-field">
               <div className="desig-inp">
-                <label className="report-template-label">
-                  Subject <span className="text-danger">*</span>
-                </label>
+                <div className="report-template-label-row">
+                  <label className="report-template-label">
+                    Subject <span className="text-danger">*</span>
+                  </label>
+                  {renderFieldPicker(insertIntoSubject, "Insert dynamic field into subject")}
+                </div>
                 <textarea
                   className={`form-control ${errors.subject ? "is-invalid" : ""}`}
                   rows={4}
                   placeholder="Enter subject..."
-                  {...register("subject", {
-                    required: "Subject is required",
-                    validate: (value) => value?.trim()?.length > 0 || "Subject is required",
-                  })}
+                  {...subjectRegister}
+                  ref={(el) => {
+                    subjectRegisterRef(el);
+                    subjectInputRef.current = el;
+                  }}
                 />
               </div>
               {errors.subject && (
@@ -753,9 +845,12 @@ export function ReportTemplatesModal({
           <div className="mb-lg-3 mb-sm-0">
             <div className="form-field">
               <div className="desig-inp">
-                <label className="report-template-label">
-                  Body <span className="text-danger">*</span>
-                </label>
+                <div className="report-template-label-row">
+                  <label className="report-template-label">
+                    Body <span className="text-danger">*</span>
+                  </label>
+                  {renderFieldPicker(insertIntoBody, "Insert dynamic field into body")}
+                </div>
                 <Controller
                   name="body"
                   control={control}
@@ -768,6 +863,7 @@ export function ReportTemplatesModal({
                       value={field.value || ""}
                       onChange={field.onChange}
                       placeholder="Enter body..."
+                      apiRef={bodyEditorApiRef}
                     />
                   )}
                 />
