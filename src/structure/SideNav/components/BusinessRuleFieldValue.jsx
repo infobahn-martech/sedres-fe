@@ -6,6 +6,9 @@ import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import SearchableSelect from '../../../components/form/SearchableSelect';
 import BoardStructureValue from './BoardStructureValue';
 import InlineTextDropdown from './InlineTextDropdown';
+import OptionColorBadge from './OptionColorBadge';
+import ColorValueDropdown from './ColorValueDropdown';
+import TagsValueDropdown from './TagsValueDropdown';
 import '../../../design/scss/business-rule-generic-action.scss';
 import {
   BETWEEN_SEPARATOR,
@@ -76,6 +79,14 @@ function ValueControl({ details, operator, options, value, onChange, ariaLabel, 
     return <BoardStructureValue level={details.structure_level} value={value} defaultBoardId={defaultBoardId} allowLaneOnlyPosition={allowLaneOnlyPosition} onChange={onChange} />;
   }
 
+  if (fieldType === 'tags') {
+    return <TagsValueDropdown value={value ?? ''} onChange={onChange} />;
+  }
+
+  if (fieldType === 'color') {
+    return <ColorValueDropdown value={value ?? ''} ariaLabel={ariaLabel} onChange={onChange} />;
+  }
+
   if (fieldType === 'multiselect' || fieldType === 'checkbox') {
     return (
       <SearchableSelect
@@ -93,12 +104,17 @@ function ValueControl({ details, operator, options, value, onChange, ariaLabel, 
   }
 
   if (fieldType === 'dropdown' || fieldType === 'radio') {
+    const choiceOptions = isYesNoDropdown && ariaLabel ? toYesNoStateOptions(options, ariaLabel) : toChoiceOptions(options);
+    const selectedChoice = choiceOptions.find((o) => o.value === String(value ?? ''));
     return (
       <InlineTextDropdown
         value={value ?? ''}
-        options={isYesNoDropdown && ariaLabel ? toYesNoStateOptions(options, ariaLabel) : toChoiceOptions(options)}
+        options={choiceOptions}
+        triggerIcon={selectedChoice && (selectedChoice.colorCode || selectedChoice.iconName) ? (
+          <OptionColorBadge colorCode={selectedChoice.colorCode} iconName={selectedChoice.iconName} />
+        ) : null}
         placeholder={NOT_SET_LABEL}
-        triggerClassName="business-rule-form-condition-label-btn br-condition-value-text"
+        triggerClassName="business-rule-form-condition-label-btn br-condition-value-text d-inline-flex align-items-center"
         showChevron={!isYesNoDropdown}
         searchable={!isYesNoDropdown}
         onChange={onChange}

@@ -17,7 +17,7 @@ import {
 import { buildCreateBusinessRulePayload, buildUpdateBusinessRulePayload, getUnconfiguredActionLabels, isCreateSubtaskAction, RECURRENCE_REGULAR_FIELD_IDS, buildAdvancedScheduleFields } from './buildBusinessRulePayload';
 import ThenGroupRawSummary from './ThenGroupRawSummary';
 import GenericThenActionEditor from './GenericThenActionEditor';
-import { CREATE_CARDS_GROUP_TYPE, EMPTY_GENERIC_ACTION_VALUE, makeCreateCardAction, parseCreateCardThenAction, parseGenericThenAction } from './genericThenAction';
+import { CREATE_CARDS_GROUP_TYPE, EMPTY_GENERIC_ACTION_VALUE, isTitleInCardAction, makeCreateCardAction, parseCreateCardThenAction, parseGenericThenAction } from './genericThenAction';
 import CreateCardActionCard from './CreateCardActionCard';
 import BusinessRuleFieldValue from './BusinessRuleFieldValue';
 import InlineTextDropdown from './InlineTextDropdown';
@@ -6280,20 +6280,13 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
     );
   }, [show, workspaces]);
 
-  // update_parent_card/update_child_card aren't optional, many-instance actions the way
+  // copy_values_to_parent/copy_values_to_child aren't optional, many-instance actions the way
   // create/link/notify/invoke are — a trigger that carries one of these only ever carries
-  // exactly one, and it's the whole point of the trigger (e.g. "Child card is moved"
-  // exists to update the parent). So
-  // unlike those optional sections, this one instance is auto-created as soon as the
-  // trigger config loads, instead of waiting for an explicit "Add new action" click.
+  // exactly one, so this one instance is auto-created as soon as the trigger config loads,
+  // instead of waiting for an explicit "Add new action" click.
   useEffect(() => {
     if (!show || !triggerConfig) return;
     const actions = triggerConfig.actions ?? [];
-    if (actions.some((a) => a.group_type === 'update_parent_card' || a.group_type === 'update_child_card')) {
-      setUpdateRelatedActions((prev) => (prev.length === 0
-        ? [{ id: Date.now(), fields: [], filterProperties: [] }]
-        : prev));
-    }
     if (actions.some((a) => a.group_type === 'copy_values_to_parent' || a.group_type === 'copy_values_to_child')) {
       setCopyValuesActions((prev) => (prev.length === 0
         ? [{ id: Date.now(), fields: [], filterProperties: [] }]
@@ -8112,11 +8105,14 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                 )}
                 {thenActionSections.map((section) => (
                   <div key={section.key || section.id} className="business-rule-form-action-section">
-                    <h4 className="business-rule-form-action-title">{section.title}</h4>
+                    {!(section.id === 'generic' && isTitleInCardAction(section.action, rule?.icon !== TRIGGER_CODE_TO_ICON.card_created)) && (
+                      <h4 className="business-rule-form-action-title">{section.title}</h4>
+                    )}
 
                     {section.id === 'generic' && (
                       <GenericThenActionEditor
                         action={section.action}
+                        title={section.title}
                         allowRepeat={rule?.icon !== TRIGGER_CODE_TO_ICON.card_created}
                         renderPropertyPicker={(pickerProps) => (
                           <CardPropertyMatchModal
