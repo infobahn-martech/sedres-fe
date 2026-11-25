@@ -879,8 +879,18 @@ function GeneralAdd({
     await createTemplateCallFile(pending, items, []);
   };
 
+  // The button is busy while the card is being created, and also while a selected
+  // template's fields (re)load — handleSubmit ignores clicks then, so say so.
+  const isTemplateBusy = isTemplateFieldsLoading || isTemplateRefetching;
+  const isAddCardBusy = isSavingGeneral || isTemplateBusy;
+  const addCardLabel = isSavingGeneral
+    ? "Adding Card..."
+    : isTemplateBusy
+      ? "Loading template..."
+      : "Add Card";
+
   const handleSubmit = async () => {
-    if (!canAddCard || isTemplateFieldsLoading || isTemplateRefetching) return;
+    if (!canAddCard || isTemplateBusy) return;
     setHasSubmitted(true);
     if (templateFields) {
       await handleTemplateSubmit();
@@ -2867,11 +2877,13 @@ function GeneralAdd({
                 <div className="general-add-page-actions">
                   <button
                     type="button"
-                    className="form-save-button"
+                    className={`form-save-button general-add-card-btn${isAddCardBusy ? " is-busy" : ""}`}
                     onClick={handleSubmit}
-                    disabled={isSavingGeneral}
+                    disabled={isAddCardBusy}
+                    aria-busy={isAddCardBusy || undefined}
                   >
-                    {isSavingGeneral ? "Saving..." : "Add Card"}
+                    {isAddCardBusy && <span className="general-add-card-spinner" aria-hidden="true" />}
+                    <span>{addCardLabel}</span>
                   </button>
                 </div>
               )}

@@ -1354,6 +1354,43 @@
   box-shadow: 0 10px 22px rgba(0, 54, 140, 0.4);
 }
 
+/* Add Card loading state: spinner + label; min-width keeps the button from
+   jumping when the label switches to "Adding Card...". */
+.general-add-page-actions .general-add-card-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 140px;
+}
+
+.general-add-page-actions .general-add-card-btn.is-busy:disabled {
+  opacity: 0.9;
+  cursor: progress;
+}
+
+.general-add-card-spinner {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: generalAddCardSpin 0.7s linear infinite;
+}
+
+@keyframes generalAddCardSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .general-add-card-spinner {
+    animation-duration: 1.6s;
+  }
+}
+
 .cf-daily-report-emails-field {
   margin-bottom: 20px;
 }

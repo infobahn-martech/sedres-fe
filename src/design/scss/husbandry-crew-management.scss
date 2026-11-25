@@ -4400,6 +4400,29 @@
   }
 }
 
+/* Crew Immigration — the Crew Listing section takes the panel height down to
+   its 8px bottom padding (just above the card's footer stepper), and the page
+   size is fitted to that height in CrewImmigrationDashboard
+   (measureFittingRows). The table card itself hugs its rows — pagination sits
+   right under the last row, never below a blank band; any leftover (less than
+   one row) falls outside the card. Crew Management keeps its fixed page size. */
+.husbandry-service-selection.crew-immigration-dashboard {
+  // min-height: 0 lets the section hand its height to the table (which then
+  // scrolls internally) instead of growing past the panel on short screens.
+  .crew-mgmt-summary-section {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+
+  // Size to the rows; may shrink (rows scroll inside) but never grows.
+  .crew-mgmt-summary-section > .crew-table-wrapper {
+    flex: 0 1 auto;
+    height: auto;
+    min-height: 200px;
+    max-height: none;
+  }
+}
+
 /* Crew Immigration — skeleton table shown while the Crew Listing loads.
    Mirrors the real table's columns so the layout doesn't jump on load. */
 @keyframes crew-skeleton-shimmer {

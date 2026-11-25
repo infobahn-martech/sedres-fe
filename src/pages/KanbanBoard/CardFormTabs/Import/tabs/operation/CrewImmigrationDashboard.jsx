@@ -20,8 +20,27 @@ import PermissionGuard from "@/components/PermissionGuard";
 import usePermissions from "@/shared/hooks/usePermissions";
 import { PERMISSION_MODULES, PERMISSION_SUBMODULES, PERMISSION_ACTIONS } from "@/shared/constants/permissions";
 
-const LISTING_PAGE_SIZE = 10;
+// The Crew Listing table fills the panel height, so its page size is however
+// many rows fit (measured from the rendered table), within these bounds.
+const DEFAULT_LISTING_PAGE_SIZE = 10;
+const MIN_LISTING_PAGE_SIZE = 5;
+const MAX_LISTING_PAGE_SIZE = 50;
 const SKELETON_ROW_COUNT = 6;
+
+// Rows that fit between the table's header and the bottom of the Crew Listing
+// section, leaving room for the pagination bar. Measured against the section
+// (whose height is set by the panel, not by the rows) because the table card
+// itself sizes to its rows. Returns null until a body row exists to measure.
+const measureFittingRows = (sectionEl, scrollEl) => {
+  const rowHeight = scrollEl.querySelector("tbody tr")?.getBoundingClientRect().height;
+  const thead = scrollEl.querySelector("thead");
+  if (!rowHeight || !thead) return null;
+  const paginationHeight = scrollEl.parentElement?.querySelector(".crew-pagination")?.getBoundingClientRect().height ?? 0;
+  const wrapperBorder = 2;
+  const available = sectionEl.getBoundingClientRect().bottom - thead.getBoundingClientRect().bottom - paginationHeight - wrapperBorder;
+  const rows = Math.floor(available / rowHeight);
+  return Math.min(MAX_LISTING_PAGE_SIZE, Math.max(MIN_LISTING_PAGE_SIZE, rows));
+};
 
 const createUploadSteps = () => ({
   crewList: { status: "pending", files: [], progress: 0 },
@@ -237,6 +256,11 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
   // the per-page table fetch's batches are scoped to that page's crew only.
   const [availableBatches, setAvailableBatches] = useState([]);
   const [listingPage, setListingPage] = useState(1);
+  const [listingPageSize, setListingPageSize] = useState(DEFAULT_LISTING_PAGE_SIZE);
+  const listingPageSizeRef = useRef(DEFAULT_LISTING_PAGE_SIZE);
+  // Callback-ref'd so the resize observer below re-attaches whenever the real
+  // table (re)mounts — it isn't rendered during the skeleton/empty states.
+  const [listingScrollEl, setListingScrollEl] = useState(null);
   const [listingCrewList, setListingCrewList] = useState([]);
   const [listingTotal, setListingTotal] = useState(0);
   const [isListingLoading, setIsListingLoading] = useState(true);
@@ -357,7 +381,34 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
     };
   }, [resolveCallAndVesselIds, fetchCallCrewList, listingRefreshTick]);
 
-  const totalListingPages = Math.max(1, Math.ceil(listingTotal / LISTING_PAGE_SIZE));
+  // Fit the page size to the space under the Crew Listing header: re-measured
+  // when the section is resized (window, devtools, sidebar), debounced so
+  // dragging a window edge doesn't fire a request per frame. The page is
+  // re-based so the first crew member currently on screen stays on the new page.
+  useEffect(() => {
+    const sectionEl = listingScrollEl?.closest(".crew-mgmt-summary-section");
+    if (!sectionEl || typeof ResizeObserver === "undefined") return undefined;
+    let timer = null;
+    const applyFit = () => {
+      const fitted = measureFittingRows(sectionEl, listingScrollEl);
+      const prevSize = listingPageSizeRef.current;
+      if (!fitted || fitted === prevSize) return;
+      listingPageSizeRef.current = fitted;
+      setListingPage((prevPage) => Math.floor(((prevPage - 1) * prevSize) / fitted) + 1);
+      setListingPageSize(fitted);
+    };
+    const observer = new ResizeObserver(() => {
+      clearTimeout(timer);
+      timer = setTimeout(applyFit, 150);
+    });
+    observer.observe(sectionEl);
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [listingScrollEl]);
+
+  const totalListingPages = Math.max(1, Math.ceil(listingTotal / listingPageSize));
   const effectiveListingPage = Math.min(Math.max(listingPage, 1), totalListingPages);
 
   // Crew Listing table — search, pagination, and batch tab driven server-side
@@ -375,7 +426,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
         payload: {
           call_id: resolvedCallId,
           page: effectiveListingPage,
-          limit: LISTING_PAGE_SIZE,
+          limit: listingPageSize,
           search: debouncedListingSearch || undefined,
           immigration_batch: listingBatchFilter || undefined,
         },
@@ -399,7 +450,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
     return () => {
       cancelled = true;
     };
-  }, [resolveCallAndVesselIds, fetchCallCrewList, effectiveListingPage, debouncedListingSearch, listingBatchFilter, listingRefreshTick]);
+  }, [resolveCallAndVesselIds, fetchCallCrewList, effectiveListingPage, listingPageSize, debouncedListingSearch, listingBatchFilter, listingRefreshTick]);
 
   // Accepts one or more crew list files — crew/import_crew_immigration now
   // takes { call_id, "files[]": [...] }, so all files go up in a single
@@ -760,8 +811,8 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
   };
 
   const totalListingItems = listingTotal;
-  const startListingItem = totalListingItems === 0 ? 0 : (effectiveListingPage - 1) * LISTING_PAGE_SIZE + 1;
-  const endListingItem = totalListingItems === 0 ? 0 : Math.min(effectiveListingPage * LISTING_PAGE_SIZE, totalListingItems);
+  const startListingItem = totalListingItems === 0 ? 0 : (effectiveListingPage - 1) * listingPageSize + 1;
+  const endListingItem = totalListingItems === 0 ? 0 : Math.min(effectiveListingPage * listingPageSize, totalListingItems);
 
   const listingPaginationPages = useMemo(() => {
     const pages = [];
@@ -1053,7 +1104,7 @@ const CrewImmigrationDashboard = ({ card, formValues, cardColor }) => {
             </div>
           ) : (
             <div className="crew-table-wrapper">
-              <div className="table-wrapper table-responsive crew-table-container crew-table-scroll">
+              <div ref={setListingScrollEl} className="table-wrapper table-responsive crew-table-container crew-table-scroll">
                 <table className="table table-striped crew-table crew-immigration-listing-table" style={{ "--card-color": cardColor, tableLayout: "fixed", width: "100%" }}>
                   <thead>
                     <tr>
