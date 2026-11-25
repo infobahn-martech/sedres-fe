@@ -558,7 +558,8 @@ const GROCardView = forwardRef(function GROCardView(
   const extraStageFieldsContent = useMemo(() => {
     if (!groStageHasExtraFields(groStageId)) return null;
 
-    const isDisabled = isGroLoading || isSavingArrivalDocument;
+    // Only the Submit button shows the saving state; the fields stay as they are.
+    const isDisabled = false;
 
     const commonProps = {
       values: extraStageFields,
@@ -641,8 +642,6 @@ const GROCardView = forwardRef(function GROCardView(
     extraStageFieldErrors,
     handleExtraStageFieldChange,
     handleExtraStageFileChange,
-    isGroLoading,
-    isSavingArrivalDocument,
     inwardTimeObjectFields,
     stage11InwardTimeObjectFields,
     timeObjectsLoading,

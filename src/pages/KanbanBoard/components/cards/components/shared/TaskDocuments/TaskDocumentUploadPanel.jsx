@@ -54,13 +54,11 @@ function TaskDocumentUploadPanel({
                     type="file"
                     className="gro-premium-upload-input-hidden"
                     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    disabled={isSaving}
                     onChange={onFileChange}
                   />
                   <button
                     type="button"
                     className="gro-premium-upload-btn"
-                    disabled={isSaving}
                     onClick={() => effectiveFileInputRef.current?.click()}
                   >
                     Choose file
@@ -90,7 +88,6 @@ function TaskDocumentUploadPanel({
                         onDateTimeChange={field.onDateTimeChange}
                         placeholder="DD/MM/YYYY HH:mm"
                         popperClassName="gro-inward-datetime-popper"
-                        disabled={isSaving}
                         hasError={Boolean(field.error)}
                       />
                       {field.onCaptureNow ? (
@@ -99,7 +96,7 @@ function TaskDocumentUploadPanel({
                           className="gro-inward-time-capture-btn"
                           title={`Set ${field.label} to now`}
                           aria-label={`Set ${field.label} to now`}
-                          disabled={isSaving || field.capturing}
+                          disabled={field.capturing}
                           onClick={field.onCaptureNow}
                         >
                           <FiClock size={16} />
