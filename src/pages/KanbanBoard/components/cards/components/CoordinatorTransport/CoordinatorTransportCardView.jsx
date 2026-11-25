@@ -862,7 +862,7 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
               </div>
 
               <div className="coordinator-transport-form-section coordinator-transport-form-section--route">
-                <FormGroup icon="calendar" label="Pickup Date Time*" accent={TRANSPORT_ACCENT}>
+                <FormGroup icon="calendar" label="Pickup Date Time *" accent={TRANSPORT_ACCENT}>
                   <FormField>
                     <DateTimePickerField
                       dateValue={transportForm.pickupDate}
