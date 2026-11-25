@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
-import { Truck, FileText, Clock, Banknote, CalendarDays, Upload } from 'lucide-react';
+import { ChevronRight, Truck, FileText, Clock, Banknote, CalendarDays, Upload } from 'lucide-react';
 import UploadInvoiceModal from '../../../components/UploadInvoiceModal';
 import useVendorReducer from '../../../store/VendorReducer';
 import { formatDate } from '../../Dashboard/dashboardUtils';
 import { StatusBadge, EmptyRow } from '../../Dashboard/dashboardWidgets';
+import OrderCrewTable from '../OrderCrewTable';
 import { formatAmount, toOrderRow } from '../orderRows';
 import '../../../design/scss/dashboard.scss';
 import '../../../design/scss/pages/dashboard/dashboard-content.scss';
@@ -15,6 +16,8 @@ import '../../../design/scss/form-designs.scss';
 
 // The full list lives in Order Management.
 const RECENT_ORDERS_LIMIT = 10;
+// Expand column + 6 data columns.
+const ORDER_TABLE_COLS = 7;
 
 const ORDER_STATUS_META = {
     Pending: { label: 'Pending', tone: 'warning' },
@@ -36,6 +39,8 @@ function TransportDashboard() {
 
     const [invoiceMonth, setInvoiceMonth] = useState(dayjs().format('YYYY-MM'));
     const [showUploadModal, setShowUploadModal] = useState(false);
+    const [expandedPoNo, setExpandedPoNo] = useState(null);
+    const toggleOrder = (poNo) => setExpandedPoNo((prev) => (prev === poNo ? null : poNo));
 
     useEffect(() => {
         getVendorDashboard();
@@ -109,6 +114,7 @@ function TransportDashboard() {
                         <table className="dash-table">
                             <thead>
                                 <tr>
+                                    <th className="vendor-table__expand-col" aria-label="Expand row" />
                                     <th>Order Date</th>
                                     <th>Company</th>
                                     <th>Vehicle</th>
@@ -119,22 +125,52 @@ function TransportDashboard() {
                             </thead>
                             <tbody>
                                 {isDashboardLoading || isOrdersLoading ? (
-                                    <EmptyRow colSpan={6} text="Loading..." />
+                                    <EmptyRow colSpan={ORDER_TABLE_COLS} text="Loading..." />
                                 ) : recentOrders.length === 0 ? (
-                                    <EmptyRow colSpan={6} text="No orders found" />
+                                    <EmptyRow colSpan={ORDER_TABLE_COLS} text="No orders found" />
                                 ) : (
-                                    recentOrders.map((order) => (
-                                        <tr key={order.poNo}>
-                                            <td>{order.orderDate}</td>
-                                            <td className="dash-table-strong">{order.company || '—'}</td>
-                                            <td>{order.vehicleType}</td>
-                                            <td className="num">{order.crew.length}</td>
-                                            <td className="num">{formatAmount(order)}</td>
-                                            <td>
-                                                <StatusBadge status={order.status} meta={ORDER_STATUS_META} />
-                                            </td>
-                                        </tr>
-                                    ))
+                                    recentOrders.map((order) => {
+                                        const isExpanded = expandedPoNo === order.poNo;
+                                        return (
+                                            <Fragment key={order.poNo}>
+                                                <tr
+                                                    className="vendor-table__row--expandable"
+                                                    onClick={() => toggleOrder(order.poNo)}
+                                                >
+                                                    <td
+                                                        className="vendor-table__expand-col"
+                                                        aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
+                                                    >
+                                                        <ChevronRight
+                                                            size={16}
+                                                            className={`vendor-table__expand-icon ${isExpanded ? 'is-open' : ''}`}
+                                                        />
+                                                    </td>
+                                                    <td>{order.orderDate}</td>
+                                                    <td className="dash-table-strong">{order.company || '—'}</td>
+                                                    <td>{order.vehicleType}</td>
+                                                    <td className="num">{order.crew.length}</td>
+                                                    <td className="num">{formatAmount(order)}</td>
+                                                    <td>
+                                                        <StatusBadge status={order.status} meta={ORDER_STATUS_META} />
+                                                    </td>
+                                                </tr>
+                                                {isExpanded && (
+                                                    <tr className="vendor-table__expanded-row">
+                                                        <td colSpan={ORDER_TABLE_COLS}>
+                                                            <div
+                                                                className="vendor-table__expanded-content"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                role="presentation"
+                                                            >
+                                                                <OrderCrewTable row={order} />
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </Fragment>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>

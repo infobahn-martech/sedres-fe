@@ -651,15 +651,16 @@
   font: normal normal 400 14px/1.4 'Manrope', sans-serif;
   color: var(--text-primary);
 
-  th,
-  td {
+  // Child selectors only, so tables nested inside an expanded row keep their own styles.
+  > thead > tr > th,
+  > tbody > tr > td {
     padding: 12px;
     text-align: left;
     white-space: nowrap;
     border-bottom: 1px solid var(--border-primary);
   }
 
-  th {
+  > thead > tr > th {
     padding-top: 10px;
     padding-bottom: 10px;
     background: rgba(16, 24, 40, 0.03);
@@ -678,20 +679,30 @@
     }
   }
 
-  thead th {
+  > thead > tr > th {
     border-bottom: none;
   }
 
-  tbody tr:last-child td {
+  > tbody > tr:last-child > td {
     border-bottom: none;
   }
 
-  tbody tr {
+  > tbody > tr {
     transition: background 0.15s ease;
   }
 
-  tbody tr:hover {
+  > tbody > tr:hover {
     background: rgba(42, 120, 214, 0.04);
+  }
+
+  // Expandable rows (Transport Company dashboard recent orders)
+  > tbody > tr.vendor-table__expanded-row > td {
+    padding: 0;
+    white-space: normal;
+  }
+
+  > tbody > tr.vendor-table__expanded-row:hover {
+    background: transparent;
   }
 
   .num {
@@ -1234,18 +1245,22 @@
   .dash-table {
     color: var(--text-body);
 
-    th,
-    td {
+    > thead > tr > th,
+    > tbody > tr > td {
       border-bottom-color: var(--divider-row);
     }
 
-    th {
+    > thead > tr > th {
       background: rgba(255, 255, 255, 0.03);
       color: var(--text-subtle);
     }
 
-    tbody tr:hover {
+    > tbody > tr:hover {
       background: rgba(76, 141, 255, 0.05);
+    }
+
+    > tbody > tr.vendor-table__expanded-row:hover {
+      background: transparent;
     }
   }
 
