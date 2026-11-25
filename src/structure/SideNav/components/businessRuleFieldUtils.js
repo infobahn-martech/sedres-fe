@@ -35,8 +35,13 @@ export const operatorNeedsTimeUnit = (operator) => TIME_UNIT_OPERATOR_KEYS.inclu
 
 // A field with has_time_unit = 1 (e.g. Cycle time) takes a number plus a unit whatever the operator.
 // Under is / is not a date field offers its periods (below) instead, so no unit is asked for.
+// A date field (e.g. Created at) sends has_time_unit = 1 but only asks for a unit under the
+// in next / in last / was more than operators; before / after / is between take dates.
+const isDateField = (details) => details?.field_type === 'date' || details?.field_type === 'datetime';
+
 export const fieldNeedsTimeUnit = (details, operator) =>
-  !hasDatePeriods(details, operator) && (Number(details?.has_time_unit) === 1 || operatorNeedsTimeUnit(operator));
+  !hasDatePeriods(details, operator)
+  && ((Number(details?.has_time_unit) === 1 && !isDateField(details)) || operatorNeedsTimeUnit(operator));
 
 // Date fields offer their `periods` (Today, This week ...) under these operators (updates guide 4).
 const PERIOD_OPERATOR_KEYS = ['is', 'is_not'];
