@@ -3994,9 +3994,12 @@
     overflow-y: auto;
   }
 
+  // Fixed layout with proportional columns so the grid fits the form panel
+  // without sideways scrolling; it only scrolls on very narrow panels.
   &__table {
     width: 100%;
-    min-width: 620px;
+    min-width: 440px;
+    table-layout: fixed;
     border-collapse: collapse;
     font-size: 12px;
 
@@ -4011,6 +4014,26 @@
       padding: 8px;
       border-bottom: 1px solid #e2e8f0;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    // Passport No takes whatever width is left.
+    .husb-crew-grid__col--crew_name {
+      width: 30%;
+    }
+
+    .husb-crew-grid__col--rank {
+      width: 19%;
+    }
+
+    .husb-crew-grid__col--movement_type {
+      width: 22%;
+    }
+
+    select {
+      cursor: pointer;
+      text-overflow: ellipsis;
     }
 
     td {
@@ -4024,10 +4047,12 @@
       width: 100%;
       border: none;
       outline: none;
+      min-width: 0;
       background: transparent;
       padding: 8px;
       font-size: 12px;
       color: #0f172a;
+      text-overflow: ellipsis;
 
       &::placeholder {
         color: #cbd5e1;
@@ -4041,29 +4066,45 @@
   }
 
   &__index {
-    width: 32px;
+    width: 30px;
     text-align: center !important;
     color: #94a3b8;
     background: #f8fafc;
   }
 
+  // Pinned to the right edge so the remove button stays visible while the grid scrolls sideways.
   &__action {
-    width: 32px;
-    text-align: center;
+    position: sticky;
+    right: 0;
+    width: 36px;
+    padding: 0 !important;
+    text-align: center !important;
     border-right: none !important;
+    background: #fff;
+    box-shadow: inset 1px 0 0 #e2e8f0;
+  }
+
+  th.husb-crew-grid__action {
+    z-index: 2;
+    background: #f8fafc;
   }
 
   &__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
     background: none;
     border: none;
+    border-radius: 6px;
     color: #94a3b8;
-    font-size: 16px;
-    line-height: 1;
     cursor: pointer;
-    padding: 4px 8px;
+    padding: 0;
 
     &:hover:not(:disabled) {
       color: #dc2626;
+      background: #fef2f2;
     }
   }
 
@@ -4194,11 +4235,21 @@
       background: var(--bg-highlight);
     }
 
+    &__action {
+      background: var(--bg-inset);
+      box-shadow: inset 1px 0 0 var(--border);
+    }
+
+    th.husb-crew-grid__action {
+      background: var(--bg-highlight);
+    }
+
     &__remove {
       color: var(--text-subtle);
 
       &:hover:not(:disabled) {
         color: var(--danger);
+        background: var(--bg-highlight);
       }
     }
 
