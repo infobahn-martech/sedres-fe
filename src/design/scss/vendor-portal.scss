@@ -970,3 +970,8 @@
         border-color: var(--brand-bright);
     }
 }
+/* Month filter beside Upload Invoice (common MonthPickerField) */
+.dash-filters .vendor-month-filter {
+    width: 190px;
+    flex: 0 0 auto;
+}

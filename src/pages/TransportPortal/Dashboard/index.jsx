@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import { ChevronRight, Truck, FileText, Clock, Banknote, CalendarDays, Upload } from 'lucide-react';
 import UploadInvoiceModal from '../../../components/UploadInvoiceModal';
+import MonthPickerField from '../../KanbanBoard/CardFormTabs/shared/components/MonthPickerField';
 import useVendorReducer from '../../../store/VendorReducer';
 import { formatDate } from '../../Dashboard/dashboardUtils';
 import { StatusBadge, EmptyRow } from '../../Dashboard/dashboardWidgets';
@@ -96,12 +97,11 @@ function TransportDashboard() {
                             <p className="chart-subtitle">Your latest crew transport orders</p>
                         </div>
                         <div className="dash-filters">
-                            <input
-                                type="month"
-                                className="dash-select dash-select--date"
-                                value={invoiceMonth}
-                                onChange={(e) => setInvoiceMonth(e.target.value)}
-                                aria-label="Invoice month"
+                            <MonthPickerField
+                                className="vendor-month-filter"
+                                monthValue={invoiceMonth}
+                                onMonthChange={(month) => setInvoiceMonth(month || dayjs().format('YYYY-MM'))}
+                                ariaLabel="Invoice month"
                             />
                             <button type="button" className="vendor-upload-btn" onClick={() => setShowUploadModal(true)}>
                                 <Upload size={16} />
