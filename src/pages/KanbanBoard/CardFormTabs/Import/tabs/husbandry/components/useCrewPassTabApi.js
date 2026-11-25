@@ -8,6 +8,7 @@ import {
 } from "@/services/cgAndZwailpassService";
 import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
 import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
+import { getApiMessage } from "./apiMessage";
 import { manualCrewIdsField, resolveCrewPayloadIds } from "./crewPayloadIds";
 
 export const resolvePassCallId = (formValues, card, routeParams) => {
@@ -131,7 +132,7 @@ export function useCrewPassTabApi({
     setSaving(true);
     try {
       const response = await createPassRequest(formData);
-      notify("Pass request saved successfully.", "success", "top-center");
+      notify(getApiMessage(response, "Pass request saved successfully."), "success", "top-center");
       resetValidation();
       onSaved?.();
       showSavedLineItems(response);

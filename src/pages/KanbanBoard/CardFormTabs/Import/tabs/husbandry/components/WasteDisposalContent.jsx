@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
 import { FormSection, FormField, FormSelect, FormGroup, PremiumCardHeader, ReactQuillEditor } from "./Husbandry.components";
+import { getApiMessage } from "./apiMessage";
 import AttachmentsList from "../../appointment/AttachmentsList";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
 import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
@@ -292,7 +293,7 @@ const WasteDisposalContent = ({ formValues, handleChange, cardColor }) => {
     try {
       const response = await createWasteDisposalRequest(formData);
       notify(
-        response?.data?.message || "Waste disposal request created successfully",
+        getApiMessage(response, "Waste disposal request created successfully"),
         "success",
         "top-center"
       );

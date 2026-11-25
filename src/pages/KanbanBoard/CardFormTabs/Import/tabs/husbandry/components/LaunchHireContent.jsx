@@ -9,6 +9,7 @@ import CrewSelectionField from "./CrewSelectionField";
 import { manualCrewIdsField, manualCrewIdsFromChange, resolveCrewPayloadIds } from "./crewPayloadIds";
 import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
 import { useServiceLineItemsModal } from "./useServiceLineItemsModal";
+import { getApiMessage } from "./apiMessage";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import useLaunchHireServiceReducer from "@/store/LaunchHireServiceReducer";
 import { buildPickupDateTime } from "@/store/TransportContent";
@@ -172,7 +173,7 @@ const LaunchHireContent = ({
     setSaving(true);
     try {
       const response = await createCrewChangeBooking(formData);
-      notify("Launch hire request saved successfully.", "success", "top-center");
+      notify(getApiMessage(response, "Launch hire request saved successfully."), "success", "top-center");
       resetValidation();
       showSavedLineItems(response);
       resetDraft();

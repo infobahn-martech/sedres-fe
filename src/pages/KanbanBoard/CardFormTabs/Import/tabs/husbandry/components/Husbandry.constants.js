@@ -211,3 +211,107 @@ export const CREW_ENTRY_INITIAL_ROW_COUNT = 3;
 export const createEmptyCrewRow = () =>
   Object.fromEntries(CREW_ENTRY_COLUMNS.map((column) => [column.key, column.defaultValue ?? ""]));
 export const createEmptyCrewRows = (count = CREW_ENTRY_INITIAL_ROW_COUNT) => Array.from({ length: count }, createEmptyCrewRow);
+
+// Blank values for every service request form (stored in the card's shared formValues).
+// Applied when a service is picked from the "What services do you need?" overview so each
+// service always opens on an empty form. Defaults match what each form resets to after a save.
+const crewFieldReset = (field) => ({ [field]: [], [`${field}ManualCrewIds`]: null });
+
+export const SERVICE_FORM_RESET_VALUES = {
+  // Transport
+  transportRequestEmail: [],
+  ...crewFieldReset("selectedCrew"),
+  transportPickupDate: "",
+  transportPickupTime: "",
+  transportFromType: "",
+  transportFromLocation: "",
+  transportToType: "",
+  transportToLocation: "",
+  transportDescription: "",
+  transportDocuments: [],
+  transportLaunchHire: true,
+  transportLaunchHireLocation: "",
+  transportLaunchHireBookingDate: "",
+  transportLaunchHireBookingTime: "",
+  // Hotel
+  hotelRequestEmail: [],
+  ...crewFieldReset("hotelSelectedCrew"),
+  hotelId: "",
+  hotelName: "",
+  hotelCheckInDate: "",
+  hotelCheckInTime: "",
+  hotelCheckOutDate: "",
+  hotelCheckOutTime: "",
+  hotelDescription: "",
+  hotelDocuments: [],
+  hotelLaunchHire: true,
+  hotelLaunchHireLocation: "",
+  hotelLaunchHireBookingDate: "",
+  hotelLaunchHireBookingTime: "",
+  // Medical
+  medicalServiceRequestEmail: [],
+  ...crewFieldReset("medicalServiceSelectedCrew"),
+  medicalServiceSelectedHospital: "",
+  medicalServiceSelectedService: "",
+  medicalServiceDescription: "",
+  medicalServiceDocuments: [],
+  medicalServiceLaunchHire: true,
+  medicalServiceLaunchHireLocation: "",
+  medicalServiceLaunchHireBookingDate: "",
+  medicalServiceLaunchHireBookingTime: "",
+  // CG Pass
+  cgPassRequestEmailFile: [],
+  ...crewFieldReset("cgPassSelectedCrew"),
+  cgPassDescription: "",
+  cgPassDocuments: [],
+  // Zawil Pass
+  zawilPassRequestEmailFile: [],
+  ...crewFieldReset("zawilPassSelectedCrew"),
+  zawilPassDescription: "",
+  zawilPassDocuments: [],
+  // Launch Hire
+  launchHireRequestEmailFile: [],
+  ...crewFieldReset("launchHireSelectedCrew"),
+  launchHireBookingDate: "",
+  launchHireBookingTime: "",
+  launchHireLocation: "",
+  launchHireDescription: "",
+  launchHireDocuments: [],
+  // MWP Renewal
+  mwpRenewalRequestEmailDocuments: [],
+  mwpRenewalExpiryDate: "",
+  mwpRenewalDescription: "",
+  mwpRenewalDocuments: [],
+  // Third-Party Services
+  thirdPartyServicesRequestEmailDocuments: [],
+  thirdPartyServiceType: "",
+  thirdPartyServicesChargeCode: "",
+  thirdPartyServicesDescription: "",
+  thirdPartyServicesDocuments: [],
+  thirdPartyServicesLaunchHire: true,
+  thirdPartyServicesLaunchHireLocation: "",
+  thirdPartyServicesLaunchHireBookingDate: "",
+  thirdPartyServicesLaunchHireBookingTime: "",
+  // Waste Disposal
+  wasteDisposalRequestEmailDocuments: [],
+  wasteType: "",
+  wasteTypeId: "",
+  wasteDisposalDate: "",
+  wasteDisposalPONumber: "",
+  wasteDisposalDescription: "",
+  wasteDisposalDocuments: [],
+  // Add-on Services
+  addOnServicesRequestEmailDocuments: [],
+  addOnServiceType: "",
+  addOnServiceTypeOther: "",
+  addOnServicesHandlingRequired: false,
+  addOnServicesHandlingAmount: "",
+  addOnServicesPalletsHandled: "",
+  addOnServicesDescription: "",
+  addOnServicesDocuments: [],
+  addOnServicesTankerDocuments: {},
+  addOnServicesLaunchHire: true,
+  addOnServicesLaunchHireLocation: "",
+  addOnServicesLaunchHireBookingDate: "",
+  addOnServicesLaunchHireBookingTime: "",
+};

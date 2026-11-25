@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
 import { FormSection, FormField, FormGroup, PremiumCardHeader, ReactQuillEditor } from "./Husbandry.components";
+import { getApiMessage } from "./apiMessage";
 import AttachmentsList from "../../appointment/AttachmentsList";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
 import { useRequestEmailCrewValidation } from "./useRequestEmailCrewValidation";
@@ -248,7 +249,7 @@ const MWPRenewalContent = ({ formValues, handleChange, cardColor }) => {
     try {
       const response = await createMwpRenewalRequest(formData);
       notify(
-        response?.data?.message || "MWP renewal request created successfully",
+        getApiMessage(response, "MWP renewal request created successfully"),
         "success",
         "top-center"
       );

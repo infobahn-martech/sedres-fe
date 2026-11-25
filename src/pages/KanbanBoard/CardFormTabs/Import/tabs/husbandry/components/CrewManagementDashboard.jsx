@@ -4,6 +4,7 @@ import { FiSearch, FiEdit2, FiCheck, FiX, FiTrash2, FiChevronLeft, FiChevronRigh
 import CardFormEmptyState from "../../../../shared/components/CardFormEmptyState";
 import { CREW_MANAGEMENT_SUBTABS } from "./Husbandry.constants";
 import { HusbIcon } from "./Husbandry.components";
+import { getApiMessage } from "./apiMessage";
 import CrewServiceSelectPage from "./CrewServiceSelectPage";
 import CrewListUploadBox from "./CrewListUploadBox";
 import CrewUploadDropzones from "./CrewUploadDropzones";
@@ -534,8 +535,9 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
     files.forEach((file) => formData.append("files[]", file));
 
     let successCount = 0;
+    let importResponse;
     try {
-      await importCrewFile({ formData });
+      importResponse = await importCrewFile({ formData });
       successCount = files.length;
     } catch {
       // handled below via successCount === 0
@@ -598,7 +600,7 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
         uploadedAt: new Date().toISOString(),
       },
     ]);
-    notify(`Crew list uploaded — ${idsForThisType.length} crew member(s) loaded.`, "success");
+    notify(getApiMessage(importResponse, `Crew list uploaded — ${idsForThisType.length} crew member(s) loaded.`), "success");
   };
 
   const handlePreviewClick = (type) => setPreviewMovementType(type);
@@ -637,7 +639,7 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
     }
 
     try {
-      await uploadAction({ formData });
+      const uploadResponse = await uploadAction({ formData });
       if (resolvedCallId) {
         const list = await fetchCallCrewList({
           payload: { call_id: resolvedCallId, page: 1, limit: 1000 },
@@ -650,7 +652,7 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
       }
       setSummaryRefreshTick((tick) => tick + 1);
       setUploadSteps((prev) => ({ ...prev, [stepKey]: { status: "completed", files, progress: 100 } }));
-      notify(`${label} uploaded — ${files.length} file(s).`, "success");
+      notify(getApiMessage(uploadResponse, `${label} uploaded — ${files.length} file(s).`), "success");
     } catch {
       setUploadSteps((prev) => ({ ...prev, [stepKey]: { ...prev[stepKey], status: "failed" } }));
       notify(`Failed to upload ${label.toLowerCase()} copies. Please try again.`, "error");
@@ -674,12 +676,13 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
     }
 
     let successCount = 0;
+    let visaResponse;
     for (const file of files) {
       const formData = new FormData();
       formData.append("call_id", String(resolvedCallId));
       formData.append("visas[]", file);
       try {
-        await uploadVisaCopies({ formData });
+        visaResponse = await uploadVisaCopies({ formData });
         successCount += 1;
       } catch {
         // this file failed — continue with the rest
@@ -699,7 +702,7 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
     setSummaryRefreshTick((tick) => tick + 1);
 
     if (successCount === files.length) {
-      notify(`Visa uploaded — ${successCount} file(s).`, "success");
+      notify(getApiMessage(visaResponse, `Visa uploaded — ${successCount} file(s).`), "success");
     } else if (successCount > 0) {
       notify(`Visa uploaded — ${successCount} of ${files.length} file(s). Some uploads failed.`, "error");
     } else {
@@ -913,7 +916,7 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
 
     setUploading(true);
     try {
-      await uploadAction({ formData });
+      const uploadResponse = await uploadAction({ formData });
       if (resolvedCallId) {
         const list = await fetchCallCrewList({
           payload: { call_id: resolvedCallId, page: 1, limit: 1000 },
@@ -925,7 +928,7 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
         }
       }
       setSummaryRefreshTick((tick) => tick + 1);
-      notify(`${label} uploaded — ${files.length} file(s).`, "success");
+      notify(getApiMessage(uploadResponse, `${label} uploaded — ${files.length} file(s).`), "success");
     } catch {
       notify(`Failed to upload ${label.toLowerCase()} copies. Please try again.`, "error");
     } finally {
@@ -970,7 +973,7 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
 
     setIsSavingEdit(true);
     try {
-      await updateCrewInfo({
+      const updateResponse = await updateCrewInfo({
         payload: {
           crew_id: crewIdNum,
           crew_name: editDraft.crewName,
@@ -993,7 +996,7 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
       }
       setSummaryRefreshTick((tick) => tick + 1);
 
-      notify("Crew details updated.", "success");
+      notify(getApiMessage(updateResponse, "Crew details updated."), "success");
       setEditingRowId(null);
       setEditDraft(null);
     } catch {
@@ -1017,7 +1020,7 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
 
     setDeletingRowId(row.id);
     try {
-      await deleteCrew({ crewId: crewIdNum });
+      const deleteResponse = await deleteCrew({ crewId: crewIdNum });
 
       const { resolvedCallId } = await resolveCallAndVesselIds();
       if (resolvedCallId) {
@@ -1033,7 +1036,7 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
       setSummarySelectedIds((prev) => prev.filter((id) => id !== row.id));
       setSummaryRefreshTick((tick) => tick + 1);
 
-      notify("Crew member removed.", "success");
+      notify(getApiMessage(deleteResponse, "Crew member removed."), "success");
     } catch {
       // error already surfaced via notify in the store
     } finally {
@@ -1098,13 +1101,13 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
         return;
       }
 
-      await createCrewChangeBooking({
+      const bookingResponse = await createCrewChangeBooking({
         call_id: resolvedCallId,
         booking_datetime: buildApiDateTime(launchDate, launchTime),
         location: launchLocation,
       });
 
-      notify("Launch hire request submitted successfully.", "success");
+      notify(getApiMessage(bookingResponse, "Launch hire request submitted successfully."), "success");
       setShowLaunchHireForm(false);
       setLaunchDate("");
       setLaunchTime("");

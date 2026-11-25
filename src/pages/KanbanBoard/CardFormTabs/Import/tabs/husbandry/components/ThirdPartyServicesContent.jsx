@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
 import { FormSection, FormField, FormInput, FormSelect, FormGroup, FieldRow, PremiumCardHeader, ReactQuillEditor } from "./Husbandry.components";
+import { getApiMessage } from "./apiMessage";
 import AttachmentsList from "../../appointment/AttachmentsList";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
@@ -287,7 +288,7 @@ const ThirdPartyServicesContent = ({ formValues, handleChange, cardColor, showLa
     try {
       const response = await createThirdPartyServiceRequest(formData);
       notify(
-        response?.data?.message || "Third-party service request created successfully",
+        getApiMessage(response, "Third-party service request created successfully"),
         "success",
         "top-center"
       );

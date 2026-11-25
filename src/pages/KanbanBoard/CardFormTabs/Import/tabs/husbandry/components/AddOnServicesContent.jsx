@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
 import { FormSection, FormField, FormSelect, FormGroup, FieldRow, PremiumCardHeader, ReactQuillEditor } from "./Husbandry.components";
+import { getApiMessage } from "./apiMessage";
 import AttachmentsList from "../../appointment/AttachmentsList";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import HusbandryServiceRequestsTable from "./HusbandryServiceRequestsTable";
@@ -332,7 +333,7 @@ const AddOnServicesContent = ({ formValues, handleChange, cardColor, showLaunchH
     try {
       const response = await createAddOnServiceRequest(formData);
       notify(
-        response?.data?.message || "Add-on service request created successfully",
+        getApiMessage(response, "Add-on service request created successfully"),
         "success",
         "top-center"
       );

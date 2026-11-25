@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
 import { FormSection, FormField, FormSelect, ReactQuillEditor, FormGroup, FieldRow, PremiumCardHeader } from "./Husbandry.components";
+import { getApiMessage } from "./apiMessage";
 import AttachmentsList from "../../appointment/AttachmentsList";
 import hospitalService, {
   extractMedicalRequestsFromEnvelope,
@@ -347,7 +348,7 @@ const MedicalServiceContent = ({ formValues, handleChange, cardColor, onRequestC
     try {
       const response = await hospitalService.createMedicalRequest(formData);
       notify(
-        response?.data?.message || "Medical request created successfully",
+        getApiMessage(response, "Medical request created successfully"),
         "success",
         "top-center"
       );

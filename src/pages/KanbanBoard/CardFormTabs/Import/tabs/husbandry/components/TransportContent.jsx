@@ -3,6 +3,7 @@
   import GroupSettingsIcon from "@/assets/images/cv.png";
   import { notify } from "@/components/Toaster";
   import { FormSection, FormField, FormSelect, ReactQuillEditor, FormGroup, FieldRow, PremiumCardHeader } from "./Husbandry.components";
+import { getApiMessage } from "./apiMessage";
   import { CREW_MANAGEMENT_SUBTABS, SERVICE_ACCENT, TRANSPORT_ROUTE_LOCATION_OPTIONS, LAUNCH_HIRE_LOCATION_OPTIONS } from "./Husbandry.constants";
   import AttachmentsList from "../../appointment/AttachmentsList";
   import { useCallDetail } from "@/pages/KanbanBoard/CardFormTabs/shared/callDetailContext";
@@ -320,7 +321,7 @@
       try {
         const response = await transportContentService.createTransportRequest(formData);
         notify(
-          response?.data?.message || "Transport request created successfully",
+          getApiMessage(response, "Transport request created successfully"),
           "success",
           "top-center"
         );

@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
 import { FormSection, FormField, FormSelect, ReactQuillEditor, FormGroup, FieldRow, PremiumCardHeader } from "./Husbandry.components";
+import { getApiMessage } from "./apiMessage";
 import AttachmentsList from "../../appointment/AttachmentsList";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import hotelService, {
@@ -335,7 +336,7 @@ const HotelContent = ({ formValues, handleChange, cardColor, onRequestCountChang
     try {
       const response = await hotelService.createHotelRequest(formData);
       notify(
-        response?.data?.message || "Hotel request created successfully",
+        getApiMessage(response, "Hotel request created successfully"),
         "success",
         "top-center"
       );

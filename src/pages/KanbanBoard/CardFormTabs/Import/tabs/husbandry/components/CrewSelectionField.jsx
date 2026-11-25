@@ -8,6 +8,7 @@ import callFileService from "@/services/callFileService";
 import useCrewReducer from "@/store/CrewReducer";
 import { notify } from "@/components/Toaster";
 import { FormGroup, FormField } from "./Husbandry.components";
+import { getApiMessage } from "./apiMessage";
 import CrewListUploadBox from "./CrewListUploadBox";
 import CrewEntryGrid from "./CrewEntryGrid";
 import { CREW_ENTRY_COLUMNS, createEmptyCrewRows } from "./Husbandry.constants";
@@ -106,7 +107,10 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
           onChange(idsToSelect);
         }
         setUploadStatus("completed");
-        notify(`${successLabel} — ${idsToSelect.length} crew member(s) added to this request.`, "success");
+        notify(
+          getApiMessage(saved, `${successLabel} — ${idsToSelect.length} crew member(s) added to this request.`),
+          "success"
+        );
         return true;
       } catch {
         // save errors are already surfaced by the store
@@ -134,8 +138,7 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
         formData.append("vessel_id", String(vesselId));
         formData.append("movement_type", UPLOAD_MOVEMENT_TYPE);
         files.forEach((file) => formData.append("files[]", file));
-        await importCrewFile({ formData });
-        return true;
+        return (await importCrewFile({ formData })) ?? true;
       }, "Crew list uploaded", "upload"),
     [callId, importCrewFile, runCrewSave]
   );
@@ -146,7 +149,7 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
   // (the store resolves call_id / vessel_id from the call detail).
   const handleGridSubmit = (rows) =>
     runCrewSave(async () => {
-      await saveCrewData({
+      const response = await saveCrewData({
         payload: {
           call_id: Number(callId),
           crew: rows.map((row) => {
@@ -160,7 +163,7 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
           }),
         },
       });
-      return true;
+      return response ?? true;
     }, "Crew saved", "manual");
 
   if (uploadMode) {

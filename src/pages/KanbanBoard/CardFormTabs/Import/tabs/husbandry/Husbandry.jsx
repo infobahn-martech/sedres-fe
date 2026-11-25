@@ -14,6 +14,7 @@ import {
   LAUNCH_HIRE_SUBTABS,
   TAB_ICON_COLORS,
   TAB_ICON_PATHS,
+  SERVICE_FORM_RESET_VALUES,
 } from "./components/Husbandry.constants";
 
 // Import shared components
@@ -975,6 +976,11 @@ function Husbandry({
     const crewDirectService = CREW_DIRECT_SERVICES.find((service) => service.id === tab);
     const bookedId = crewDirectService ? MAIN_TABS.CREW_MANAGEMENT : tab;
 
+    // Every service opens on a blank form — drop whatever was entered on a previous visit.
+    Object.entries(SERVICE_FORM_RESET_VALUES).forEach(([field, value]) => {
+      handleChange(field)({ target: { value } });
+    });
+
     setServiceSelected(true);
     setSelectedActionTab(null); // Reset selected action
 
@@ -1042,7 +1048,7 @@ function Husbandry({
         setActiveSubTab(null);
       }
     }
-  }, []);
+  }, [handleChange]);
 
   const handleMainTabChange = useCallback((tab) => {
     setActiveMainTab(tab);
