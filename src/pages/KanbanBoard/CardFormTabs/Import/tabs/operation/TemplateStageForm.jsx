@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FiAlertTriangle, FiExternalLink, FiEye, FiFileText, FiLayers, FiX } from "react-icons/fi";
+import { FiAlertTriangle, FiExternalLink, FiEye, FiFileText, FiLayers, FiLock, FiX } from "react-icons/fi";
 import CardFormEmptyState from "../../../shared/components/CardFormEmptyState";
 import GroupSettingsIcon from "@/assets/images/cv.png";
 import { notify } from "@/components/Toaster";
@@ -14,12 +14,15 @@ import {
   buildTemplateFieldDisplay,
   findTimeObjectRowForField,
   flattenTimeObjects,
+  formatTemplateDateTime,
   getTemplateOperationSubtabs,
   normalizeTemplateKey,
   getTemplateFieldType,
   hasExistingTemplateFile,
   isEmptyTemplateValue,
+  isTemplateFieldDisabled,
   isTemplateFieldRequired,
+  resolveTemplateOptionLabel,
   sortTemplateFields,
   toStageDateTimeValue,
   toStageFormValue,
@@ -856,7 +859,8 @@ function TemplateStageForm({
   const validate = () => {
     const nextErrors = {};
     visibleFields.forEach((field) => {
-      if (!isTemplateFieldRequired(field)) return;
+      // Disabled fields can't be filled by the user, so they never block the save.
+      if (!isTemplateFieldRequired(field) || isTemplateFieldDisabled(field)) return;
       const type = getTemplateFieldType(field);
       const id = field.field_id;
       let missing;
@@ -1032,12 +1036,38 @@ function TemplateStageForm({
   };
 
   // ---- Field rendering ----
+  // Template-locked field (`is_disabled`): a light read-only value box instead of a greyed-out control.
+  const renderLockedValue = (field) => {
+    const type = getTemplateFieldType(field);
+    const value = getValue(field.field_id);
+    let text = "";
+    if (typeof value === "boolean") text = value ? "Yes" : "No";
+    else if (isEmptyTemplateValue(value)) text = "";
+    else if (type === "datetime" || type === "timeobject") text = formatTemplateDateTime(value);
+    else if (type === "date") text = formatTemplateDateTime(value, { withTime: false });
+    else if (Array.isArray(value)) text = value.map((item) => resolveTemplateOptionLabel(field, item) ?? String(item)).join(", ");
+    else text = resolveTemplateOptionLabel(field, value) ?? String(value);
+    const isEmpty = !text;
+    return (
+      <div
+        className={`operation-locked-value${isEmpty ? " operation-locked-value--empty" : ""}`}
+        title="This field is locked and can't be edited"
+        aria-readonly="true"
+      >
+        <span className="operation-locked-value__text">{isEmpty ? "Not set" : text}</span>
+        <FiLock className="operation-locked-value__icon" size={13} aria-hidden />
+      </div>
+    );
+  };
+
   const renderInput = (field) => {
     const id = field.field_id;
     const type = getTemplateFieldType(field);
     const value = getValue(id);
     const hasError = Boolean(errors[id]);
-    const disabled = isViewOnly;
+    const isLocked = isTemplateFieldDisabled(field);
+    if (isLocked && type !== "file") return renderLockedValue(field);
+    const disabled = isViewOnly || isLocked;
 
     if (type === "datetime" || type === "timeobject") {
       const [datePart = "", timePart = ""] = String(value || "").split(" ");

@@ -399,6 +399,10 @@ export const toStagePayloadValue = (field, value) => {
 export const isTemplateFieldRequired = (field) =>
   field?.is_required === true || String(field?.is_required ?? "").trim() === "1";
 
+// `is_disabled` (0/1) from the template: the field is shown but locked for editing.
+export const isTemplateFieldDisabled = (field) =>
+  field?.is_disabled === true || String(field?.is_disabled ?? "").trim() === "1";
+
 // A file field already holds an attachment when the API returns a filename or file_url.
 export const hasExistingTemplateFile = (field) =>
   !isEmptyTemplateValue(field?.value) || !isEmptyTemplateValue(field?.file_url);

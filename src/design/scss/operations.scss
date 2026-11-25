@@ -11493,3 +11493,38 @@ a.operation-task-document-name--link {
   color: var(--accent, #2563eb);
   font-weight: 700;
 }
+
+// Template-locked stage field (`is_disabled: 1`): a light, read-only value box
+// instead of a greyed-out control — no empty date mask, calendar icon or arrow.
+.operation-locked-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px dashed var(--border-primary);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-secondary) 45%, var(--surface-primary));
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.4;
+  cursor: default;
+  box-sizing: border-box;
+
+  &__text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    color: var(--text-muted);
+    opacity: 0.8;
+  }
+
+  &--empty &__text {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+}
