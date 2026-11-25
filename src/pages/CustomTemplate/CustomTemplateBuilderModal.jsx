@@ -401,10 +401,9 @@ const buildTimeObjectTypeKey = (apiFieldTypes) => {
     return match ? String(match.type_key ?? "").toLowerCase() : "time_object";
 };
 
-const buildTimeObjectOptions = (timeObjects) => (timeObjects ?? []).map((t) => ({
-    value: String(t.time_object_id ?? ""),
-    label: t.time_object,
-}));
+// The time_object master list isn't fetched by the builder, so the Time Object
+// "Master Data" picker has nothing to offer yet.
+const TIME_OBJECT_OPTIONS = [];
 
 // Master Data modules come from the master_lookups API.
 const buildMasterModuleOptions = (masterLookups) => (masterLookups ?? []).map((m) => ({
@@ -517,7 +516,7 @@ function OptionsSourceEditor({ field, masterModuleOptions, masterModulesLoading,
 
 // Time Object-only: the time is either entered manually or linked to a time
 // object from the time_object master.
-function TimeObjectSourceEditor({ field, timeObjectOptions, timeObjectsLoading, onSetSource, onSetTimeObject }) {
+function TimeObjectSourceEditor({ field, timeObjectOptions, onSetSource, onSetTimeObject }) {
     const source = field.optionsSource ?? "manual";
     return (
         <div className="ctm-options-source">
@@ -546,8 +545,7 @@ function TimeObjectSourceEditor({ field, timeObjectOptions, timeObjectsLoading, 
                         value={field.timeObjectId ?? ""}
                         onChange={(e) => onSetTimeObject(e.target.value)}
                         options={timeObjectOptions}
-                        placeholder={timeObjectsLoading ? "Loading..." : "Select time object..."}
-                        disabled={timeObjectsLoading}
+                        placeholder="Select time object..."
                         menuPortalTarget={document.body}
                         menuPlacement="auto"
                     />
@@ -577,7 +575,7 @@ const getFieldSummary = (field, typeLabel, isDropdown, hasOptions, masterModuleO
     return parts.join(" · ");
 };
 
-function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterModuleOptions, masterModulesLoading, dropdownFieldLabels, timeObjectOptions, timeObjectsLoading, optionsFieldTypes, optionsSourceTypes, timeObjectTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
+function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterModuleOptions, masterModulesLoading, dropdownFieldLabels, timeObjectOptions, optionsFieldTypes, optionsSourceTypes, timeObjectTypeKey, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, onUpdate, onRequestDelete, onAddOption, onUpdateOption, onRemoveOption, onSetOptionsSource, onSetMasterModule }) {
     // New (unlabelled) fields open ready to edit; existing ones start collapsed
     // so long templates stay scannable.
     const [expanded, setExpanded] = useState(() => !field.label.trim());
@@ -712,13 +710,39 @@ function FieldCard({ field, index, fieldTypeOptions, fieldTypesLoading, masterMo
                         <TimeObjectSourceEditor
                             field={field}
                             timeObjectOptions={timeObjectOptions}
-                            timeObjectsLoading={timeObjectsLoading}
                             onSetSource={(source) => onSetOptionsSource(field.id, source)}
                             onSetTimeObject={(id) => onUpdate(field.id, "timeObjectId", id)}
                         />
                     )}
                 </div>
             )}
+        </div>
+    );
+}
+
+// Inline name editor used to add or rename a tab/subtab. Enter confirms,
+// Escape cancels.
+function InlineNameInput({ value, placeholder, className = "", onChange, onConfirm, onCancel, confirmLabel, cancelLabel }) {
+    return (
+        <div className={`ctm-add-tab-inline ${className}`.trim()}>
+            <input
+                type="text"
+                className="ctm-tab-name-input"
+                placeholder={placeholder}
+                value={value}
+                autoFocus
+                onChange={(e) => onChange(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter") onConfirm();
+                    if (e.key === "Escape") onCancel();
+                }}
+            />
+            <button type="button" className="ctm-tab-icon-btn" onClick={onConfirm} aria-label={confirmLabel}>
+                <FiCheck size={14} />
+            </button>
+            <button type="button" className="ctm-tab-icon-btn" onClick={onCancel} aria-label={cancelLabel}>
+                <FiX size={14} />
+            </button>
         </div>
     );
 }
@@ -742,12 +766,12 @@ function PreviewCloseButton({ label, onClick }) {
 
 const MAX_UNDO_STEPS = 50;
 
-// Builder form + live preview, with no overlay/topbar of its own — the caller
-// (either the standalone modal below, or CustomTemplateListModal reusing its
-// own single panel) owns the surrounding chrome and decides what onClose does.
-// A new template starts empty; its tabs, subtabs and locked Appointment
-// Details fields are loaded once a call type is selected.
-function TemplateBuilderBody({ initialTemplate = null, onClose }) {
+// Builder form + live preview, with no overlay/topbar of its own —
+// CustomTemplateListModal owns the surrounding chrome. The caller unmounts this
+// body on onClose (cancel) and onSaved (successful save), so it never needs to
+// reset its own state. A new template starts empty; its tabs, subtabs and
+// locked Appointment Details fields are loaded once a call type is selected.
+function TemplateBuilderBody({ initialTemplate = null, onClose, onSaved }) {
     const {
         getFieldTypes, fieldTypes, isLoadingFieldTypes,
         getMasterLookups, masterLookups, isLoadingMasterLookups,
@@ -759,13 +783,14 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const { getBillingEntities, billingEntities, isLoading: billingEntitiesLoading } = useBillingEntityReducer((s) => s);
     const { getPorts, ports, isLoading: portsLoading } = usePortReducer((s) => s);
 
-    const [templateName, setTemplateName] = useState(() => getTemplateSeed(initialTemplate).name);
+    const [seed] = useState(() => getTemplateSeed(initialTemplate));
+    const { templateId } = seed;
+    const [templateName, setTemplateName] = useState(seed.name);
     const [nameTouched, setNameTouched] = useState(false);
-    const [callTypeId, setCallTypeId] = useState(() => getTemplateSeed(initialTemplate).callTypeId);
+    const [callTypeId, setCallTypeId] = useState(seed.callTypeId);
     const [callTypeTouched, setCallTypeTouched] = useState(false);
-    const [billingEntityId, setBillingEntityId] = useState(() => getTemplateSeed(initialTemplate).billingEntityId);
-    const [portId, setPortId] = useState(() => getTemplateSeed(initialTemplate).portId);
-    const [templateId] = useState(() => getTemplateSeed(initialTemplate).templateId);
+    const [billingEntityId, setBillingEntityId] = useState(seed.billingEntityId);
+    const [portId, setPortId] = useState(seed.portId);
 
     // Card structure (tabs, subtabs, locked fields, sections) of the selected
     // call type, normalised from form_template/system_bindings.
@@ -821,8 +846,6 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const optionsSourceTypes = useMemo(() => buildOptionsSourceTypeSet(fieldTypes), [fieldTypes]);
     const masterModuleOptions = useMemo(() => buildMasterModuleOptions(masterLookups), [masterLookups]);
     const timeObjectTypeKey = useMemo(() => buildTimeObjectTypeKey(fieldTypes), [fieldTypes]);
-    // The time_object master list is no longer fetched by the builder.
-    const timeObjectOptions = useMemo(() => buildTimeObjectOptions([]), []);
 
     const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
     // The first tab is the template's default — it and its email preview can't be removed.
@@ -960,36 +983,6 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         getMasterLookups();
     }, [needsMasterLookups, masterLookups, getMasterLookups]);
 
-    const resetState = () => {
-        const seed = getTemplateSeed(initialTemplate);
-        setTemplateName(seed.name);
-        setNameTouched(false);
-        setCallTypeId(seed.callTypeId);
-        setCallTypeTouched(false);
-        setBillingEntityId(seed.billingEntityId);
-        setPortId(seed.portId);
-        bindingsRequestRef.current += 1;
-        setIsLoadingBindings(false);
-        setBindingsError(false);
-        setStructure([]);
-        const defaultTabs = buildTabsFromTemplate(initialTemplate);
-        setTabs(defaultTabs);
-        setActiveTabId(defaultTabs[0]?.id);
-        setActiveSubTabId(defaultTabs[0]?.subTabs?.[0]?.id ?? null);
-        setAddingTab(false);
-        setNewTabName("");
-        setEditingTabId(null);
-        setEditingTabName("");
-        setAddingSubTab(false);
-        setNewSubTabName("");
-        setEditingSubTabId(null);
-        setEditingSubTabName("");
-        setDeleteFieldRequest(null);
-        setHiddenEmailPreviewIds(new Set());
-        setUndoStack([]);
-        lastUndoGroupRef.current = null;
-    };
-
     // Applies a call type's card structure. With no tabs yet (new template) the
     // whole structure is built from it. Otherwise tabs/subtabs are matched to the
     // structure (by key, else by name) and their locked fields and sections are
@@ -1038,7 +1031,6 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     // Editing an existing template: load its call type's bindings so the
     // locked fields are recognised and kept in step with the API.
     useEffect(() => {
-        const seed = getTemplateSeed(initialTemplate);
         // Existing templates keep the tabs they were saved with (no re-adding deleted ones).
         if (seed.callTypeId) loadSystemBindings(seed.callTypeId, { addMissing: false, entityId: seed.billingEntityId });
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1144,17 +1136,12 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const handleTabDrop = (targetTabId) => {
         const from = tabs.findIndex((t) => t.id === dragTabId);
         const to = tabs.findIndex((t) => t.id === targetTabId);
-        if (dragTabId && dragTabId !== targetTabId && from >= 1 && to >= 1) {
+        if (dragTabId && from !== to && from >= 1 && to >= 1) {
             recordHistory();
-            setTabs((prev) => {
-                const from = prev.findIndex((t) => t.id === dragTabId);
-                const to = prev.findIndex((t) => t.id === targetTabId);
-                if (from < 1 || to < 1) return prev;
-                const next = [...prev];
-                const [moved] = next.splice(from, 1);
-                next.splice(to, 0, moved);
-                return next;
-            });
+            const next = [...tabs];
+            const [moved] = next.splice(from, 1);
+            next.splice(to, 0, moved);
+            setTabs(next);
         }
         handleTabDragEnd();
     };
@@ -1392,11 +1379,6 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     const isCallTypeInvalid = callTypeTouched && !callTypeId;
     const canSave = Boolean(templateName.trim()) && Boolean(callTypeId);
 
-    const handleClose = () => {
-        resetState();
-        onClose();
-    };
-
     const buildFieldPayload = (field, index) => {
         const systemBindingKey = field.systemBindingKey || null;
         const payload = {
@@ -1512,13 +1494,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
         if (portId) payload.port_id = Number(portId);
         if (templateId) payload.template_id = Number(templateId);
 
-        saveCardTemplate({
-            payload,
-            cb: () => {
-                resetState();
-                onClose();
-            },
-        });
+        saveCardTemplate({ payload, cb: onSaved ?? onClose });
     };
 
     // Single stacked column (email-preview scopes and Operation subtabs). Dropping a field
@@ -1707,25 +1683,15 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                         <div className="ctm-tabs-row ctm-tabs-row--stacked">
                             {tabs.map((tab) => (
                                 editingTabId === tab.id ? (
-                                    <div key={tab.id} className="ctm-add-tab-inline">
-                                        <input
-                                            type="text"
-                                            className="ctm-tab-name-input"
-                                            value={editingTabName}
-                                            autoFocus
-                                            onChange={(e) => setEditingTabName(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter") handleConfirmRenameTab();
-                                                if (e.key === "Escape") setEditingTabId(null);
-                                            }}
-                                        />
-                                        <button type="button" className="ctm-tab-icon-btn" onClick={handleConfirmRenameTab} aria-label="Confirm rename">
-                                            <FiCheck size={14} />
-                                        </button>
-                                        <button type="button" className="ctm-tab-icon-btn" onClick={() => setEditingTabId(null)} aria-label="Cancel rename">
-                                            <FiX size={14} />
-                                        </button>
-                                    </div>
+                                    <InlineNameInput
+                                        key={tab.id}
+                                        value={editingTabName}
+                                        onChange={setEditingTabName}
+                                        onConfirm={handleConfirmRenameTab}
+                                        onCancel={() => setEditingTabId(null)}
+                                        confirmLabel="Confirm rename"
+                                        cancelLabel="Cancel rename"
+                                    />
                                 ) : (
                                     <div
                                         key={tab.id}
@@ -1756,26 +1722,15 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                             ))}
 
                             {addingTab && (
-                                <div className="ctm-add-tab-inline">
-                                    <input
-                                        type="text"
-                                        className="ctm-tab-name-input"
-                                        placeholder="Tab name"
-                                        value={newTabName}
-                                        autoFocus
-                                        onChange={(e) => setNewTabName(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter") handleConfirmAddTab();
-                                            if (e.key === "Escape") handleCancelAddTab();
-                                        }}
-                                    />
-                                    <button type="button" className="ctm-tab-icon-btn" onClick={handleConfirmAddTab} aria-label="Confirm add tab">
-                                        <FiCheck size={14} />
-                                    </button>
-                                    <button type="button" className="ctm-tab-icon-btn" onClick={handleCancelAddTab} aria-label="Cancel add tab">
-                                        <FiX size={14} />
-                                    </button>
-                                </div>
+                                <InlineNameInput
+                                    placeholder="Tab name"
+                                    value={newTabName}
+                                    onChange={setNewTabName}
+                                    onConfirm={handleConfirmAddTab}
+                                    onCancel={handleCancelAddTab}
+                                    confirmLabel="Confirm add tab"
+                                    cancelLabel="Cancel add tab"
+                                />
                             )}
                         </div>
 
@@ -1792,25 +1747,15 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                             <div className="ctm-subtabs-row ctm-subtabs-row--stacked">
                                 {activeTab.subTabs.map((sub) => (
                                     editingSubTabId === sub.id ? (
-                                        <div key={sub.id} className="ctm-add-tab-inline">
-                                            <input
-                                                type="text"
-                                                className="ctm-tab-name-input"
-                                                value={editingSubTabName}
-                                                autoFocus
-                                                onChange={(e) => setEditingSubTabName(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Enter") handleConfirmRenameSubTab();
-                                                    if (e.key === "Escape") setEditingSubTabId(null);
-                                                }}
-                                            />
-                                            <button type="button" className="ctm-tab-icon-btn" onClick={handleConfirmRenameSubTab} aria-label="Confirm rename">
-                                                <FiCheck size={14} />
-                                            </button>
-                                            <button type="button" className="ctm-tab-icon-btn" onClick={() => setEditingSubTabId(null)} aria-label="Cancel rename">
-                                                <FiX size={14} />
-                                            </button>
-                                        </div>
+                                        <InlineNameInput
+                                            key={sub.id}
+                                            value={editingSubTabName}
+                                            onChange={setEditingSubTabName}
+                                            onConfirm={handleConfirmRenameSubTab}
+                                            onCancel={() => setEditingSubTabId(null)}
+                                            confirmLabel="Confirm rename"
+                                            cancelLabel="Cancel rename"
+                                        />
                                     ) : (
                                         <div
                                             key={sub.id}
@@ -1839,50 +1784,29 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                 ))}
 
                                 {addingSubTab && (
-                                    <div className="ctm-add-tab-inline">
-                                        <input
-                                            type="text"
-                                            className="ctm-tab-name-input"
-                                            placeholder="Subtab name"
-                                            value={newSubTabName}
-                                            autoFocus
-                                            onChange={(e) => setNewSubTabName(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter") handleConfirmAddSubTab();
-                                                if (e.key === "Escape") handleCancelAddSubTab();
-                                            }}
-                                        />
-                                        <button type="button" className="ctm-tab-icon-btn" onClick={handleConfirmAddSubTab} aria-label="Confirm add subtab">
-                                            <FiCheck size={14} />
-                                        </button>
-                                        <button type="button" className="ctm-tab-icon-btn" onClick={handleCancelAddSubTab} aria-label="Cancel add subtab">
-                                            <FiX size={14} />
-                                        </button>
-                                    </div>
+                                    <InlineNameInput
+                                        placeholder="Subtab name"
+                                        value={newSubTabName}
+                                        onChange={setNewSubTabName}
+                                        onConfirm={handleConfirmAddSubTab}
+                                        onCancel={handleCancelAddSubTab}
+                                        confirmLabel="Confirm add subtab"
+                                        cancelLabel="Cancel add subtab"
+                                    />
                                 )}
                             </div>
                             </>
                         ) : addingSubTab ? (
-                            <div className="ctm-add-tab-inline ctm-add-subtab-inline-standalone">
-                                <input
-                                    type="text"
-                                    className="ctm-tab-name-input"
-                                    placeholder="Subtab name"
-                                    value={newSubTabName}
-                                    autoFocus
-                                    onChange={(e) => setNewSubTabName(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") handleConfirmAddSubTab();
-                                        if (e.key === "Escape") handleCancelAddSubTab();
-                                    }}
-                                />
-                                <button type="button" className="ctm-tab-icon-btn" onClick={handleConfirmAddSubTab} aria-label="Confirm add subtab">
-                                    <FiCheck size={14} />
-                                </button>
-                                <button type="button" className="ctm-tab-icon-btn" onClick={handleCancelAddSubTab} aria-label="Cancel add subtab">
-                                    <FiX size={14} />
-                                </button>
-                            </div>
+                            <InlineNameInput
+                                className="ctm-add-subtab-inline-standalone"
+                                placeholder="Subtab name"
+                                value={newSubTabName}
+                                onChange={setNewSubTabName}
+                                onConfirm={handleConfirmAddSubTab}
+                                onCancel={handleCancelAddSubTab}
+                                confirmLabel="Confirm add subtab"
+                                cancelLabel="Cancel add subtab"
+                            />
                         ) : isSectionScope ? null : (
                             <button type="button" className="ctm-add-subtab-link" onClick={handleAddSubTabClick}>
                                 <FiPlus size={12} /> Add Subtab
@@ -1929,8 +1853,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                                         masterModuleOptions={masterModuleOptions}
                                         masterModulesLoading={isLoadingMasterLookups}
                                         dropdownFieldLabels={dropdownFieldLabels}
-                                        timeObjectOptions={timeObjectOptions}
-                                        timeObjectsLoading={false}
+                                        timeObjectOptions={TIME_OBJECT_OPTIONS}
                                         optionsFieldTypes={optionsFieldTypes}
                                         optionsSourceTypes={optionsSourceTypes}
                                         timeObjectTypeKey={timeObjectTypeKey}
@@ -2092,7 +2015,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
                             >
                                 <FiRotateCcw size={14} /> Undo
                             </button>
-                            <button type="button" className="btn-common close" onClick={handleClose}>
+                            <button type="button" className="btn-common close" onClick={onClose}>
                                 Cancel
                             </button>
                             <button type="button" className="ctm-save-btn" disabled={!canSave || isSaving} onClick={handleSave}>
@@ -2115,30 +2038,4 @@ function TemplateBuilderBody({ initialTemplate = null, onClose }) {
     );
 }
 
-// Standalone modal — used directly (outside the templates list), owns its own
-// overlay/topbar and simply closes on cancel/save.
-function CustomTemplateBuilderModal({ show, onClose, initialTemplate = null }) {
-    const isEditMode = Boolean(initialTemplate);
-
-    if (!show) return null;
-
-    return (
-        <div className="cardform-overlay ctm-modal-overlay">
-            <div className="cardform-panel">
-                <div className="cardform-topbar ctm-modal-topbar">
-                    <div>
-                        <span className="ctm-topbar-title">{isEditMode ? "Edit Custom Template" : "Create Custom Template"}</span>
-                    </div>
-                    <div className="cardform-topbar-right">
-                        <button type="button" className="cardform-close-btn" onClick={onClose}>✕</button>
-                    </div>
-                </div>
-
-                <TemplateBuilderBody initialTemplate={initialTemplate} onClose={onClose} />
-            </div>
-        </div>
-    );
-}
-
-export default CustomTemplateBuilderModal;
 export { TemplateBuilderBody, buildTabsFromTemplate };

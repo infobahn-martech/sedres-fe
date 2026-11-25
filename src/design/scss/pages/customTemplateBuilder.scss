@@ -24,26 +24,8 @@
   }
 }
 
-.ctm-modal-overlay {
-  z-index: 1350;
-
-  .cardform-panel {
-    width: 98%;
-    max-width: 1720px;
-    max-height: calc(100vh - 2rem);
-    height: 92%;
-    display: flex;
-    flex-direction: column;
-
-    @media (max-width: 767px) {
-      width: 97%;
-      max-height: calc(100vh - 1.5rem);
-    }
-  }
-}
-
 // The delete-field confirmation is a react-bootstrap Modal, which defaults to a
-// much lower z-index (~1050-1060) than this raw-overlay modal's 1350 — without
+// much lower z-index (~1050-1060) than the list modal's raw overlay (1350) — without
 // this override it mounts visually behind the panel and appears unresponsive.
 body .modal-backdrop.fade.ctm-delete-confirm-backdrop,
 body .modal-backdrop.ctm-delete-confirm-backdrop.show {
@@ -59,17 +41,6 @@ body .modal.ctm-delete-confirm-modal.show {
 body .modal.ctm-delete-confirm-modal.show .modal-dialog {
   z-index: 1452 !important;
   position: relative;
-}
-
-.ctm-modal-topbar {
-  background-color: #00368c;
-}
-
-.ctm-topbar-title {
-  color: var(--text-inverse);
-  font-weight: 700;
-  font-size: 14px;
-  letter-spacing: 0.02em;
 }
 
 // Live preview topbar — same blue as the modal's own topbar instead of the

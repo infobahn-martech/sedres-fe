@@ -27,7 +27,7 @@ const normalizeTemplateSummary = (tpl) => ({
 });
 
 function TemplateListCard({ template, isActive, onSelect, onDelete }) {
-    const tabCount = template.tabCount ?? template.tabs?.length ?? 0;
+    const { tabCount } = template;
     return (
         <div className={`ctl-template-card ${isActive ? "is-active" : ""}`} onClick={onSelect}>
             <span className={`ctl-template-checkbox ${isActive ? "is-checked" : ""}`} aria-hidden="true" />
@@ -83,9 +83,10 @@ function CustomTemplateListModal({ show, onClose }) {
         }
     }, [normalizedTemplates, selectedId]);
 
-    const filteredTemplates = normalizedTemplates.filter((t) =>
-        t.name.toLowerCase().includes(searchQuery.trim().toLowerCase())
-    );
+    const query = searchQuery.trim().toLowerCase();
+    const filteredTemplates = query
+        ? normalizedTemplates.filter((t) => t.name.toLowerCase().includes(query))
+        : normalizedTemplates;
     const selectedTemplate = normalizedTemplates.find((t) => t.id === selectedId) ?? null;
     const activeTab = selectedTemplate?.tabs?.[activeTabIndex] ?? null;
     const hasSubTabs = Array.isArray(activeTab?.subTabs) && activeTab.subTabs.length > 0;
@@ -126,7 +127,10 @@ function CustomTemplateListModal({ show, onClose }) {
         setViewMode("create");
     };
 
-    const handleBackToList = () => {
+    const handleBackToList = () => setViewMode("list");
+
+    // Only a successful save changes the list, so only then is it re-fetched.
+    const handleSaved = () => {
         setViewMode("list");
         getTemplateList();
     };
@@ -302,6 +306,7 @@ function CustomTemplateListModal({ show, onClose }) {
                                 key={viewMode === "edit" ? (selectedTemplate?.id ?? "edit") : "create"}
                                 initialTemplate={builderInitialTemplate}
                                 onClose={handleBackToList}
+                                onSaved={handleSaved}
                             />
                         )}
                     </div>

@@ -21,7 +21,6 @@ import StickersModal from '../SideNav/components/StickersModal';
 import TagsModal from '../SideNav/components/TagsModal';
 import TypesModal from '../SideNav/components/TypesModal';
 const CallTypeBuilderModal = lazy(() => import('../../pages/CallType/CallTypeBuilderModal'));
-const CustomTemplateBuilderModal = lazy(() => import('../../pages/CustomTemplate/CustomTemplateBuilderModal'));
 const CustomTemplateListModal = lazy(() => import('../../pages/CustomTemplate/CustomTemplateListModal'));
 import ToolsMenu, { ToolModals } from './ToolsMenu';
 import { useLayoutView } from '../../shared/context/LayoutViewContext';
@@ -58,7 +57,6 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
   const [showTagsModal, setShowTagsModal] = useState(false);
   const [showTypesModal, setShowTypesModal] = useState(false);
   const [showCallTypeBuilderModal, setShowCallTypeBuilderModal] = useState(false);
-  const [showCustomTemplateModal, setShowCustomTemplateModal] = useState(false);
   const [showTemplatesListModal, setShowTemplatesListModal] = useState(false);
   const [activeTool, setActiveTool] = useState(null);
   const [showQuickActions, setShowQuickActions] = useState(false);
@@ -155,7 +153,6 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     { label: 'Types', modal: 'types', icon: <FiList /> },
     // { label: 'Templates', modal: 'templates' },
     { label: 'Custom Templates', modal: 'templates list', icon: <FiFileText /> },
-    // { label: 'Custom Templates', modal: 'custom templates' },
   ];
 
   const getLoggedInUser = () => {
@@ -313,7 +310,6 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     setShowTagsModal(false);
     setShowTypesModal(false);
     setShowCallTypeBuilderModal(false);
-    setShowCustomTemplateModal(false);
     setShowTemplatesListModal(false);
 
     if (item.modal === 'blockers') setShowBlockersModal(true);
@@ -322,7 +318,6 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
     if (item.modal === 'types') setShowTypesModal(true);
     if (item.modal === 'templates') setShowCallTypeBuilderModal(true);
     if (item.modal === 'templates list') setShowTemplatesListModal(true);
-    if (item.modal === 'custom templates') setShowCustomTemplateModal(true);
   };
 
   const handleUserCircleClick = () => {
@@ -747,17 +742,6 @@ function Header({ onMenuToggle, mobileMenuOpen: externalMobileMenuOpen, activePo
             <CallTypeBuilderModal
               show={showCallTypeBuilderModal}
               onClose={() => setShowCallTypeBuilderModal(false)}
-            />
-          </Suspense>
-        </ModalErrorBoundary>
-      )}
-
-      {showCustomTemplateModal && (
-        <ModalErrorBoundary onClose={() => setShowCustomTemplateModal(false)}>
-          <Suspense fallback={null}>
-            <CustomTemplateBuilderModal
-              show={showCustomTemplateModal}
-              onClose={() => setShowCustomTemplateModal(false)}
             />
           </Suspense>
         </ModalErrorBoundary>
