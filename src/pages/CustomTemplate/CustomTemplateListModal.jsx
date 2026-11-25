@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { FiSearch, FiChevronRight, FiEdit2, FiTrash2, FiPlus, FiArrowLeft } from "react-icons/fi";
+import { Spinner } from "react-bootstrap";
+import { FiSearch, FiChevronRight, FiEdit2, FiTrash2, FiPlus, FiArrowLeft, FiAlertCircle, FiRotateCcw, FiFileText } from "react-icons/fi";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import { TemplateBuilderBody, buildTabsFromTemplate } from "./CustomTemplateBuilderModal";
 import { buildFieldGrid } from "./templateFieldGrid";
@@ -7,6 +8,7 @@ import TemplateFieldPreview from "./TemplateFieldPreview";
 import TemplateEmailPreview, { TemplateEmailFieldsColumn } from "./TemplateEmailPreview";
 import { getEmailPreviewSubject } from "./emailPreviewSubjects";
 import TemplateFeaturePreview from "./TemplateFeaturePreview";
+import TemplatePreviewSkeleton from "./TemplatePreviewSkeleton";
 import { getFeaturePreviewKind } from "./templateFeaturePreviews";
 import useFormTemplateReducer from "../../store/FormTemplateReducer";
 import "../../design/css/common/CardForm.css";
@@ -26,10 +28,33 @@ const normalizeTemplateSummary = (tpl) => ({
     tabs: buildTabsFromTemplate(tpl),
 });
 
-function TemplateListCard({ template, isActive, onSelect, onDelete }) {
+const SKELETON_CARD_COUNT = 6;
+
+// Placeholder list cards shown while the template list loads for the first time.
+function TemplateListSkeleton() {
+    return (
+        <div className="ctl-template-list" aria-hidden="true">
+            {Array.from({ length: SKELETON_CARD_COUNT }, (_, i) => (
+                <div key={i} className="ctl-template-card ctl-skeleton-card">
+                    <span className="ctl-bone ctl-bone--check" />
+                    <div className="ctl-template-card-body">
+                        <span className="ctl-bone ctl-bone--name" style={{ width: `${70 - (i % 3) * 12}%` }} />
+                        <span className="ctl-bone ctl-bone--meta" />
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function TemplateListCard({ template, isActive, isDeleting, deleteDisabled, onSelect, onDelete }) {
     const { tabCount } = template;
     return (
-        <div className={`ctl-template-card ${isActive ? "is-active" : ""}`} onClick={onSelect}>
+        <div
+            className={`ctl-template-card ${isActive ? "is-active" : ""} ${isDeleting ? "is-deleting" : ""}`}
+            onClick={isDeleting ? undefined : onSelect}
+            aria-busy={isDeleting || undefined}
+        >
             <span className={`ctl-template-checkbox ${isActive ? "is-checked" : ""}`} aria-hidden="true" />
             <div className="ctl-template-card-body">
                 <span className="ctl-template-name">{template.name}</span>
@@ -40,10 +65,13 @@ function TemplateListCard({ template, isActive, onSelect, onDelete }) {
             <button
                 type="button"
                 className="ctl-template-delete-btn"
-                aria-label="Delete template"
+                aria-label={isDeleting ? "Deleting template" : "Delete template"}
+                disabled={deleteDisabled}
                 onClick={(e) => { e.stopPropagation(); onDelete(); }}
             >
-                <FiTrash2 size={14} />
+                {isDeleting
+                    ? <Spinner animation="border" size="sm" className="ctl-inline-spinner" />
+                    : <FiTrash2 size={14} />}
             </button>
             <FiChevronRight size={16} className="ctl-template-arrow" />
         </div>
@@ -52,7 +80,9 @@ function TemplateListCard({ template, isActive, onSelect, onDelete }) {
 
 function CustomTemplateListModal({ show, onClose }) {
     const {
-        getTemplateList, templates, getTemplateById, deleteTemplate,
+        getTemplateList, templates, isLoadingTemplates,
+        getTemplateById, isLoadingTemplateDetail,
+        deleteTemplate, isDeleting,
     } = useFormTemplateReducer((s) => s);
 
     const [searchQuery, setSearchQuery] = useState("");
@@ -60,6 +90,11 @@ function CustomTemplateListModal({ show, onClose }) {
     const [activeTabIndex, setActiveTabIndex] = useState(0);
     const [activeSubTabIndex, setActiveSubTabIndex] = useState(0);
     const [deleteRequestId, setDeleteRequestId] = useState(null);
+    // The template whose delete request is in flight (cleared by the store's isDeleting).
+    const [pendingDeleteId, setPendingDeleteId] = useState(null);
+    // Set once the first list request goes out, so a failed load (templates still
+    // null, nothing loading) can be told apart from the moment before it starts.
+    const [hasRequestedList, setHasRequestedList] = useState(templates !== null);
     // 'list' shows the template list + preview; 'create'/'edit' reuse this same
     // modal panel to show the builder form + preview instead of stacking a
     // second modal on top.
@@ -68,9 +103,17 @@ function CustomTemplateListModal({ show, onClose }) {
 
     useEffect(() => {
         if (show && templates === null) {
+            setHasRequestedList(true);
             getTemplateList();
         }
     }, [show, templates, getTemplateList]);
+
+    // First load shows skeletons; a later refresh (after save/delete) keeps the
+    // current list on screen with a slim progress bar instead.
+    const isInitialLoading = templates === null && (isLoadingTemplates || !hasRequestedList);
+    const isRefreshing = isLoadingTemplates && templates !== null;
+    const loadFailed = templates === null && hasRequestedList && !isLoadingTemplates;
+    const deletingId = isDeleting ? pendingDeleteId : null;
 
     const normalizedTemplates = useMemo(
         () => (templates ?? []).map((tpl) => normalizeTemplateSummary(tpl)),
@@ -109,6 +152,7 @@ function CustomTemplateListModal({ show, onClose }) {
     const handleConfirmDelete = () => {
         const templateId = deleteRequestId;
         setDeleteRequestId(null);
+        setPendingDeleteId(templateId);
         deleteTemplate({
             templateId,
             cb: () => {
@@ -136,7 +180,7 @@ function CustomTemplateListModal({ show, onClose }) {
     };
 
     const handleEditClick = () => {
-        if (!selectedTemplate) return;
+        if (!selectedTemplate || isLoadingTemplateDetail) return;
         getTemplateById({
             templateId: selectedTemplate.id,
             cb: (detail) => {
@@ -201,27 +245,51 @@ function CustomTemplateListModal({ show, onClose }) {
                                         </div>
                                     </div>
 
-                                    <div className="ct-split-scroll-area">
-                                        <div className="ctl-template-list">
-                                            {filteredTemplates.length === 0 ? (
-                                                <p className="ctl-list-empty">No templates found.</p>
-                                            ) : (
-                                                filteredTemplates.map((tpl) => (
-                                                    <TemplateListCard
-                                                        key={tpl.id}
-                                                        template={tpl}
-                                                        isActive={tpl.id === selectedId}
-                                                        onSelect={() => handleSelectTemplate(tpl.id)}
-                                                        onDelete={() => setDeleteRequestId(tpl.id)}
-                                                    />
-                                                ))
-                                            )}
-                                        </div>
+                                    <div className="ct-split-scroll-area ctl-list-scroll" aria-busy={isLoadingTemplates || undefined}>
+                                        {isRefreshing && <div className="ctl-list-progress" role="progressbar" aria-label="Refreshing templates" />}
+                                        {isInitialLoading ? (
+                                            <TemplateListSkeleton />
+                                        ) : loadFailed ? (
+                                            <div className="ctl-list-state" role="alert">
+                                                <FiAlertCircle size={22} className="ctl-list-state-icon is-error" />
+                                                <p>Couldn&apos;t load templates.</p>
+                                                <button type="button" className="ctl-retry-btn" onClick={() => getTemplateList()}>
+                                                    <FiRotateCcw size={13} /> Retry
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="ctl-template-list">
+                                                {filteredTemplates.length === 0 ? (
+                                                    query ? (
+                                                        <p className="ctl-list-empty">No templates match &ldquo;{searchQuery.trim()}&rdquo;.</p>
+                                                    ) : (
+                                                        <div className="ctl-list-state">
+                                                            <FiFileText size={22} className="ctl-list-state-icon" />
+                                                            <p>No custom templates yet.</p>
+                                                        </div>
+                                                    )
+                                                ) : (
+                                                    filteredTemplates.map((tpl) => (
+                                                        <TemplateListCard
+                                                            key={tpl.id}
+                                                            template={tpl}
+                                                            isActive={tpl.id === selectedId}
+                                                            isDeleting={tpl.id === deletingId}
+                                                            deleteDisabled={isDeleting}
+                                                            onSelect={() => handleSelectTemplate(tpl.id)}
+                                                            onDelete={() => setDeleteRequestId(tpl.id)}
+                                                        />
+                                                    ))
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
                                 <div className="ct-split-right ctl-preview-panel">
-                                    {selectedTemplate ? (
+                                    {isInitialLoading ? (
+                                        <TemplatePreviewSkeleton />
+                                    ) : selectedTemplate ? (
                                             // Live preview — reuses the real kanban card's own shell
                                             // (cardform-topbar/tabs, operation-wrapper/left/right) so the
                                             // template previews pixel-identical to the actual card.
@@ -231,8 +299,18 @@ function CustomTemplateListModal({ show, onClose }) {
                                                         {selectedTemplate.name}
                                                     </span>
                                                     <div className="cardform-topbar-right">
-                                                        <button type="button" className="ctl-preview-edit-btn" onClick={handleEditClick}>
-                                                            <FiEdit2 size={13} /> Edit Template
+                                                        <button
+                                                            type="button"
+                                                            className="ctl-preview-edit-btn"
+                                                            onClick={handleEditClick}
+                                                            disabled={isLoadingTemplateDetail}
+                                                            aria-busy={isLoadingTemplateDetail || undefined}
+                                                        >
+                                                            {isLoadingTemplateDetail ? (
+                                                                <><Spinner animation="border" size="sm" className="ctl-inline-spinner" /> Opening...</>
+                                                            ) : (
+                                                                <><FiEdit2 size={13} /> Edit Template</>
+                                                            )}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -296,7 +374,12 @@ function CustomTemplateListModal({ show, onClose }) {
                                             </div>
                                     ) : (
                                         <div className="ct-preview-empty">
-                                            <p>Select a template from the list to preview its structure.</p>
+                                            <FiFileText size={28} />
+                                            <p>
+                                                {normalizedTemplates.length
+                                                    ? "Select a template from the list to preview its structure."
+                                                    : "Create a custom template to see its preview here."}
+                                            </p>
                                         </div>
                                     )}
                                 </div>

@@ -242,9 +242,185 @@
   cursor: pointer;
   transition: background 0.15s;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.3);
   }
+
+  &:disabled {
+    cursor: progress;
+    opacity: 0.85;
+  }
+}
+
+// ── Loading states ────────────────────────────────────────────────────────────
+// Skeleton "bones" shimmer between two theme tokens, so they follow dark mode.
+.ctl-bone {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--border-primary) 25%,
+    var(--surface-secondary) 50%,
+    var(--border-primary) 75%
+  );
+  background-size: 200% 100%;
+  animation: ctlShimmer 1.4s ease-in-out infinite;
+
+  // On the blue preview topbar.
+  &--inverse {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.16) 25%,
+      rgba(255, 255, 255, 0.32) 50%,
+      rgba(255, 255, 255, 0.16) 75%
+    );
+    background-size: 200% 100%;
+  }
+
+  &--check { width: 16px; height: 16px; flex-shrink: 0; border-radius: 4px; }
+  &--name { height: 12px; }
+  &--meta { width: 34%; height: 9px; margin-top: 4px; }
+  &--title { width: 180px; height: 14px; }
+  &--tab { height: 26px; border-radius: 6px; }
+  &--label { width: 40%; height: 10px; }
+  &--input { width: 100%; height: 36px; border-radius: 8px; }
+}
+
+.ctl-skeleton-card {
+  cursor: default;
+  pointer-events: none;
+}
+
+.ctl-preview-skeleton {
+  .ctl-skeleton-tabs {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .ctl-skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 24px;
+    padding: 20px 16px;
+
+    @media (max-width: 767px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .ctl-skeleton-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+// Slim indeterminate bar pinned to the top of the list while it re-fetches
+// (after a save or delete) — the current list stays visible underneath.
+.ctl-list-scroll {
+  position: relative;
+}
+
+.ctl-list-progress {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 3px;
+  overflow: hidden;
+  background: var(--border-primary);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: 35%;
+    background: #00368c;
+    animation: ctlProgress 1.1s ease-in-out infinite;
+  }
+}
+
+.ctl-list-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 36px 20px;
+  color: var(--text-muted);
+  text-align: center;
+
+  p {
+    margin: 0;
+    font-size: 13px;
+  }
+}
+
+.ctl-list-state-icon {
+  opacity: 0.6;
+
+  &.is-error {
+    color: #ef4444;
+    opacity: 1;
+  }
+}
+
+.ctl-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 6px 14px;
+  border: 1.5px solid var(--border-primary);
+  border-radius: 6px;
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: #00368c;
+  }
+}
+
+.ctl-inline-spinner {
+  width: 13px;
+  height: 13px;
+  border-width: 2px;
+}
+
+.ctl-template-card.is-deleting {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.ctl-template-delete-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+
+  &:hover {
+    color: var(--text-muted);
+    background: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ctl-bone,
+  .ctl-list-progress::after {
+    animation: none;
+  }
+}
+
+@keyframes ctlShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes ctlProgress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(290%); }
 }
 
 .ctl-preview-empty {
@@ -280,6 +456,14 @@
   .ctl-template-checkbox.is-checked {
     border-color: var(--brand-bright);
     background: var(--brand);
+  }
+
+  .ctl-list-progress::after {
+    background: var(--brand-bright);
+  }
+
+  .ctl-retry-btn:hover {
+    border-color: var(--brand-bright);
   }
 }
 

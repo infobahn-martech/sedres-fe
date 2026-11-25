@@ -24,6 +24,232 @@
   }
 }
 
+// ── Preview placeholder (before the template has tabs) ───────────────────────
+.ctm-preview-placeholder {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px 24px;
+  border: 1.5px dashed var(--border-primary);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(0, 54, 140, 0.05), transparent 60%),
+    var(--surface-secondary);
+  text-align: center;
+  overflow-y: auto;
+}
+
+.ctm-placeholder-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #eaf0fb;
+  color: #00368c;
+  margin-bottom: 4px;
+
+  &.is-error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+}
+
+.ctm-placeholder-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ctm-placeholder-text {
+  margin: 0;
+  max-width: 380px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.ctm-placeholder-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 7px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #00368c;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #002a6e;
+  }
+}
+
+// Miniature, static sketch of the card preview — hints at what will appear.
+.ctm-wireframe {
+  width: min(340px, 100%);
+  margin-bottom: 14px;
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  background: var(--surface-primary);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+
+  span {
+    display: block;
+    border-radius: 4px;
+    background: var(--border-primary);
+  }
+}
+
+.ctm-wireframe-bar {
+  height: 22px;
+  background: #00368c;
+}
+
+.ctm-wireframe-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-primary);
+
+  span {
+    width: 44px;
+    height: 8px;
+
+    &.is-active {
+      background: #00368c;
+      opacity: 0.55;
+    }
+  }
+}
+
+.ctm-wireframe-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  padding: 12px 10px 14px;
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  span:first-child {
+    width: 45%;
+    height: 6px;
+  }
+
+  span:last-child {
+    height: 16px;
+    border-radius: 5px;
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-primary);
+  }
+}
+
+.ctm-placeholder-steps {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  width: min(340px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    background: var(--surface-primary);
+    transition: border-color 0.2s, background 0.2s;
+
+    &.is-done {
+      border-color: rgba(16, 185, 129, 0.35);
+
+      .ctm-step-marker {
+        background: #10b981;
+        border-color: #10b981;
+        color: #fff;
+      }
+
+      .ctm-step-label {
+        color: var(--text-muted);
+        text-decoration: line-through;
+      }
+    }
+  }
+}
+
+.ctm-step-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-primary);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.ctm-step-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ctm-step-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ctm-step-hint {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+// Preview topbar title before a name is typed.
+.ctm-preview-title-placeholder {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+[data-theme="dark"] {
+  .ctm-placeholder-icon:not(.is-error) {
+    background: var(--tint-brand-bg);
+    color: var(--brand-bright);
+  }
+
+  .ctm-wireframe-bar,
+  .ctm-placeholder-btn {
+    background: var(--brand);
+  }
+
+  .ctm-wireframe-tabs span.is-active {
+    background: var(--brand-bright);
+  }
+}
+
 // The delete-field confirmation is a react-bootstrap Modal, which defaults to a
 // much lower z-index (~1050-1060) than the list modal's raw overlay (1350) — without
 // this override it mounts visually behind the panel and appears unresponsive.

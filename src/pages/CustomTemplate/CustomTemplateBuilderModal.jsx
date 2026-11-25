@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiX, FiMenu, FiChevronDown, FiRotateCcw } from "react-icons/fi";
+import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiX, FiMenu, FiChevronDown, FiRotateCcw, FiLayout, FiAlertCircle } from "react-icons/fi";
+import TemplatePreviewSkeleton from "./TemplatePreviewSkeleton";
 import SearchableSelect from "../../components/form/SearchableSelect";
 import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 import TemplateFieldPreview from "./TemplateFieldPreview";
@@ -743,6 +744,73 @@ function InlineNameInput({ value, placeholder, className = "", onChange, onConfi
             <button type="button" className="ctm-tab-icon-btn" onClick={onCancel} aria-label={cancelLabel}>
                 <FiX size={14} />
             </button>
+        </div>
+    );
+}
+
+// Right-hand panel shown before the template has any tabs to preview: a getting-
+// started guide (with a wireframe of the card and a progress checklist), or an
+// error / "no tabs" message once a call type has been tried.
+function PreviewPlaceholder({ hasCallType, hasName, bindingsError, onRetry }) {
+    if (bindingsError) {
+        return (
+            <div className="ctm-preview-placeholder" role="alert">
+                <span className="ctm-placeholder-icon is-error"><FiAlertCircle size={22} /></span>
+                <h4 className="ctm-placeholder-title">Couldn&apos;t load the template structure</h4>
+                <p className="ctm-placeholder-text">Something went wrong while fetching the tabs for this call type.</p>
+                <button type="button" className="ctm-placeholder-btn" onClick={onRetry}>
+                    <FiRotateCcw size={13} /> Try again
+                </button>
+            </div>
+        );
+    }
+
+    if (hasCallType) {
+        return (
+            <div className="ctm-preview-placeholder">
+                <span className="ctm-placeholder-icon"><FiLayout size={22} /></span>
+                <h4 className="ctm-placeholder-title">No tabs configured for this call type</h4>
+                <p className="ctm-placeholder-text">Add a tab on the left to start building — it will appear here as you go.</p>
+            </div>
+        );
+    }
+
+    const steps = [
+        { label: "Choose a call type", hint: "Loads its default tabs and fields", done: hasCallType },
+        { label: "Name your template", hint: "Shown as the card title", done: hasName },
+        { label: "Customize tabs & fields", hint: "Add, rename, reorder and drag fields", done: false },
+    ];
+
+    return (
+        <div className="ctm-preview-placeholder">
+            <div className="ctm-wireframe" aria-hidden="true">
+                <div className="ctm-wireframe-bar" />
+                <div className="ctm-wireframe-tabs">
+                    <span className="is-active" /><span /><span />
+                </div>
+                <div className="ctm-wireframe-grid">
+                    {Array.from({ length: 4 }, (_, i) => (
+                        <div key={i}><span /><span /></div>
+                    ))}
+                </div>
+            </div>
+
+            <h4 className="ctm-placeholder-title">Your live preview will appear here</h4>
+            <p className="ctm-placeholder-text">
+                Build the template on the left and see the card exactly as users will.
+            </p>
+
+            <ol className="ctm-placeholder-steps">
+                {steps.map((step, i) => (
+                    <li key={step.label} className={step.done ? "is-done" : ""}>
+                        <span className="ctm-step-marker">{step.done ? <FiCheck size={12} /> : i + 1}</span>
+                        <span className="ctm-step-body">
+                            <span className="ctm-step-label">{step.label}</span>
+                            <span className="ctm-step-hint">{step.hint}</span>
+                        </span>
+                    </li>
+                ))}
+            </ol>
         </div>
     );
 }
@@ -1886,10 +1954,22 @@ function TemplateBuilderBody({ initialTemplate = null, onClose, onSaved }) {
                         (cardform-topbar/tabs, operation-wrapper/left/right) so the
                         template previews pixel-identical to the actual card. */}
                     <div className="ct-split-right">
+                        {!activeTab ? (
+                            isLoadingBindings ? (
+                                <TemplatePreviewSkeleton />
+                            ) : (
+                                <PreviewPlaceholder
+                                    hasCallType={Boolean(callTypeId)}
+                                    hasName={Boolean(templateName.trim())}
+                                    bindingsError={bindingsError}
+                                    onRetry={() => loadSystemBindings(callTypeId)}
+                                />
+                            )
+                        ) : (
                         <div className="ct-preview-modal">
                             <div className="cardform-topbar ct-preview-topbar ctm-preview-topbar">
-                                <span className="cardform-title">
-                                    {templateName.trim()}
+                                <span className={`cardform-title ${templateName.trim() ? "" : "ctm-preview-title-placeholder"}`}>
+                                    {templateName.trim() || "Untitled template"}
                                 </span>
                             </div>
 
@@ -1954,11 +2034,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose, onSaved }) {
                                     )}
 
                                     <div className={`operation-right${featurePreviewKind ? " operation-right--feature-preview" : ""}`}>
-                                        {!activeTab ? (
-                                            <p className="ct-summary-no-fields">
-                                                {isLoadingBindings ? "Loading template structure..." : "Select a call type to load the template structure."}
-                                            </p>
-                                        ) : featurePreviewKind ? (
+                                        {featurePreviewKind ? (
                                             <TemplateFeaturePreview kind={featurePreviewKind} />
                                         ) : isSectionScope ? (
                                             <div className="ctm-sys-scope">
@@ -2000,6 +2076,7 @@ function TemplateBuilderBody({ initialTemplate = null, onClose, onSaved }) {
                                 </div>
                             </div>
                         </div>
+                        )}
                     </div>
                     </div>
 
