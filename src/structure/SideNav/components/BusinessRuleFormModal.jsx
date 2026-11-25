@@ -7902,6 +7902,10 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                   const selectedOperator = operators.find((op) => getOperatorId(op) === cond.operatorId);
                   const showValueInput = fieldTakesValue(details) && operatorTakesValue(selectedOperator);
                   const { head: operatorHead, tail: operatorTail } = splitNoValueOperatorLabel(selectedOperator);
+                  // A state field with no value box (e.g. Blocked: is / is not) reads "Blocked is v / Blocked".
+                  const impliedStateLabel = details && selectedOperator && !fieldTakesValue(details) && operatorTakesValue(selectedOperator)
+                    ? cond.fieldLabel
+                    : '';
                   // A row with a typed or chosen value (Title, Blocker, ...) can take more than one,
                   // so it keeps the OR pill (adds another value) and the bin (removes this one). Yes/No
                   // states and the Deadline / Last moved rows have nothing to repeat.
@@ -8001,7 +8005,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
 
                       {cond.values.map((v) => (
                         <div key={v.id} className="br-board-condition-value-row">
-                          {operatorTail && <span className="br-condition-value-text">{operatorTail}</span>}
+                          {(operatorTail || impliedStateLabel) && <span className="br-condition-value-text">{operatorTail || impliedStateLabel}</span>}
                           {showValueInput && (
                             cond.valueType === 'color' ? (
                               <div className="board-minimap-picker-wrap br-color-condition-wrap">
