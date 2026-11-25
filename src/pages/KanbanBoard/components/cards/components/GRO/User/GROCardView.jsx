@@ -1555,6 +1555,22 @@ const GROCardView = forwardRef(function GROCardView(
   const showDynamicUploadIcon =
     (isVesselInwardRegistrationStage || isCrewImmigrationStage) && hasGeneratedDocument;
 
+  // Once the signed document can be uploaded, the Vessel Inward Registration tab is hidden.
+  const hideVesselInwardRegistrationTab = isVesselInwardRegistrationStage && hasGeneratedDocument;
+
+  useEffect(() => {
+    if (hideVesselInwardRegistrationTab && activeTab === GRO_ACTIVE_TABS.vesselInwardRegistration) {
+      setActiveTab(GRO_ACTIVE_TABS.documents);
+    }
+  }, [hideVesselInwardRegistrationTab, activeTab]);
+
+  // Likewise, the Crew Immigration Form view is hidden once the signed document can be uploaded.
+  const hideCrewImmigrationForm = isCrewImmigrationStage && hasGeneratedDocument;
+
+  useEffect(() => {
+    if (hideCrewImmigrationForm) setCrewImmigrationView("list");
+  }, [hideCrewImmigrationForm]);
+
   const dynamicUploadButtonLabel = "Upload Signed Document";
   const dynamicUploadTitle = "Upload Signed Document";
   const dynamicUploadShowsTimeFields = true;
@@ -1879,7 +1895,7 @@ const GROCardView = forwardRef(function GROCardView(
                         </span>
                       </button>
                     ) : null}
-                    {isVesselInwardRegistrationStage ? (
+                    {isVesselInwardRegistrationStage && !hideVesselInwardRegistrationTab ? (
                       <button
                         type="button"
                         role="tab"
@@ -2167,7 +2183,7 @@ const GROCardView = forwardRef(function GROCardView(
             onViewChange={setCrewImmigrationView}
             batchStatus={crewImmigrationBatchStatus}
             formContent={
-              <CrewImmigrationFormView
+              hideCrewImmigrationForm ? null : <CrewImmigrationFormView
                 portId={groPortId}
                 callId={callId}
                 activeBatch={crewImmigrationBatchFilter}

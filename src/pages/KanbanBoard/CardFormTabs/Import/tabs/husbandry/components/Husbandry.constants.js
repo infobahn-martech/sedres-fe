@@ -192,7 +192,7 @@ export const CREW_ENTRY_COLUMNS = [
     options: ["Sign On", "Sign Off"],
     defaultValue: "Sign On",
   },
-  { key: "passport_no", header: "Passport No", placeholder: "Passport number" },
+  { key: "passport_no", header: "Passport No", placeholder: "Passport number", required: true },
 ];
 
 /** Maps typed/pasted text ("sign off", "OFF", "Sign-On"…) to a select column's option; unknown → default. */

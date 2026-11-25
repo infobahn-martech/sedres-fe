@@ -68,8 +68,12 @@ const CrewEntryGrid = ({ rows, onRowsChange: setRows, onSubmit, submitting = fal
       notify("Enter at least one crew member.", "error");
       return;
     }
-    if (filledRows.some((row) => !row.crew_name.trim())) {
-      notify("Crew name is required for every row.", "error");
+    const missingRequired = CREW_ENTRY_COLUMNS.filter(
+      (column) => column.required && filledRows.some((row) => !String(row[column.key] ?? "").trim())
+    );
+    if (missingRequired.length > 0) {
+      const names = missingRequired.map((column) => column.header).join(" and ");
+      notify(`${names} ${missingRequired.length > 1 ? "are" : "is"} required for every row.`, "error");
       return;
     }
     const submittedRows = filledRows;
