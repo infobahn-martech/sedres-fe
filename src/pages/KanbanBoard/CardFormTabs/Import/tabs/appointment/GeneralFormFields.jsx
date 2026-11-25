@@ -243,6 +243,7 @@ const DocumentUpload = ({
   onMultipleFiles,
   isLoading = false,
   loadingText = "Uploading...",
+  loadingSubText = "",
   fileUrl = "",
   showFileActions = false,
 }) => {
@@ -409,7 +410,8 @@ const DocumentUpload = ({
         onDragLeave={zoneDisabled ? undefined : handleDragLeave}
         onDrop={zoneDisabled ? undefined : handleDrop}
         onClick={zoneDisabled ? undefined : () => fileInputRef.current?.click()}
-        style={{ "--card-color": "#3e5cb6" || "#2A00FF", pointerEvents: zoneDisabled ? "none" : "auto", opacity: zoneDisabled ? 0.6 : 1 }}
+        style={{ "--card-color": "#3e5cb6" || "#2A00FF", pointerEvents: zoneDisabled ? "none" : "auto", opacity: disabled ? 0.6 : 1 }}
+        aria-busy={isLoading || undefined}
       >
         <input
           ref={fileInputRef}
@@ -421,10 +423,16 @@ const DocumentUpload = ({
         />
         <div className="upload-zone-content">
           {isLoading ? (
-            <div className="document-upload-loading-state">
-              <span className="document-upload-spinner" aria-hidden="true" />
-              <p className="upload-main-text">{loadingText}</p>
-            </div>
+            <>
+              <div className="document-upload-loading-state" role="status" aria-live="polite">
+                <span className="document-upload-spinner" aria-hidden="true" />
+                <div className="document-upload-loading-copy">
+                  <p className="upload-main-text">{loadingText}</p>
+                  {loadingSubText && <p className="document-upload-loading-sub">{loadingSubText}</p>}
+                </div>
+              </div>
+              <span className="document-upload-progress" aria-hidden="true" />
+            </>
           ) : (
             <>
               <div className="upload-text-content">
@@ -447,7 +455,7 @@ const DocumentUpload = ({
             return (
               <div
                 key={index}
-                className={`document-file-preview-item ${showFileActions ? "appointment-email-file-row appointment-email-file-row--preview" : ""}`}
+                className={`document-file-preview-item ${showFileActions ? "appointment-email-file-row appointment-email-file-row--preview" : ""} ${isLoading ? "is-processing" : ""}`}
               >
                 {showFileActions ? (
                   <div className="appointment-email-file-left">
@@ -463,14 +471,19 @@ const DocumentUpload = ({
                     </div>
                     <div className="document-file-preview-info">
                       <span className="document-file-preview-name">{displayName}</span>
-                      <span className="document-file-preview-size">{formatFileSize(file.size)}</span>
+                      <span className="document-file-preview-size">
+                        {formatFileSize(file.size)}
+                        {isLoading && <span className="document-file-preview-status"> · Processing...</span>}
+                      </span>
                     </div>
                   </>
                 )}
                 {showFileActions && (
                   <AppointmentEmailFileActions fileUrl={fileUrl} fileName={displayName} />
                 )}
-                {!disabled && (
+                {isLoading ? (
+                  <span className="document-upload-spinner document-upload-spinner--sm" aria-label="Processing file" />
+                ) : !disabled && (
                   <button
                     className="document-file-preview-remove"
                     onClick={(e) => {
@@ -506,6 +519,7 @@ DocumentUpload.propTypes = {
   onMultipleFiles: PropTypes.func,
   isLoading: PropTypes.bool,
   loadingText: PropTypes.string,
+  loadingSubText: PropTypes.string,
   fileUrl: PropTypes.string,
   showFileActions: PropTypes.bool,
 };

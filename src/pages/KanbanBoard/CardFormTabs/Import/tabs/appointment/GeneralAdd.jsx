@@ -402,6 +402,8 @@ function GeneralAdd({
   const templateRefetchRequestIdRef = useRef(0);
   const templateRefetchTimerRef = useRef(null);
   const [isTemplateRefetching, setIsTemplateRefetching] = useState(false);
+  // File field (e.g. Appointment Email) whose upload started the in-flight re-fetch; it shows the loader inline.
+  const [templateRefetchFileFieldId, setTemplateRefetchFileFieldId] = useState(null);
   const clearTemplateRefetchTimer = useCallback(() => {
     if (templateRefetchTimerRef.current) {
       window.clearTimeout(templateRefetchTimerRef.current);
@@ -456,6 +458,7 @@ function GeneralAdd({
     clearTemplateRefetchTimer();
     templateRefetchRequestIdRef.current += 1;
     setIsTemplateRefetching(false);
+    setTemplateRefetchFileFieldId(null);
     if (!selectedTemplateId) return;
     let cancelled = false;
     getTemplateFirstTab({
@@ -674,7 +677,7 @@ function GeneralAdd({
   // Re-fetches first_tab with the current email / vessel / billing entity selection and binds the
   // returned values; the trigger fields keep what the user picked.
   const refetchTemplateFirstTab = useCallback(
-    (values) => {
+    (values, fileFieldId = null) => {
       if (!selectedTemplateId || !templateFields) return;
       const payload = new FormData();
       const triggerIds = [];
@@ -701,6 +704,7 @@ function GeneralAdd({
 
       const requestId = ++templateRefetchRequestIdRef.current;
       setIsTemplateRefetching(true);
+      setTemplateRefetchFileFieldId(fileFieldId);
       getTemplateFirstTab({
         templateId: selectedTemplateId,
         boardId: templateBoardId,
@@ -729,7 +733,10 @@ function GeneralAdd({
           });
         },
       }).finally(() => {
-        if (requestId === templateRefetchRequestIdRef.current) setIsTemplateRefetching(false);
+        if (requestId === templateRefetchRequestIdRef.current) {
+          setIsTemplateRefetching(false);
+          setTemplateRefetchFileFieldId(null);
+        }
       });
     },
     [selectedTemplateId, templateBoardId, templateFields, getTemplateFirstTab, applyTemplateEmailPreview]
@@ -760,7 +767,7 @@ function GeneralAdd({
         }, TEMPLATE_REFETCH_DEBOUNCE_MS);
         return;
       }
-      refetchTemplateFirstTab(nextValues);
+      refetchTemplateFirstTab(nextValues, isFileValue(nextValue) ? fieldId : null);
     },
     [refetchTemplateFirstTab, clearTemplateRefetchTimer]
   );
@@ -2254,6 +2261,7 @@ function GeneralAdd({
                               value={templateFieldValues[field.id]}
                               onChange={handleTemplateFieldChange(field)}
                               error={templateFieldErrors[field.id]}
+                              loading={isTemplateRefetching && templateRefetchFileFieldId === field.id}
                             />
                           ))}
                         </div>

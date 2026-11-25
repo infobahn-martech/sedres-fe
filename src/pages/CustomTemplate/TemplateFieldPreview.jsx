@@ -105,7 +105,7 @@ const hasMeaningfulScalar = (value) => value !== undefined && value !== null && 
 // so the template preview is pixel-identical to the real card. Shared by the
 // Custom Templates list preview, the Custom Template builder's live preview and,
 // controlled via value/onChange, the Add Card form when a template is selected.
-function TemplateFieldPreview({ field, value, onChange, error = "" }) {
+function TemplateFieldPreview({ field, value, onChange, error = "", loading = false }) {
     const radioName = useId();
     const label = field.label;
     const requiredMark = field.required && <span className="text-danger">*</span>;
@@ -277,6 +277,9 @@ function TemplateFieldPreview({ field, value, onChange, error = "" }) {
                             allowMultiple={false}
                             hasError={Boolean(error)}
                             disabled={disabled}
+                            isLoading={loading}
+                            loadingText="Reading document..."
+                            loadingSubText="Filling in the remaining fields"
                         />
                         {errorNode}
                     </div>
