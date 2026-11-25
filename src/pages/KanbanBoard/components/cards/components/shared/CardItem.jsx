@@ -513,6 +513,103 @@ ApiCardChecklistRejectedBadge.propTypes = {
   setSelectedCard: PropTypes.func.isRequired,
 };
 
+/** One-line status for the document line, most urgent first. */
+function getTaskDocsStatus(docs) {
+  if (docs.rejected > 0) return { tone: "rejected", text: `${docs.rejected} rejected` };
+  if (docs.pending > 0) return { tone: "pending", text: `${docs.pending} to upload` };
+  if (docs.awaiting > 0) return { tone: "awaiting", text: `${docs.awaiting} awaiting review` };
+  return { tone: "verified", text: "All verified" };
+}
+
+const TASK_DOC_STATUS_ICON = {
+  verified: FiCheck,
+  awaiting: FiClock,
+  rejected: FiAlertTriangle,
+  pending: FiFileText,
+};
+
+const pluralDocs = (n) => `${n} document${n === 1 ? "" : "s"}`;
+
+/**
+ * Tooltip: a plain-language headline saying what the state means / what to do next, then a
+ * breakdown (only when more than one state is present, so single-state cards stay one line).
+ */
+function getTaskDocsTooltip(docs) {
+  const { total, verified, awaiting, rejected, pending } = docs;
+  let headline;
+  if (rejected > 0) {
+    headline = `${pluralDocs(rejected)} rejected — please re-upload.`;
+  } else if (pending > 0) {
+    headline =
+      pending === total
+        ? `No documents uploaded yet — ${pluralDocs(total)} required.`
+        : `${pending} of ${pluralDocs(total)} still to be uploaded.`;
+  } else if (awaiting > 0) {
+    headline =
+      awaiting === total
+        ? `All ${pluralDocs(total)} uploaded — waiting for verification.`
+        : `${awaiting} of ${pluralDocs(total)} waiting for verification.`;
+  } else {
+    headline = `All ${pluralDocs(total)} uploaded and verified.`;
+  }
+
+  const lines = [
+    verified > 0 && `✓  ${verified} verified`,
+    awaiting > 0 && `◷  ${awaiting} uploaded, awaiting verification`,
+    rejected > 0 && `⚠  ${rejected} rejected, re-upload needed`,
+    pending > 0 && `○  ${pending} not uploaded yet`,
+  ].filter(Boolean);
+
+  return lines.length > 1 ? `${headline}\n\n${lines.join("\n")}` : headline;
+}
+
+/** Short status for the card line ("Verified" reads better than "All verified" next to "7/7 docs"). */
+const getTaskDocsLineText = (status) => (status.tone === "verified" ? "Verified" : status.text);
+
+/**
+ * Document checklist status line (get_full_board `task_details`), set like the billing-entity line
+ * above it: status icon + "x/y docs · <status>", coloured by the most urgent state. Hover gives the breakdown.
+ */
+function ApiCardTaskDocs({ card }) {
+  const docs = card.taskDocs;
+  if (!docs) return null;
+  const status = getTaskDocsStatus(docs);
+  const tooltipId = `task-docs-${card.id}`;
+  const StatusIcon = TASK_DOC_STATUS_ICON[status.tone];
+  const lineText = getTaskDocsLineText(status);
+
+  return (
+    <div
+      className={`card-api-docs-line card-api-docs-line--${status.tone}`}
+      data-tooltip-id={tooltipId}
+      data-tooltip-content={getTaskDocsTooltip(docs)}
+      aria-label={`Documents ${docs.label}, ${lineText}`}
+    >
+      <StatusIcon size={11} strokeWidth={2.5} className="card-api-docs-line-icon" aria-hidden />
+      <span className="card-api-docs-line-text">
+        <span className="card-api-docs-line-count">{docs.label} docs</span>
+        <span className="card-api-docs-line-sep" aria-hidden> · </span>
+        <span className="card-api-docs-line-status">{lineText}</span>
+      </span>
+      <Tooltip id={tooltipId} place="top" className="card-name-tooltip card-checklist-rejected-tooltip" />
+    </div>
+  );
+}
+
+ApiCardTaskDocs.propTypes = {
+  card: PropTypes.shape({
+    id: PropTypes.string,
+    taskDocs: PropTypes.shape({
+      total: PropTypes.number,
+      verified: PropTypes.number,
+      awaiting: PropTypes.number,
+      rejected: PropTypes.number,
+      pending: PropTypes.number,
+      label: PropTypes.string,
+    }),
+  }).isRequired,
+};
+
 /** Reference number row (invoice no → PO no → sales order no) shown above the KPI summary row, with a click-to-copy icon
     and, on DA board cards whose final invoice is ready, a download icon. */
 function ApiCardSalesOrderRow({ card, showInvoiceDownload = false }) {
@@ -861,6 +958,7 @@ function ApiKanbanCardFull({
             <span className="card-api-secondary-text">{secondary}</span>
           </p>
         ) : null}
+        <ApiCardTaskDocs card={card} />
       </div>
 
       <ApiCardChecklistRejectedBadge card={card} setSelectedCard={setSelectedCard} />

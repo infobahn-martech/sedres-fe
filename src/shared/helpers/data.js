@@ -88,6 +88,32 @@ function flattenStageColumns(cols, parentColumnId = null, parentTitle = null) {
 }
 
 /**
+ * get_full_board's per-card `task_details` → document checklist counters, or null when the card
+ * has no documents to track. `uploaded` includes verified docs, so "awaiting review" is derived.
+ * @param {unknown} details
+ * @returns {{ total: number, uploaded: number, verified: number, pending: number, rejected: number, awaiting: number, label: string } | null}
+ */
+function mapTaskDocsFromApi(details) {
+  if (!details || typeof details !== "object") return null;
+  const num = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  };
+  const total = num(details.documents_total);
+  if (total === 0) return null;
+  const uploaded = num(details.documents_uploaded);
+  const verified = Math.min(num(details.documents_verified), total);
+  const rejected = Math.min(num(details.documents_rejected), total - verified);
+  const pending = Math.min(
+    details.documents_pending != null ? num(details.documents_pending) : Math.max(0, total - uploaded),
+    total - verified - rejected
+  );
+  const awaiting = Math.max(0, total - verified - rejected - pending);
+  const label = String(details.documents_label ?? "").trim() || `${uploaded}/${total}`;
+  return { total, uploaded, verified, pending, rejected, awaiting, label };
+}
+
+/**
  * Flattens get_full_board's per-card `task_cards` (grouped by card type) into one list of
  * child task cards, oldest first, so the card can render them as a left→right task flow.
  * @param {unknown} groups
@@ -429,6 +455,9 @@ export function mapBoardWorkflowFromApi(workflow) {
                     fileName: String(doc?.file_name ?? "").trim(),
                   }))
                 : [],
+            // get_full_board: task_card_docs flag + task_details document counters (task cards' checklist progress).
+            taskCardDocs: String(card.task_card_docs ?? "").trim() === "1",
+            taskDocs: mapTaskDocsFromApi(card.task_details),
             swimlaneTitle: swimlanes[laneKey]?.title,
             taskCards: mapTaskCardsFromApi(card.task_cards),
             raw: card,

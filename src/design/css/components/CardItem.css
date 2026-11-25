@@ -663,6 +663,72 @@
   }
 }
 
+/* ========== Document checklist status line (get_full_board task_details) ==========
+   Set like .card-api-secondary (billing entity line) directly above it: same size, rhythm and
+   ellipsis; the icon + count take the state colour, the status text stays readable. */
+.card-api-docs-line {
+  --docs-tone: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  margin: 2px 0 4px 0;
+  padding-top: 5px;
+  border-top: 1px solid var(--border-primary);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: default;
+}
+
+.card-api-docs-line-icon {
+  flex-shrink: 0;
+  width: 11px;
+  color: var(--docs-tone);
+}
+
+.card-api-docs-line-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-api-docs-line-count {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.card-api-docs-line-sep {
+  color: var(--text-muted, #94a3b8);
+}
+
+.card-api-docs-line-status {
+  font-weight: 600;
+  color: var(--docs-tone);
+}
+
+.card-api-docs-line--verified { --docs-tone: #15803d; }
+.card-api-docs-line--awaiting { --docs-tone: #1d4ed8; }
+.card-api-docs-line--rejected { --docs-tone: #b91c1c; }
+
+.kanban-card--level-2 .card-api-docs-line {
+  font-size: 10.5px;
+  margin-bottom: 3px;
+}
+
+[data-theme="dark"] .card-api-docs-line,
+.kanban-card-dark .card-api-docs-line { --docs-tone: #94a3b8; }
+[data-theme="dark"] .card-api-docs-line--verified,
+.kanban-card-dark .card-api-docs-line--verified { --docs-tone: #86efac; }
+[data-theme="dark"] .card-api-docs-line--awaiting,
+.kanban-card-dark .card-api-docs-line--awaiting { --docs-tone: #93c5fd; }
+[data-theme="dark"] .card-api-docs-line--rejected,
+.kanban-card-dark .card-api-docs-line--rejected { --docs-tone: #fca5a5; }
+
 /* ============================================
    SHRUNK CARD STYLES (Improved Compact View)
    ============================================ */
