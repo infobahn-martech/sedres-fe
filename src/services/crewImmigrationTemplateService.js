@@ -1,7 +1,8 @@
 import Gateway from '../gateway/gateway';
 
 // Same pass_template endpoints as Vessel Registration, scoped to the "Crew Immigration" template type.
-export const CREW_IMMIGRATION_TEMPLATE_TYPE = 'Crew Template';
+// Listing: GET /pass_template/templates_by_type/Crew%20Immigration
+export const CREW_IMMIGRATION_TEMPLATE_TYPE = 'Crew Immigration';
 
 const getAll = (params) =>
   Gateway.get(`/pass_template/templates_by_type/${encodeURIComponent(CREW_IMMIGRATION_TEMPLATE_TYPE)}`, { params });
