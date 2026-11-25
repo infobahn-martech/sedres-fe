@@ -89,6 +89,49 @@ const firstNonEmpty = (...values) => {
   return EMPTY_DISPLAY;
 };
 
+const findOptionLabel = (options, value) =>
+  (Array.isArray(options) ? options : []).find((option) => String(option.value) === String(value))?.label || "";
+
+const getFileExtension = (name) => {
+  const match = /\.([a-z0-9]{1,5})$/i.exec(String(name || ""));
+  return match ? match[1].toUpperCase() : "FILE";
+};
+
+/** Numbered step header for a form section — the number turns into a check once the step is filled in. */
+const FormStepHeader = ({ step, title, hint, status, complete = false, required = false }) => (
+  <div className={`coordinator-transport-step${complete ? " is-complete" : ""}`}>
+    <span className="coordinator-transport-step__badge" aria-hidden="true">
+      {complete ? <FiCheck size={13} strokeWidth={3} /> : step}
+    </span>
+    <div className="coordinator-transport-step__text">
+      <span className="coordinator-transport-step__title">
+        {title}
+        {required && <span className="coordinator-transport-step__required">*</span>}
+      </span>
+      {hint && <span className="coordinator-transport-step__hint">{hint}</span>}
+    </div>
+    {status && (
+      <span
+        className={`coordinator-transport-step__status${complete ? " is-complete" : ""}${
+          required ? "" : " is-optional"
+        }`}
+        title={status}
+      >
+        {status}
+      </span>
+    )}
+  </div>
+);
+
+FormStepHeader.propTypes = {
+  step: PropTypes.number.isRequired,
+  title: PropTypes.string.isRequired,
+  hint: PropTypes.string,
+  status: PropTypes.string,
+  complete: PropTypes.bool,
+  required: PropTypes.bool,
+};
+
 const fileToAttachment = (file) => ({
   name: file.name,
   file,
@@ -713,6 +756,29 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
     [detail]
   );
 
+  // Step completion drives the numbered badges and the header progress bar.
+  const isInhouse = transportForm.providerType === "inhouse";
+  const crewCount = Array.isArray(transportForm.selectedCrew) ? transportForm.selectedCrew.length : 0;
+  const documentCount = Array.isArray(transportForm.documents) ? transportForm.documents.length : 0;
+  const hasRemarks = String(transportForm.remarks || "").replace(/<[^>]*>/g, "").trim() !== "";
+  const stepComplete = {
+    email: Boolean(transportForm.requestEmail?.[0]),
+    crew: crewCount > 0,
+    provider: isInhouse
+      ? Boolean(transportForm.vehicleTypeId && transportForm.inhouseDriverId)
+      : Boolean(transportForm.transportCompanyId),
+    route: Boolean(
+      transportForm.pickupDate && transportForm.pickupTime && transportForm.fromLocation && transportForm.toLocation
+    ),
+  };
+  const requiredStepCount = Object.keys(stepComplete).length;
+  const completedStepCount = Object.values(stepComplete).filter(Boolean).length;
+  const providerStatus = isInhouse
+    ? findOptionLabel(driverSelectOptions, transportForm.inhouseDriverId) ||
+      findOptionLabel(vehicleSelectOptions, transportForm.vehicleTypeId) ||
+      "In house"
+    : findOptionLabel(companyOptions, transportForm.transportCompanyId) || "Third party";
+
   return (
     <div className="coordinator-transport-card-view" style={{ "--card-color": cardColor }}>
       <div className="coordinator-transport-content">
@@ -730,21 +796,48 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
               <span className="coordinator-transport-form-header-icon">
                 <FiTruck size={18} />
               </span>
-              <div>
+              <div className="coordinator-transport-form-header-text">
                 <h3 className="coordinator-transport-form-title">New transport request</h3>
                 <p className="coordinator-transport-form-subtitle">Book a vehicle for crew movement</p>
+              </div>
+              <div
+                className={`coordinator-transport-form-progress${
+                  completedStepCount === requiredStepCount ? " is-complete" : ""
+                }`}
+                aria-label={`${completedStepCount} of ${requiredStepCount} required steps complete`}
+              >
+                <span className="coordinator-transport-form-progress__count">
+                  {completedStepCount}/{requiredStepCount}
+                  <span className="coordinator-transport-form-progress__label">
+                    {completedStepCount === requiredStepCount ? "Ready" : "Steps"}
+                  </span>
+                </span>
+                <span className="coordinator-transport-form-progress__track">
+                  <span
+                    className="coordinator-transport-form-progress__fill"
+                    style={{ width: `${(completedStepCount / requiredStepCount) * 100}%` }}
+                  />
+                </span>
               </div>
             </div>
 
             <div className="coordinator-transport-form-body crew-pass-thin-scrollbar">
-              <div className="coordinator-transport-form-section">
-                <FormGroup icon="mail" label="Request Email" accent={TRANSPORT_ACCENT}>
+              <div className={`coordinator-transport-form-section${stepComplete.email ? " is-complete" : ""}`}>
+                <FormStepHeader
+                  step={1}
+                  title="Request email"
+                  hint="Original request from the operator"
+                  status={stepComplete.email ? "Attached" : "Missing"}
+                  complete={stepComplete.email}
+                  required
+                />
+                <FormGroup icon="mail" label="" accent={TRANSPORT_ACCENT}>
                   <FormField>
                     <div className="coordinator-transport-request-email-view">
                       {transportForm.requestEmail?.[0] ? (
                         <div className="coordinator-transport-request-email-view__file">
                           <span className="coordinator-transport-request-email-view__icon">
-                            <FiMail size={15} />
+                            {getFileExtension(transportForm.requestEmail[0].name)}
                           </span>
                           <span className="coordinator-transport-request-email-view__name">
                             {transportForm.requestEmail[0].name}
@@ -773,7 +866,15 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
                 </FormGroup>
               </div>
 
-              <div className="coordinator-transport-form-section">
+              <div className={`coordinator-transport-form-section${stepComplete.crew ? " is-complete" : ""}`}>
+                <FormStepHeader
+                  step={2}
+                  title="Crew"
+                  hint="Who is travelling"
+                  status={crewCount > 0 ? `${crewCount} selected` : "None selected"}
+                  complete={stepComplete.crew}
+                  required
+                />
                 <CrewSelectionField
                   callId={callId}
                   selected={transportForm.selectedCrew}
@@ -782,35 +883,53 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
                 />
               </div>
 
-              <div className="coordinator-transport-form-section">
-                <FormGroup icon="transport" label="Provider" accent={TRANSPORT_ACCENT}>
+              <div className={`coordinator-transport-form-section${stepComplete.provider ? " is-complete" : ""}`}>
+                <FormStepHeader
+                  step={3}
+                  title="Provider"
+                  hint="Vehicle and driver for this trip"
+                  status={providerStatus}
+                  complete={stepComplete.provider}
+                  required
+                />
+                <FormGroup icon="transport" label="" accent={TRANSPORT_ACCENT}>
                   <FormField>
-                    <div className="coordinator-transport-provider-toggle">
+                    <div className="coordinator-transport-provider-toggle" role="radiogroup" aria-label="Provider">
                       <button
                         type="button"
-                        className={`coordinator-transport-provider-option${
-                          transportForm.providerType === "inhouse" ? " is-active" : ""
-                        }`}
+                        role="radio"
+                        aria-checked={isInhouse}
+                        className={`coordinator-transport-provider-option${isInhouse ? " is-active" : ""}`}
                         onClick={() => handleProviderChange("inhouse")}
                       >
-                        <FiHome size={14} />
-                        In house
+                        <span className="coordinator-transport-provider-option__icon">
+                          <FiHome size={15} />
+                        </span>
+                        <span className="coordinator-transport-provider-option__text">
+                          <span className="coordinator-transport-provider-option__title">In house</span>
+                          <span className="coordinator-transport-provider-option__sub">Own fleet &amp; drivers</span>
+                        </span>
                       </button>
                       <button
                         type="button"
-                        className={`coordinator-transport-provider-option${
-                          transportForm.providerType === "thirdparty" ? " is-active" : ""
-                        }`}
+                        role="radio"
+                        aria-checked={!isInhouse}
+                        className={`coordinator-transport-provider-option${!isInhouse ? " is-active" : ""}`}
                         onClick={() => handleProviderChange("thirdparty")}
                       >
-                        <FiTruck size={14} />
-                        Third party
+                        <span className="coordinator-transport-provider-option__icon">
+                          <FiTruck size={15} />
+                        </span>
+                        <span className="coordinator-transport-provider-option__text">
+                          <span className="coordinator-transport-provider-option__title">Third party</span>
+                          <span className="coordinator-transport-provider-option__sub">External company</span>
+                        </span>
                       </button>
                     </div>
                   </FormField>
                 </FormGroup>
 
-                {transportForm.providerType === "inhouse" ? (
+                {isInhouse ? (
                   <FieldRow>
                     <FormField label="Vehicle Type">
                       <FormSelect
@@ -861,9 +980,21 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
                 )}
               </div>
 
-              <div className="coordinator-transport-form-section coordinator-transport-form-section--route">
-                <FormGroup icon="calendar" label="Pickup Date Time *" accent={TRANSPORT_ACCENT}>
-                  <FormField>
+              <div
+                className={`coordinator-transport-form-section coordinator-transport-form-section--route${
+                  stepComplete.route ? " is-complete" : ""
+                }`}
+              >
+                <FormStepHeader
+                  step={4}
+                  title="Schedule & route"
+                  hint="Pickup time, origin and destination"
+                  status={stepComplete.route ? "Set" : "Incomplete"}
+                  complete={stepComplete.route}
+                  required
+                />
+                <FormGroup icon="calendar" label="" accent={TRANSPORT_ACCENT}>
+                  <FormField label="Pickup date & time">
                     <DateTimePickerField
                       dateValue={transportForm.pickupDate}
                       timeValue={transportForm.pickupTime}
@@ -876,38 +1007,56 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
                   </FormField>
                 </FormGroup>
 
-                <FieldRow>
-                  <FormField label="From">
-                    <FormSelect
-                      value={transportForm.fromType}
-                      onChange={(e) => updateTransportField("fromType", e.target.value)}
-                      options={TRANSPORT_ROUTE_LOCATION_OPTIONS}
-                      placeholder="Select location type"
-                    />
-                    <LocationAutocomplete
-                      value={transportForm.fromLocation}
-                      onChange={(e) => updateTransportField("fromLocation", e.target.value)}
-                      placeholder="Enter pickup location"
-                    />
-                  </FormField>
-                  <FormField label="To">
-                    <FormSelect
-                      value={transportForm.toType}
-                      onChange={(e) => updateTransportField("toType", e.target.value)}
-                      options={TRANSPORT_ROUTE_LOCATION_OPTIONS}
-                      placeholder="Select location type"
-                    />
-                    <LocationAutocomplete
-                      value={transportForm.toLocation}
-                      onChange={(e) => updateTransportField("toLocation", e.target.value)}
-                      placeholder="Enter drop-off location"
-                    />
-                  </FormField>
-                </FieldRow>
+                {/* Journey: pickup and drop-off stops joined by a dashed connector */}
+                <div className="coordinator-transport-journey">
+                  <div className="coordinator-transport-journey__stop coordinator-transport-journey__stop--from">
+                    <span className="coordinator-transport-journey__marker" aria-hidden="true" />
+                    <FormField label="Pickup from">
+                      <div className="coordinator-transport-journey__inputs">
+                        <FormSelect
+                          value={transportForm.fromType}
+                          onChange={(e) => updateTransportField("fromType", e.target.value)}
+                          options={TRANSPORT_ROUTE_LOCATION_OPTIONS}
+                          placeholder="Type"
+                        />
+                        <LocationAutocomplete
+                          value={transportForm.fromLocation}
+                          onChange={(e) => updateTransportField("fromLocation", e.target.value)}
+                          placeholder="Enter pickup location"
+                        />
+                      </div>
+                    </FormField>
+                  </div>
+                  <div className="coordinator-transport-journey__stop coordinator-transport-journey__stop--to">
+                    <span className="coordinator-transport-journey__marker" aria-hidden="true" />
+                    <FormField label="Drop-off at">
+                      <div className="coordinator-transport-journey__inputs">
+                        <FormSelect
+                          value={transportForm.toType}
+                          onChange={(e) => updateTransportField("toType", e.target.value)}
+                          options={TRANSPORT_ROUTE_LOCATION_OPTIONS}
+                          placeholder="Type"
+                        />
+                        <LocationAutocomplete
+                          value={transportForm.toLocation}
+                          onChange={(e) => updateTransportField("toLocation", e.target.value)}
+                          placeholder="Enter drop-off location"
+                        />
+                      </div>
+                    </FormField>
+                  </div>
+                </div>
               </div>
 
-              <div className="coordinator-transport-form-section">
-                <FormGroup icon="folder" label="Documents" accent={TRANSPORT_ACCENT}>
+              <div className={`coordinator-transport-form-section${documentCount > 0 ? " is-complete" : ""}`}>
+                <FormStepHeader
+                  step={5}
+                  title="Documents"
+                  hint="Supporting files for the driver"
+                  status={documentCount > 0 ? `${documentCount} file${documentCount === 1 ? "" : "s"}` : "Optional"}
+                  complete={documentCount > 0}
+                />
+                <FormGroup icon="folder" label="" accent={TRANSPORT_ACCENT}>
                   <FormField className="cf-field-full">
                     <div className="coordinator-transport-documents-upload">
                       <AttachmentsList
@@ -930,8 +1079,15 @@ const CoordinatorTransportCardView = ({ cardData, cardColor }) => {
                 </FormGroup>
               </div>
 
-              <div className="coordinator-transport-form-section">
-                <FormGroup icon="notebook" label="Remarks" accent={TRANSPORT_ACCENT}>
+              <div className={`coordinator-transport-form-section${hasRemarks ? " is-complete" : ""}`}>
+                <FormStepHeader
+                  step={6}
+                  title="Remarks"
+                  hint="Notes for the coordinator or driver"
+                  status={hasRemarks ? "Added" : "Optional"}
+                  complete={hasRemarks}
+                />
+                <FormGroup icon="notebook" label="" accent={TRANSPORT_ACCENT}>
                   <FormField>
                     <ReactQuillEditor
                       value={transportForm.remarks}
