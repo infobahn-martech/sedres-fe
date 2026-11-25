@@ -21,10 +21,14 @@ const WarningIcon = () => (
 const CrewListUploadBox = ({
   movementType,
   movementTypeLabel,
+  statusLabel,
   status,
   onSelectFile,
   onBlocked,
 }) => {
+  // Label used in the uploading/failed titles — defaults to
+  // "<movement type> Crew List" unless the caller supplies its own.
+  const resolvedStatusLabel = statusLabel || `${movementTypeLabel} Crew List`;
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef(null);
   const disabled = !movementType || status === "uploading";
@@ -77,10 +81,10 @@ const CrewListUploadBox = ({
 
   if (movementType) {
     if (status === "uploading") {
-      title = `Uploading ${movementTypeLabel} Crew List…`;
+      title = `Uploading ${resolvedStatusLabel}…`;
       subtitle = "Please wait";
     } else if (status === "failed") {
-      title = `${movementTypeLabel} Crew List Upload Failed`;
+      title = `${resolvedStatusLabel} Upload Failed`;
       subtitle = "Tap to try again";
       Icon = WarningIcon;
     } else {
@@ -128,6 +132,7 @@ const CrewListUploadBox = ({
 CrewListUploadBox.propTypes = {
   movementType: PropTypes.string,
   movementTypeLabel: PropTypes.string,
+  statusLabel: PropTypes.string,
   status: PropTypes.oneOf(["pending", "uploading", "completed", "failed"]),
   onSelectFile: PropTypes.func.isRequired,
   onBlocked: PropTypes.func,
