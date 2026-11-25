@@ -1,10 +1,4 @@
-import { useState } from 'react';
-import dayjs from 'dayjs';
-import { toast } from 'react-toastify';
 import {
-    FiCheckCircle,
-    FiClock,
-    FiMapPin,
     FiPaperclip,
     FiAnchor,
     FiBriefcase,
@@ -12,20 +6,12 @@ import {
     FiUsers,
     FiCalendar,
     FiMessageSquare,
-    FiCheck,
     FiGlobe,
-    FiActivity,
 } from 'react-icons/fi';
 import useInhouseDriverReducer from '../../store/InhouseDriverReducer';
-import DateTimePickerField from '../KanbanBoard/CardFormTabs/shared/components/DateTimePickerField';
+import TripUpdatePanel from '../../components/TripUpdatePanel';
 import '../../design/scss/pages/dashboard/dashboard-content.scss';
 import '../../design/scss/vendor-portal.scss';
-
-const TRIP_STATUS_OPTIONS = [
-    { value: 'Pending', tone: 'amber', icon: <FiClock /> },
-    { value: 'In Progress', tone: 'blue', icon: <FiActivity /> },
-    { value: 'Completed', tone: 'green', icon: <FiCheckCircle /> },
-];
 
 const AVATAR_TONES = ['blue', 'violet', 'green', 'amber'];
 
@@ -39,58 +25,13 @@ const getInitials = (name = '') =>
 
 const hasValue = (value) => value != null && value !== '' && value !== '—';
 
-const EMPTY_PARTS = { date: '', time: '' };
-
-/** API datetime → DateTimePickerField parts (empty when unset / SQL zero date). */
-const toPickerParts = (value) => {
-    if (!value) return EMPTY_PARTS;
-    const parsed = dayjs(value);
-    if (!parsed.isValid() || parsed.year() < 1900) return EMPTY_PARTS;
-    return { date: parsed.format('YYYY-MM-DD'), time: parsed.format('HH:mm') };
-};
-
-/** DateTimePickerField parts → API datetime ('' when not fully set). */
-const toApiValue = ({ date, time }) => (date && time ? `${date} ${time}:00` : '');
-
-const toDayjs = (parts) => (parts.date && parts.time ? dayjs(`${parts.date} ${parts.time}`) : null);
-
 /** Expanded trip view (route, status update, info, crew, attachments). `row` comes from toTripRow. */
 function TripDetails({ row }) {
     const { isUpdatingTripStatus, updateTripStatus, getDriverTripStats } = useInhouseDriverReducer();
-    const initialPickup = toApiValue(toPickerParts(row.rawPickup));
-    const initialDropOff = toApiValue(toPickerParts(row.rawDropOff));
 
-    const [selectedStatus, setSelectedStatus] = useState(row.status);
-    const [pickupParts, setPickupParts] = useState(() => toPickerParts(row.rawPickup));
-    const [dropOffParts, setDropOffParts] = useState(() => toPickerParts(row.rawDropOff));
-
-    const pickupValue = toApiValue(pickupParts);
-    const dropOffValue = toApiValue(dropOffParts);
-    const pickupDayjs = toDayjs(pickupParts);
-    const dropOffDayjs = toDayjs(dropOffParts);
-
-    const isUnchanged =
-        selectedStatus === row.status && pickupValue === initialPickup && dropOffValue === initialDropOff;
-    const isDropOffBeforePickup = !!pickupDayjs && !!dropOffDayjs && dropOffDayjs.isBefore(pickupDayjs);
-
-    const handleStatusSave = async () => {
-        if (isUnchanged) return;
-        if (isDropOffBeforePickup) {
-            toast.error('Drop-off time cannot be before pickup time');
-            return;
-        }
-        try {
-            await updateTripStatus({
-                transportRequestId: row.id,
-                status: selectedStatus,
-                pickupDatetime: pickupValue,
-                dropOffDatetime: dropOffValue,
-            });
-            toast.success('Trip updated successfully');
-            getDriverTripStats();
-        } catch (error) {
-            toast.error(error?.response?.data?.message ?? 'Failed to update trip');
-        }
+    const handleTripSave = async (changes) => {
+        await updateTripStatus({ transportRequestId: row.id, ...changes });
+        getDriverTripStats();
     };
 
     const infoTiles = [
@@ -103,85 +44,17 @@ function TripDetails({ row }) {
 
     return (
         <div className="trip-details">
-            <div className="trip-details__top">
-                <div className="trip-details__card trip-details__route">
-                    <div className="trip-details__stop">
-                        <span className="trip-details__stop-dot trip-details__stop-dot--from" />
-                        <div className="trip-details__stop-body">
-                            <div className="trip-details__stop-info">
-                                <p className="trip-details__eyebrow">Pickup</p>
-                                <p className="trip-details__place">{row.from || '—'}</p>
-                                {hasValue(row.fromDet) && <p className="trip-details__note">{row.fromDet}</p>}
-                            </div>
-                            <div className="trip-details__stop-time">
-                                <span className="trip-details__eyebrow">
-                                    <FiClock /> Pickup time
-                                </span>
-                                <DateTimePickerField
-                                    dateValue={pickupParts.date}
-                                    timeValue={pickupParts.time}
-                                    onDateTimeChange={setPickupParts}
-                                    placeholder="Select pickup time"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="trip-details__stop">
-                        <span className="trip-details__stop-dot trip-details__stop-dot--to">
-                            <FiMapPin />
-                        </span>
-                        <div className="trip-details__stop-body">
-                            <div className="trip-details__stop-info">
-                                <p className="trip-details__eyebrow">Drop-off</p>
-                                <p className="trip-details__place">{row.to || '—'}</p>
-                                {hasValue(row.toDet) && <p className="trip-details__note">{row.toDet}</p>}
-                            </div>
-                            <div className="trip-details__stop-time">
-                                <span className="trip-details__eyebrow">
-                                    <FiClock /> Drop-off time
-                                </span>
-                                <DateTimePickerField
-                                    dateValue={dropOffParts.date}
-                                    timeValue={dropOffParts.time}
-                                    onDateTimeChange={setDropOffParts}
-                                    minDate={pickupParts.date || undefined}
-                                    hasError={isDropOffBeforePickup}
-                                    placeholder="Select drop-off time"
-                                />
-                                {isDropOffBeforePickup && (
-                                    <p className="trip-details__error">Drop-off cannot be before pickup</p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="trip-details__card trip-details__status">
-                    <p className="trip-details__card-title">Update Trip Status</p>
-                    <div className="trip-details__status-options" role="radiogroup" aria-label="Trip status">
-                        {TRIP_STATUS_OPTIONS.map(({ value, tone, icon }) => (
-                            <button
-                                key={value}
-                                type="button"
-                                role="radio"
-                                aria-checked={selectedStatus === value}
-                                className={`trip-details__status-pill tone-${tone} ${selectedStatus === value ? 'is-active' : ''}`}
-                                onClick={() => setSelectedStatus(value)}
-                            >
-                                {icon} {value}
-                            </button>
-                        ))}
-                    </div>
-                    <button
-                        type="button"
-                        className="trip-details__save"
-                        disabled={isUpdatingTripStatus || isUnchanged || isDropOffBeforePickup}
-                        onClick={handleStatusSave}
-                    >
-                        <FiCheck /> {isUpdatingTripStatus ? 'Saving...' : 'Save Changes'}
-                    </button>
-                </div>
-            </div>
+            <TripUpdatePanel
+                from={row.from}
+                to={row.to}
+                fromDet={row.fromDet}
+                toDet={row.toDet}
+                status={row.status}
+                rawPickup={row.rawPickup}
+                rawDropOff={row.rawDropOff}
+                isSaving={isUpdatingTripStatus}
+                onSave={handleTripSave}
+            />
 
             {!!infoTiles.length && (
                 <div className="trip-details__tiles">

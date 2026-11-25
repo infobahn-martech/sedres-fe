@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import vendorService from '../services/vendorService';
 import salesOrderService from '../services/salesOrderService';
 
-const useVendorReducer = create((set) => ({
+const useVendorReducer = create((set, get) => ({
   isDashboardLoading: false,
   dashboardError: '',
   dashboardData: null,
@@ -44,6 +44,49 @@ const useVendorReducer = create((set) => ({
         isOrdersLoading: false,
         ordersData: [],
       });
+    }
+  },
+
+  isUpdatingOrderTrip: false,
+  updateOrderTripError: '',
+
+  // UPDATE_ORDER_TRIP_REQUEST / SUCCESS / FAILURE
+  updateOrderTrip: async ({ transportRequestId, status, pickupDatetime, dropOffDatetime }) => {
+    try {
+      set({ isUpdatingOrderTrip: true, updateOrderTripError: '' });
+      const { data } = await vendorService.updateTransportTrip({
+        transport_request_id: transportRequestId,
+        status,
+        pickup_datetime: pickupDatetime,
+        drop_offdatetime: dropOffDatetime,
+      });
+      const tripStatus = data?.trip_status ?? status;
+      const pickup = data?.pickup_datetime ?? (pickupDatetime || undefined);
+      const dropOff = data?.drop_offdatetime ?? (dropOffDatetime || undefined);
+      const withTrip = (item) => ({
+        ...item,
+        trip_status: tripStatus,
+        ...(pickup && { pickup_datetime: pickup }),
+        ...(dropOff && { drop_offdatetime: dropOff }),
+      });
+      set({
+        isUpdatingOrderTrip: false,
+        ordersData: get().ordersData.map((order) => {
+          if (order.transport_request_id === transportRequestId) return withTrip(order);
+          // Older responses only carry the request id on each crew row.
+          if (!(order.crew || []).some((c) => c.transport_request_id === transportRequestId)) return order;
+          return {
+            ...order,
+            crew: order.crew.map((c) => (c.transport_request_id === transportRequestId ? withTrip(c) : c)),
+          };
+        }),
+      });
+    } catch (error) {
+      set({
+        updateOrderTripError: error?.response?.data?.message ?? error.message,
+        isUpdatingOrderTrip: false,
+      });
+      throw error;
     }
   },
 

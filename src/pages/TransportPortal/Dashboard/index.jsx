@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { Truck, FileText, Clock, Banknote, CalendarDays, FileCheck2, Upload } from 'lucide-react';
+import { Truck, FileText, Clock, Banknote, CalendarDays, Upload } from 'lucide-react';
 import UploadInvoiceModal from '../../../components/UploadInvoiceModal';
 import useVendorReducer from '../../../store/VendorReducer';
-import { formatDate, useChartTheme } from '../../Dashboard/dashboardUtils';
-import { StatusBadge, ChartTooltip, EmptyRow } from '../../Dashboard/dashboardWidgets';
+import { formatDate } from '../../Dashboard/dashboardUtils';
+import { StatusBadge, EmptyRow } from '../../Dashboard/dashboardWidgets';
 import { formatAmount, toOrderRow } from '../orderRows';
 import '../../../design/scss/dashboard.scss';
 import '../../../design/scss/pages/dashboard/dashboard-content.scss';
@@ -25,8 +24,6 @@ const ORDER_STATUS_META = {
     Cancelled: { label: 'Cancelled', tone: 'neutral' },
 };
 
-const share = (part, total) => (total ? (part / total) * 100 : 0);
-
 function TransportDashboard() {
     const {
         isDashboardLoading,
@@ -39,7 +36,6 @@ function TransportDashboard() {
 
     const [invoiceMonth, setInvoiceMonth] = useState(dayjs().format('YYYY-MM'));
     const [showUploadModal, setShowUploadModal] = useState(false);
-    const { seriesColors } = useChartTheme();
 
     useEffect(() => {
         getVendorDashboard();
@@ -51,14 +47,6 @@ function TransportDashboard() {
         [ordersData]
     );
 
-    const invoiceStatus = dashboardData?.invoice_status ?? {};
-    const invoiceSegments = [
-        { key: 'pending', name: 'Pending', value: Number(invoiceStatus.pending ?? 0), color: seriesColors[1] },
-        { key: 'approved', name: 'Approved', value: Number(invoiceStatus.approved ?? 0), color: seriesColors[0] },
-        { key: 'paid', name: 'Paid', value: Number(invoiceStatus.paid ?? 0), color: seriesColors[2] },
-        { key: 'rejected', name: 'Rejected', value: Number(invoiceStatus.rejected ?? 0), color: seriesColors[3] },
-    ];
-    const totalInvoices = invoiceSegments.reduce((sum, segment) => sum + segment.value, 0);
     const paidAmount = Number(dashboardData?.paid_amount ?? 0);
 
     const stats = [
@@ -95,78 +83,6 @@ function TransportDashboard() {
             </div>
 
             <div className="charts-grid">
-                {/* Invoice status */}
-                <div className="chart-card chart-card-full">
-                    <div className="chart-header">
-                        <h3 className="chart-title">Invoice Status</h3>
-                        <p className="chart-subtitle">Where your submitted invoices stand</p>
-                    </div>
-                    <div className="revenue-overview">
-                        <div className="revenue-hero">
-                            <span className="revenue-hero-label">Total Invoices</span>
-                            <span className="revenue-hero-value">{totalInvoices.toLocaleString()}</span>
-                            <div className="revenue-hero-meta">
-                                <span>
-                                    <FileCheck2 /> {invoiceSegments.find((s) => s.key === 'paid').value} paid
-                                </span>
-                                <span>
-                                    <Banknote /> {paidAmount.toLocaleString()} received
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="revenue-donut">
-                            <ResponsiveContainer width="100%" height={200}>
-                                <PieChart>
-                                    <Pie
-                                        data={totalInvoices ? invoiceSegments : [{ key: 'none', name: 'No invoices', value: 1 }]}
-                                        dataKey="value"
-                                        nameKey="name"
-                                        innerRadius={68}
-                                        outerRadius={92}
-                                        paddingAngle={totalInvoices ? 2 : 0}
-                                        cornerRadius={4}
-                                        stroke="none"
-                                        startAngle={90}
-                                        endAngle={-270}
-                                    >
-                                        {totalInvoices ? (
-                                            invoiceSegments.map((segment) => <Cell key={segment.key} fill={segment.color} />)
-                                        ) : (
-                                            <Cell fill="var(--border-primary)" />
-                                        )}
-                                    </Pie>
-                                    {!!totalInvoices && <Tooltip content={<ChartTooltip />} />}
-                                </PieChart>
-                            </ResponsiveContainer>
-                            <div className="revenue-donut-center">
-                                <span className="revenue-donut-value">{totalInvoices.toLocaleString()}</span>
-                                <span className="revenue-donut-label">invoices</span>
-                            </div>
-                        </div>
-
-                        <ul className="revenue-breakdown">
-                            {invoiceSegments.map((segment) => (
-                                <li key={segment.key} className="revenue-segment">
-                                    <div className="revenue-segment-head">
-                                        <span className="revenue-dot" style={{ background: segment.color }} />
-                                        <span className="revenue-segment-name">{segment.name}</span>
-                                        <span className="revenue-segment-share">
-                                            {Math.round(share(segment.value, totalInvoices))}%
-                                        </span>
-                                    </div>
-                                    <span className="revenue-segment-value">{segment.value.toLocaleString()}</span>
-                                    <div className="revenue-segment-track">
-                                        <span
-                                            style={{ width: `${share(segment.value, totalInvoices)}%`, background: segment.color }}
-                                        />
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-
                 {/* Recent orders */}
                 <div className="chart-card chart-card-full">
                     <div className="chart-header chart-header--row">

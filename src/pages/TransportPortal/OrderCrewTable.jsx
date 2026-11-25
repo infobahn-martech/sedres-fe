@@ -1,6 +1,8 @@
 import dayjs from 'dayjs';
 import { FiUsers, FiGlobe } from 'react-icons/fi';
 import { StatusBadge } from '../Dashboard/dashboardWidgets';
+import TripUpdatePanel from '../../components/TripUpdatePanel';
+import useVendorReducer from '../../store/VendorReducer';
 import '../../design/scss/pages/dashboard/dashboard-content.scss';
 import '../../design/scss/vendor-portal.scss';
 
@@ -29,10 +31,33 @@ const getInitials = (name = '') =>
         .map((part) => part[0].toUpperCase())
         .join('') || '?';
 
-/** Expanded order view: crew list with pickup status and pick-up / drop-off times. `row` comes from toOrderRow. */
+/**
+ * Expanded order view: trip time / status update (same as the inhouse driver) and the crew list
+ * with pickup status and pick-up / drop-off times. `row` comes from toOrderRow.
+ */
 function OrderCrewTable({ row }) {
+    const { isUpdatingOrderTrip, updateOrderTrip, getVendorDashboard } = useVendorReducer();
+
+    const handleTripSave = async (changes) => {
+        await updateOrderTrip({ transportRequestId: row.transportRequestId, ...changes });
+        getVendorDashboard();
+    };
+
     return (
         <div className="trip-details">
+            {row.transportRequestId != null && (
+                <TripUpdatePanel
+                    from={row.from}
+                    to={row.to}
+                    fromDet={row.fromDet}
+                    toDet={row.toDet}
+                    status={row.tripStatus}
+                    rawPickup={row.rawPickup}
+                    rawDropOff={row.rawDropOff}
+                    isSaving={isUpdatingOrderTrip}
+                    onSave={handleTripSave}
+                />
+            )}
             <div className="trip-details__card">
                 <p className="trip-details__card-title">
                     <FiUsers /> Crew Members

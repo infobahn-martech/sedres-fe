@@ -27,10 +27,22 @@ const getHotelOrders = () =>
 const updateHotelRequestDates = (payload) =>
   Gateway.post('hotel/update_hotel_request_dates', payload);
 
+/**
+ * Same endpoint the inhouse driver uses for a trip.
+ * @param {object} payload
+ * @param {number|string} payload.transport_request_id
+ * @param {string} payload.status - "Pending" | "In Progress" | "Completed"
+ * @param {string} payload.pickup_datetime - "YYYY-MM-DD HH:mm:ss" ('' when unset)
+ * @param {string} payload.drop_offdatetime - "YYYY-MM-DD HH:mm:ss" ('' when unset)
+ */
+const updateTransportTrip = (payload) =>
+  Gateway.post('transport/update_trip_status', payload);
+
 export default {
   getVendorDashboard,
   getVendorOrders,
   getHotelDashboard,
   getHotelOrders,
   updateHotelRequestDates,
+  updateTransportTrip,
 };
