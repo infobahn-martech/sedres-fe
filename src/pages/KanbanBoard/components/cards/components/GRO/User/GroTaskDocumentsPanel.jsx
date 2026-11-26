@@ -116,6 +116,40 @@ export default function GroTaskDocumentsPanel({
   const selectedRemarks = String(selectedDoc?.remarks ?? "").trim();
   const canVerifySelected = showDocumentVerifyActions && selectedStatus === 1;
 
+  // Verification strip (pending → Approve / Reject, or the review remarks), shown inside
+  // the selected document's row.
+  const reviewStrip =
+    selectedDoc && (canVerifySelected || selectedRemarks) ? (
+      <div className={`gro-docs-lib-review gro-docs-lib-review--${STATUS_META[selectedStatus].tone}`}>
+        <span className="gro-docs-lib-review-text" title={selectedRemarks || undefined}>
+          {canVerifySelected ? "Awaiting your verification" : `${STATUS_META[selectedStatus].label}`}
+          {selectedRemarks ? <span className="gro-docs-lib-review-remarks">{` · ${selectedRemarks}`}</span> : null}
+        </span>
+        {canVerifySelected ? (
+          <span className="gro-docs-lib-review-actions">
+            <button
+              type="button"
+              className="gro-docs-lib-review-btn gro-docs-lib-review-btn--reject"
+              disabled={isSubmittingAction}
+              onClick={() => onRejectClick(selectedDoc)}
+            >
+              <FiX aria-hidden />
+              Reject
+            </button>
+            <button
+              type="button"
+              className="gro-docs-lib-review-btn gro-docs-lib-review-btn--approve"
+              disabled={isSubmittingAction}
+              onClick={() => onApproveClick(selectedDoc)}
+            >
+              <FiCheck aria-hidden />
+              Approve
+            </button>
+          </span>
+        ) : null}
+      </div>
+    ) : null;
+
   return (
     <div className="gro-crew-immigration-panel gro-crew-imm-panel gro-crew-imm-panel--docs">
       <div className="gro-crew-immigration-toolbar gro-crew-imm-toolbar">
@@ -202,27 +236,32 @@ export default function GroTaskDocumentsPanel({
                 const meta = STATUS_META[status];
                 const isSelected = doc.__rowKey === selectedKey;
                 return (
-                  <button
+                  <div
                     key={doc.__rowKey}
-                    type="button"
-                    role="option"
-                    aria-selected={isSelected}
-                    tabIndex={isSelected ? 0 : -1}
-                    data-row-key={doc.__rowKey}
                     className={`gro-docs-lib-row${isSelected ? " is-selected" : ""}${status === 0 ? " is-empty" : ""}`}
-                    onClick={() => setSelectedKey(doc.__rowKey)}
                   >
-                    <TaskDocumentFilePreview fileName={doc.file_name} fileUrl={doc.file_url} document={doc} />
-                    <span className="gro-docs-lib-row-main">
-                      <span className="gro-docs-lib-row-name" title={formatGroDocumentDisplayName(doc.document_name)}>
-                        {formatGroDocumentDisplayName(doc.document_name)}
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
+                      tabIndex={isSelected ? 0 : -1}
+                      data-row-key={doc.__rowKey}
+                      className="gro-docs-lib-row-select"
+                      onClick={() => setSelectedKey(doc.__rowKey)}
+                    >
+                      <TaskDocumentFilePreview fileName={doc.file_name} fileUrl={doc.file_url} document={doc} />
+                      <span className="gro-docs-lib-row-main">
+                        <span className="gro-docs-lib-row-name" title={formatGroDocumentDisplayName(doc.document_name)}>
+                          {formatGroDocumentDisplayName(doc.document_name)}
+                        </span>
+                        <span className="gro-docs-lib-row-meta">
+                          <span className={`gro-docs-lib-status gro-docs-lib-status--${meta.tone}`}>{meta.label}</span>
+                          {doc.file_name ? <span className="gro-docs-lib-row-file">{doc.file_name}</span> : null}
+                        </span>
                       </span>
-                      <span className="gro-docs-lib-row-meta">
-                        <span className={`gro-docs-lib-status gro-docs-lib-status--${meta.tone}`}>{meta.label}</span>
-                        {doc.file_name ? <span className="gro-docs-lib-row-file">{doc.file_name}</span> : null}
-                      </span>
-                    </span>
-                  </button>
+                    </button>
+                    {isSelected ? reviewStrip : null}
+                  </div>
                 );
               })}
             </div>
@@ -230,37 +269,6 @@ export default function GroTaskDocumentsPanel({
         </section>
 
         <aside className="gro-docs-lib-preview" aria-label="Document preview">
-          {selectedDoc && (canVerifySelected || selectedRemarks) ? (
-            <div className={`gro-docs-lib-review gro-docs-lib-review--${STATUS_META[selectedStatus].tone}`}>
-              <span className="gro-docs-lib-review-text">
-                {canVerifySelected ? "Awaiting your verification" : `${STATUS_META[selectedStatus].label}`}
-                {selectedRemarks ? <span className="gro-docs-lib-review-remarks">{` · ${selectedRemarks}`}</span> : null}
-              </span>
-              {canVerifySelected ? (
-                <span className="gro-docs-lib-review-actions">
-                  <button
-                    type="button"
-                    className="gro-docs-lib-review-btn gro-docs-lib-review-btn--reject"
-                    disabled={isSubmittingAction}
-                    onClick={() => onRejectClick(selectedDoc)}
-                  >
-                    <FiX aria-hidden />
-                    Reject
-                  </button>
-                  <button
-                    type="button"
-                    className="gro-docs-lib-review-btn gro-docs-lib-review-btn--approve"
-                    disabled={isSubmittingAction}
-                    onClick={() => onApproveClick(selectedDoc)}
-                  >
-                    <FiCheck aria-hidden />
-                    Approve
-                  </button>
-                </span>
-              ) : null}
-            </div>
-          ) : null}
-
           {selectedDoc && !groDocumentHasDownloadableUrl(selectedDoc) ? (
             <div className="gro-docs-lib-empty">
               <FiUploadCloud aria-hidden />

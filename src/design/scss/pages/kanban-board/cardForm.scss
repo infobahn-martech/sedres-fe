@@ -1574,26 +1574,24 @@
   }
 }
 
+/* Row = select button (fills the row) + the verification strip on the right when selected. */
 .gro-card-view .gro-docs-lib-row {
   display: flex;
   align-items: center;
   gap: 12px;
   width: 100%;
-  padding: 10px 12px;
+  padding-right: 10px;
   border: 1px solid transparent;
   border-left: 3px solid transparent;
   border-radius: 10px;
   background: transparent;
-  text-align: left;
-  font-family: inherit;
-  cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease;
 
   &:hover:not(.is-selected) {
     background: var(--surface-secondary);
   }
 
-  &:focus-visible {
+  &:has(.gro-docs-lib-row-select:focus-visible) {
     outline: 2px solid var(--color-primary);
     outline-offset: 1px;
   }
@@ -1607,6 +1605,34 @@
   &.is-empty .gro-document-preview-icon {
     opacity: 0.55;
   }
+}
+
+.gro-card-view .gro-docs-lib-row-select {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 2px 10px 12px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+/* Verification strip inside the selected row. */
+.gro-card-view .gro-docs-lib-row .gro-docs-lib-review {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 60%;
+  padding: 6px 6px 6px 14px;
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
 }
 
 .gro-card-view .gro-docs-lib-row-main {
@@ -1723,7 +1749,7 @@
   }
 }
 
-/* Verification strip above the preview (pending → Approve / Reject, or remarks). */
+/* Verification strip (pending → Approve / Reject, or remarks). */
 .gro-card-view .gro-docs-lib-review {
   display: flex;
   align-items: center;
