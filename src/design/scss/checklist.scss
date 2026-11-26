@@ -5635,3 +5635,20 @@ span.cl-item-meta-chip.cl-item-meta-chip--expiry {
 
 @import "./checklist-sedres-theme";
 @import "./checklist-review";
+
+// Auto-save indicator next to the "Checklist Information" title.
+.checklist-autosave-status {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  white-space: nowrap;
+
+  &--saved {
+    color: #15803d;
+  }
+
+  &--error {
+    color: #dc2626;
+  }
+}

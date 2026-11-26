@@ -9,7 +9,6 @@ import callFileService from "@/services/callFileService";
 import { notify } from "@/components/Toaster";
 import "@/design/scss/checklist.scss";
 import ChecklistTypeBlock from "./checklistTab/ChecklistTypeBlock";
-import ChecklistFooterActions from "./checklistTab/ChecklistFooterActions";
 import ChecklistLoadingState from "./checklistTab/ChecklistLoadingState";
 import ChecklistEmptyState from "./checklistTab/ChecklistEmptyState";
 import ChecklistRejectedBanner from "./checklistTab/ChecklistRejectedBanner";
@@ -22,7 +21,13 @@ import {
   mapCallDetailChecklist,
 } from "./checklistTab/checklistMappers";
 
-const normalizeExpiryDateForUi = (value) => {
+const AUTOSAVE_STATUS_LABEL = {
+  saving: "Saving…",
+  saved: "All changes saved",
+  error: "Couldn't save changes",
+};
+
+const normalizeExpiryDateForUi =(value) => {
   const s = String(value ?? "").trim();
   if (!s || s === "0000-00-00" || s.startsWith("0000-00-00")) return "";
   return s;
@@ -177,7 +182,14 @@ function Checklist({
   const [refreshedRows, setRefreshedRows] = useState(null);
   const [itemsData, setItemsData] = useState({});
   const [openSections, setOpenSections] = useState({});
-  const [saveLoading, setSaveLoading] = useState(false);
+  // Auto-save state: "idle" | "saving" | "saved" | "error".
+  const [saveStatus, setSaveStatus] = useState("idle");
+  const savingRef = useRef(false);
+  const queuedSaveRef = useRef(false);
+  const latestItemsDataRef = useRef(itemsData);
+  latestItemsDataRef.current = itemsData;
+  // itemsData as last sent by an auto-save: the refresh that follows keeps any item edited since.
+  const mergeBaseRef = useRef(null);
 
   const callDetail = hasCardDetailProp ? cardDetail : localCallDetail;
   const checklistRows = useMemo(
@@ -210,9 +222,26 @@ function Checklist({
 
   // (Re)build form state from the call detail. A background refresh of the shared call detail
   // (e.g. another tab saved) must not wipe unsaved checklist edits, so it is skipped while dirty.
+  // After an auto-save, items untouched since that save take the server's copy (uploaded
+  // files get their real ids) while items edited since keep the user's values.
   useEffect(() => {
-    if (userEditedRef.current) return;
-    setItemsData(buildItemsDataFromCallChecklist(checklistBlocks, savedChecklistLookup));
+    const fresh = buildItemsDataFromCallChecklist(checklistBlocks, savedChecklistLookup);
+    if (userEditedRef.current) {
+      const base = mergeBaseRef.current;
+      if (!base) return;
+      mergeBaseRef.current = null;
+      baselineSnapshotRef.current = serializeItemsDataForDirtyCheck(fresh);
+      setItemsData((prev) => {
+        const next = { ...fresh };
+        Object.keys(prev).forEach((id) => {
+          if (prev[id] !== base[id] && id in fresh) next[id] = prev[id];
+        });
+        return next;
+      });
+    } else {
+      mergeBaseRef.current = null;
+      setItemsData(fresh);
+    }
     const allSectionIds = checklistBlocks.flatMap((b) => collectTreeSectionIds(b.tree));
     setOpenSections((prev) =>
       allSectionIds.reduce((acc, sectionId) => ({ ...acc, [sectionId]: prev[sectionId] ?? true }), {})
@@ -229,8 +258,16 @@ function Checklist({
     onDirtyChange?.(snapshot !== baselineSnapshotRef.current);
   }, [itemsData, onDirtyChange]);
 
-  const handleItemChange = (id, nextData) => {
+  // Auto-save: a change asks for a save; the effect below runs it once the new itemsData
+  // has rendered, so the request always carries the latest state.
+  const saveRequestedRef = useRef(false);
+  const requestSave = () => {
+    if (!isViewOnly) saveRequestedRef.current = true;
+  };
+
+  const handleItemChange = (id, nextData, options) => {
     userEditedRef.current = true;
+    if (options?.save !== false) requestSave();
     setItemsData((prev) => ({ ...prev, [id]: { ...prev[id], ...nextData } }));
   };
 
@@ -250,6 +287,7 @@ function Checklist({
     const itemIds = collectItemIdsUnderSectionInBlocks(checklistBlocks, sectionId).filter(
       (itemId) => !documentRequiredIds.has(itemId)
     );
+    requestSave();
     setItemsData((prev) => {
       const next = { ...prev };
       itemIds.forEach((itemId) => {
@@ -259,9 +297,14 @@ function Checklist({
     });
   };
 
-  const buildChecklistSaveFormData = useCallback(() => {
+  // Local files already sent by an earlier auto-save: never upload them twice while the
+  // refreshed call detail (which replaces them with the server's copies) is still on its way.
+  const uploadedLocalFilesRef = useRef(new WeakSet());
+
+  const buildChecklistSaveFormData = useCallback((itemsData) => {
     const formData = new FormData();
     formData.append("call_id", String(currentCallId));
+    const sentFiles = [];
 
     const checklists = checklistBlocks.map((block) => {
       const items = [];
@@ -271,7 +314,9 @@ function Checklist({
           const d = itemsData[item.id] || {};
           const checklistItemId = getChecklistItemIdFromUiItem(item);
           const resolvedChecklistItemId = checklistItemId || item.checklist_item_id || item.id;
-          const newLocalFiles = collectLocalFilesForSavePayload(d.uploadedFiles);
+          const newLocalFiles = collectLocalFilesForSavePayload(d.uploadedFiles).filter(
+            (file) => !uploadedLocalFilesRef.current.has(file)
+          );
           // A new file on a rejected item is a re-upload: the backend should reset the task
           // document to "uploaded" (status 1) so the task card can verify it again.
           const isReupload = isChecklistReviewRejected(d.review?.status) && newLocalFiles.length > 0;
@@ -287,6 +332,7 @@ function Checklist({
           const fileFieldName = `files_${resolvedChecklistItemId}[]`;
           newLocalFiles.forEach((file) => {
             formData.append(fileFieldName, file);
+            sentFiles.push(file);
           });
           const existingFileFieldName = `existing_file_ids_${resolvedChecklistItemId}[]`;
           collectExistingFileIdsForSavePayload(d.uploadedFiles).forEach((fileId) => {
@@ -301,8 +347,8 @@ function Checklist({
     });
 
     formData.append("checklists", JSON.stringify(checklists));
-    return formData;
-  }, [currentCallId, checklistBlocks, itemsData]);
+    return { formData, sentFiles };
+  }, [currentCallId, checklistBlocks]);
 
   /** Re-read the call detail after a save so files, ticks and review states come from the server. */
   const reloadChecklistFromCallDetail = useCallback(async () => {
@@ -338,28 +384,36 @@ function Checklist({
     };
   }, [currentCallId]);
 
-  const handleSaveConfirm = useCallback(async () => {
+  // Saves the latest checklist state. Saves never overlap: a change made while one is in
+  // flight is queued and sent right after it. Nothing is sent when nothing changed since
+  // the last save (e.g. blurring an untouched remarks field).
+  const runAutoSave = useCallback(async () => {
     if (!currentCallId) {
       notify("Call ID is missing. Please save general details first.", "error");
       return;
     }
-    if (!checklistBlocks.length) {
-      notify("No checklist data available to save.", "error");
+    if (!checklistBlocks.length) return;
+    if (savingRef.current) {
+      queuedSaveRef.current = true;
       return;
     }
 
-    setSaveLoading(true);
+    savingRef.current = true;
+    let lastSent = null;
     try {
-      await checklistService.saveCallChecklist(buildChecklistSaveFormData());
-      notify("Checklist saved successfully.", "success");
-      userEditedRef.current = false;
-      baselineSnapshotRef.current = latestSnapshotRef.current;
-      onDirtyChange?.(false);
-      try {
-        await reloadChecklistFromCallDetail();
-      } catch {
-        /* save succeeded; refresh is best-effort */
-      }
+      do {
+        queuedSaveRef.current = false;
+        const snapshot = latestSnapshotRef.current;
+        if (snapshot !== baselineSnapshotRef.current) {
+          const data = latestItemsDataRef.current;
+          setSaveStatus("saving");
+          const { formData, sentFiles } = buildChecklistSaveFormData(data);
+          await checklistService.saveCallChecklist(formData);
+          sentFiles.forEach((file) => uploadedLocalFilesRef.current.add(file));
+          baselineSnapshotRef.current = snapshot;
+          lastSent = data;
+        }
+      } while (queuedSaveRef.current);
     } catch (error) {
       const msg =
         error?.response?.data?.message ||
@@ -367,10 +421,32 @@ function Checklist({
         error?.message ||
         "Failed to save checklist.";
       notify(typeof msg === "string" ? msg : "Failed to save checklist.", "error");
+      setSaveStatus("error");
+      return;
     } finally {
-      setSaveLoading(false);
+      savingRef.current = false;
+    }
+    if (!lastSent) return;
+
+    setSaveStatus("saved");
+    // Edits made after the last save (e.g. remarks still being typed) survive the refresh.
+    mergeBaseRef.current = lastSent;
+    if (latestItemsDataRef.current === lastSent) {
+      userEditedRef.current = false;
+      onDirtyChange?.(false);
+    }
+    try {
+      await reloadChecklistFromCallDetail();
+    } catch {
+      /* save succeeded; refresh is best-effort */
     }
   }, [buildChecklistSaveFormData, checklistBlocks, currentCallId, onDirtyChange, reloadChecklistFromCallDetail]);
+
+  useEffect(() => {
+    if (!saveRequestedRef.current) return;
+    saveRequestedRef.current = false;
+    runAutoSave();
+  }, [itemsData, runAutoSave]);
 
   // Items a task card rejected (or asked to re-upload) that still have no replacement file.
   const rejectedSummary = useMemo(() => {
@@ -412,6 +488,15 @@ function Checklist({
     <>
       <div className="operation-content-header checklist-page-header">
         <h3 className="operation-content-title">Checklist Information</h3>
+        {!isViewOnly && saveStatus !== "idle" ? (
+          <span
+            className={`checklist-autosave-status checklist-autosave-status--${saveStatus}`}
+            role="status"
+            aria-live="polite"
+          >
+            {AUTOSAVE_STATUS_LABEL[saveStatus]}
+          </span>
+        ) : null}
         {!isLoading && hasChecklistData ? (
           <ChecklistRejectedBanner
             pending={rejectedSummary.pending}
@@ -463,16 +548,6 @@ function Checklist({
                 />
               </div>
             ))}
-
-          {!isViewOnly && !isLoading && hasChecklistData ? (
-            <div className="checklist-actions">
-              <ChecklistFooterActions
-                disabled={saveLoading}
-                loading={saveLoading}
-                onSaveConfirm={handleSaveConfirm}
-              />
-            </div>
-          ) : null}
         </div>
       </div>
     </>

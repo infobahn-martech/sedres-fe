@@ -294,19 +294,25 @@ const ChecklistItemRow = ({
     setMoreUploadFilesOpen(false);
   }, [uploadedFilesSyncKey]);
 
-  const pushChange = (patch) => {
+  // Every change is saved right away (options.save defaults to true); remarks typing passes
+  // save: false and is saved on blur / Enter instead.
+  const pushChange = (patch, options) => {
     const filesNext = patch.uploadedFiles !== undefined ? patch.uploadedFiles : uploadedFiles;
     const apiFilesNext = patch.apiUploadedFiles !== undefined ? patch.apiUploadedFiles : filesNext;
     const removedNext =
       patch.removedFiles !== undefined ? patch.removedFiles : itemData.removedFiles ?? [];
-    onChange(id, {
-      ...itemData,
-      ...patch,
-      remarks: patch.remarks !== undefined ? patch.remarks : remarks,
-      uploadedFiles: filesNext,
-      apiUploadedFiles: apiFilesNext,
-      removedFiles: removedNext,
-    });
+    onChange(
+      id,
+      {
+        ...itemData,
+        ...patch,
+        remarks: patch.remarks !== undefined ? patch.remarks : remarks,
+        uploadedFiles: filesNext,
+        apiUploadedFiles: apiFilesNext,
+        removedFiles: removedNext,
+      },
+      options
+    );
   };
 
   const handleCheckedChange = (e) => {
@@ -348,15 +354,19 @@ const ChecklistItemRow = ({
       const key = getBackendFileSessionRemovalKey(entry);
       if (key && !removedNext.includes(key)) removedNext.push(key);
     }
+    const remainingUploads = filterUploadColumnFiles(next, referenceFiles).length;
     setUploadedFiles(next);
     pushChange({
       uploadedFiles: next,
       apiUploadedFiles: nextApiFiles,
       removedFiles: removedNext,
-      // Document Req.: removing the last uploaded document un-ticks the item.
-      ...(isDocumentRequired
-        ? { checked: filterUploadColumnFiles(next, referenceFiles).length > 0 }
-        : {}),
+      // Removing the last uploaded document un-ticks the item (any item). While files remain,
+      // Document Req. items stay ticked and optional items keep the user's tick.
+      ...(remainingUploads === 0
+        ? { checked: false }
+        : isDocumentRequired
+          ? { checked: true }
+          : {}),
     });
   };
 
@@ -365,7 +375,20 @@ const ChecklistItemRow = ({
   const handleRemarksChange = (e) => {
     const newRemarks = e.target.value;
     setRemarks(newRemarks);
-    pushChange({ remarks: newRemarks });
+    pushChange({ remarks: newRemarks }, { save: false });
+  };
+
+  // Save remarks when the field loses focus or on Enter (Shift+Enter adds a new line).
+  // The parent skips the API call when nothing changed since the last save.
+  const commitRemarks = () => {
+    if (isViewOnly) return;
+    pushChange({ remarks });
+  };
+
+  const handleRemarksKeyDown = (e) => {
+    if (e.key !== "Enter" || e.shiftKey || e.nativeEvent?.isComposing) return;
+    e.preventDefault();
+    commitRemarks();
   };
 
   const handlePreviewOneFile = (e, entry) => {
@@ -761,6 +784,8 @@ const ChecklistItemRow = ({
         <FormTextarea
           value={remarks}
           onChange={handleRemarksChange}
+          onBlur={commitRemarks}
+          onKeyDown={handleRemarksKeyDown}
           placeholder="Add remarks…"
           rows={1}
           className="checklist-table-textarea cl-remarks-ta"
