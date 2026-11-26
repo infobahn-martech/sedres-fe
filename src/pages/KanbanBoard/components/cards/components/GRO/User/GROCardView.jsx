@@ -31,7 +31,7 @@ import PassRequestsView from "./PassRequestsView";
 import GroPassUploadPopoverForm from "./GroPassUploadPopoverForm";
 import GroPopoverStageExtraFields from "./GroPopoverStageExtraFields";
 import CrewImmigrationPanel from "./CrewImmigrationPanel";
-import CrewImmigrationDocumentsPanel from "./CrewImmigrationDocumentsPanel";
+import GroTaskDocumentsPanel from "./GroTaskDocumentsPanel";
 import CrewChangePassPanel from "./CrewChangePassPanel";
 import VesselInwardRegistrationView from "./VesselInwardRegistrationView";
 import CrewImmigrationFormView from "./CrewImmigrationFormView";
@@ -1639,30 +1639,28 @@ const GROCardView = forwardRef(function GROCardView(
     ]
   );
 
-  // Heading follows the active tab, so a task view isn't titled "Documents".
   const crewImmigrationTotalCrew = useMemo(
     () => Object.values(crewImmigrationBatchCounts ?? {}).reduce((sum, n) => sum + (Number(n) || 0), 0),
     [crewImmigrationBatchCounts]
   );
-  const isCrewImmigrationTabActive = hidePassTabs && activeTab === GRO_ACTIVE_TABS.crewImmigration;
-  const isTaskTabActive =
-    hidePassTabs &&
-    [
-      GRO_ACTIVE_TABS.crewImmigration,
-      GRO_ACTIVE_TABS.vesselInwardRegistration,
-      GRO_ACTIVE_TABS.crewChange,
-    ].includes(activeTab);
-  const documentsSectionTitle = isTaskTabActive ? taskPanelTitle : "Documents";
   const crewImmigrationSummary =
     crewImmigrationBatchOptions.length > 0
       ? `${crewImmigrationTotalCrew} crew across ${crewImmigrationBatchOptions.length} batch${crewImmigrationBatchOptions.length === 1 ? "" : "es"}`
       : "";
 
-  // The Crew Immigration card drops the section header row on both of its tabs; the
-  // Documents / Crew Immigration switch lives in the panel's brand band instead.
-  const useCrewImmigrationBand = hidePassTabs && isCrewImmigrationStage;
+  // Task cards drop the section header row; the Documents / <task> switch and the task's
+  // actions live in the panel's brand band instead, so every task card reads the same.
   const isDocumentsTabActive = activeTab === GRO_ACTIVE_TABS.documents;
-  const crewImmigrationNav = (
+  const taskTab = isCrewImmigrationStage
+    ? { key: GRO_ACTIVE_TABS.crewImmigration, icon: FiUsers, onSelect: selectCrewImmigrationTab, hint: crewImmigrationSummary }
+    : isVesselInwardRegistrationStage
+      ? { key: GRO_ACTIVE_TABS.vesselInwardRegistration, icon: FiAnchor, onSelect: selectVesselInwardRegistrationTab }
+      : isCrewChangeStage
+        ? { key: GRO_ACTIVE_TABS.crewChange, icon: FiRepeat, onSelect: selectCrewChangeTab }
+        : null;
+  const isTaskTabSelected = taskTab != null && activeTab === taskTab.key;
+  const TaskTabIcon = isAllGroDocumentsVerified ? taskTab?.icon : FiLock;
+  const taskNav = (
     <div className="gro-crew-imm-nav" role="tablist" aria-label={`Documents and ${taskPanelTitle}`}>
       <button
         type="button"
@@ -1675,20 +1673,20 @@ const GROCardView = forwardRef(function GROCardView(
         Documents
         {!isGroLoading ? <span className="gro-crew-imm-nav-count">{documents.length}</span> : null}
       </button>
-      <button
-        type="button"
-        role="tab"
-        aria-selected={isCrewImmigrationTabActive}
-        className={`gro-crew-imm-nav-btn${isCrewImmigrationTabActive ? " gro-crew-imm-nav-btn--active" : ""}`}
-        onClick={selectCrewImmigrationTab}
-        disabled={!isAllGroDocumentsVerified}
-        title={
-          isAllGroDocumentsVerified ? crewImmigrationSummary || undefined : "Verify all documents to continue"
-        }
-      >
-        {isAllGroDocumentsVerified ? <FiUsers aria-hidden /> : <FiLock aria-hidden />}
-        {taskPanelTitle}
-      </button>
+      {taskTab ? (
+        <button
+          type="button"
+          role="tab"
+          aria-selected={isTaskTabSelected}
+          className={`gro-crew-imm-nav-btn${isTaskTabSelected ? " gro-crew-imm-nav-btn--active" : ""}`}
+          onClick={taskTab.onSelect}
+          disabled={!isAllGroDocumentsVerified}
+          title={isAllGroDocumentsVerified ? taskTab.hint || undefined : "Verify all documents to continue"}
+        >
+          <TaskTabIcon aria-hidden />
+          {taskPanelTitle}
+        </button>
+      ) : null}
     </div>
   );
 
@@ -1774,16 +1772,148 @@ const GROCardView = forwardRef(function GROCardView(
       )
       : null;
 
-  const isDocumentsListVisible =
-    (hidePassTabs || groMainView === GRO_MAIN_VIEWS.inward) &&
-    !(
-      hidePassTabs &&
-      [
-        GRO_ACTIVE_TABS.crewImmigration,
-        GRO_ACTIVE_TABS.vesselInwardRegistration,
-        GRO_ACTIVE_TABS.crewChange,
-      ].includes(activeTab)
-    );
+  // Task actions; on task cards they sit in the panel band, on pass views in the section header.
+  const dynamicUploadControl = (
+    <div className="gro-inward-anchor">
+      <button
+        type="button"
+        className={`gro-stage-upload-icon-btn${showDynamicUploadModal ? " gro-pass-segment--popover-open" : ""}`}
+        title={dynamicUploadTitle}
+        aria-label={dynamicUploadTitle}
+        aria-expanded={showDynamicUploadModal}
+        onClick={showDynamicUploadModal ? closeDynamicUploadModal : openDynamicUploadModal}
+      >
+        {dynamicUploadButtonLabel}
+      </button>
+      {showDynamicUploadModal ? (
+        <div
+          className="gro-inward-popover"
+          role="dialog"
+          aria-label={dynamicUploadTitle}
+        >
+          <div className="gro-inward-popover-header">{dynamicUploadTitle}</div>
+          <form onSubmit={handleDynamicUploadSubmit}>
+            <div className="gro-inward-popover-body">
+              {!dynamicUploadShowsTimeFields ? null : timeObjectsLoading ? (
+                <div className="gro-inward-popover-field">
+                  <span className="gro-inward-popover-label gro-inward-popover-loading">
+                    Loading time fields…
+                  </span>
+                </div>
+              ) : (
+                <div style={{ display: "contents" }}>
+                {dynamicUploadTimeFields.map((field) => (
+                  <div
+                    key={field.fieldKey}
+                    className={`gro-inward-popover-field gro-inward-popover-datetime-full${field.error ? " gro-inward-popover-field--error" : ""}`}
+                  >
+                    <span className="gro-inward-popover-label">
+                      {field.label}
+                    </span>
+                    <div className="gro-inward-popover-datetime-row">
+                      <DateTimePickerField
+                        dateValue={field.pickerParts?.date ?? ""}
+                        timeValue={field.pickerParts?.time ?? ""}
+                        onDateTimeChange={field.onDateTimeChange}
+                        placeholder="DD/MM/YYYY HH:mm"
+                        popperClassName="gro-inward-datetime-popper"
+                        hasError={Boolean(field.error)}
+                      />
+                    </div>
+                    {field.error ? (
+                      <span className="gro-inward-popover-field-error">{field.error}</span>
+                    ) : null}
+                  </div>
+                ))}
+                </div>
+              )}
+              <div className="gro-inward-popover-field">
+                <span className="gro-inward-popover-label">
+                  Signed Document
+                </span>
+                <div className="gro-premium-upload">
+                  <input
+                    ref={dynamicUploadFileInputRef}
+                    type="file"
+                    className="gro-premium-upload-input-hidden"
+                    disabled={isDynamicUploadSubmitting}
+                    onChange={(e) => handleDynamicUploadFileSelect(e.target.files?.[0] ?? null)}
+                  />
+                  <button
+                    type="button"
+                    className="gro-premium-upload-btn"
+                    disabled={isDynamicUploadSubmitting}
+                    onClick={() => dynamicUploadFileInputRef.current?.click()}
+                  >
+                    Choose file
+                  </button>
+                  {dynamicUploadFile ? (
+                    <span className="gro-premium-upload-filename" title={dynamicUploadFile.name}>
+                      {dynamicUploadFile.name}
+                    </span>
+                  ) : vesselRegSignedDocInfo ? (
+                    <a
+                      className="gro-premium-upload-filename gro-premium-upload-filename--uploaded"
+                      href={vesselRegSignedDocInfo.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={vesselRegSignedDocInfo.file_name}
+                    >
+                      {vesselRegSignedDocInfo.file_name}
+                    </a>
+                  ) : (
+                    <span className="gro-premium-upload-filename">No file chosen</span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="gro-inward-popover-footer">
+              <button
+                type="button"
+                className="gro-inward-popover-btn-cancel"
+                disabled={isDynamicUploadSubmitting}
+                onClick={closeDynamicUploadModal}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="gro-inward-popover-btn-submit"
+                disabled={isDynamicUploadSubmitting}
+              >
+                {isDynamicUploadSubmitting ? "Saving..." : "Submit"}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+    </div>
+  );
+
+  const inwardClearanceControl = (
+    <InwardClearanceToolbar
+      inwardAnchorRef={inwardAnchorRef}
+      showMainFileUpload={false}
+      showInwardClearance={showInwardClearance}
+      onToggleInwardPopover={() => setShowInwardClearance(!showInwardClearance)}
+      inwardActionLabel={inwardPanelLabel}
+      inwardPopoverTitle={taskPanelTitle}
+      timeObjectFields={groStageId === 10 ? [] : inwardTimeObjectFields}
+      timeObjectsLoading={groStageId === 10 ? false : timeObjectsLoading}
+      extraStageFieldsContent={extraStageFieldsContent}
+      onInwardCancel={handleInwardCancel}
+      onInwardSubmit={handleInwardSubmit}
+      isSavingInward={isSavingArrivalDocument}
+      isGroLoadingDisabled={
+        isGroLoading ||
+        isSavingArrivalDocument ||
+        callId == null ||
+        callId === "" ||
+        !taskId ||
+        !isAllGroDocumentsVerified
+      }
+    />
+  );
 
   return (
     <div className="gro-card-view">
@@ -1814,10 +1944,11 @@ const GROCardView = forwardRef(function GROCardView(
       </div>
 
       <div className="gro-document-section">
-        <div className="gro-document-header" hidden={useCrewImmigrationBand}>
+        {!hidePassTabs ? (
+        <div className="gro-document-header">
           <h3 className="gro-documents-heading">
-            {documentsSectionTitle}
-            {isDocumentsListVisible && !isGroLoading ? (
+            Documents
+            {groMainView === GRO_MAIN_VIEWS.inward && !isGroLoading ? (
               <span className="gro-documents-count" aria-label={`${documents.length} documents`}>
                 {documents.length}
               </span>
@@ -1834,70 +1965,6 @@ const GROCardView = forwardRef(function GROCardView(
                     : `Documents and ${taskPanelTitle}`
                 }
               >
-                {hidePassTabs ? (
-                  <>
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={activeTab === GRO_ACTIVE_TABS.documents}
-                      className={`gro-pass-segment${activeTab === GRO_ACTIVE_TABS.documents ? " gro-pass-segment--active" : ""}`}
-                      onClick={selectDocumentsTab}
-                    >
-                      <span className="gro-tab-inner">
-                        <FiFolder aria-hidden />
-                        Documents
-                      </span>
-                    </button>
-                    {isCrewImmigrationStage ? (
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={activeTab === GRO_ACTIVE_TABS.crewImmigration}
-                        className={`gro-pass-segment${activeTab === GRO_ACTIVE_TABS.crewImmigration ? " gro-pass-segment--active" : ""}`}
-                        onClick={selectCrewImmigrationTab}
-                        disabled={!isAllGroDocumentsVerified}
-                        title={isAllGroDocumentsVerified ? undefined : "Verify all documents to continue"}
-                      >
-                        <span className="gro-tab-inner">
-                          {isAllGroDocumentsVerified ? <FiUsers aria-hidden /> : <FiLock aria-hidden />}
-                          {taskPanelTitle}
-                        </span>
-                      </button>
-                    ) : null}
-                    {isVesselInwardRegistrationStage ? (
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={activeTab === GRO_ACTIVE_TABS.vesselInwardRegistration}
-                        className={`gro-pass-segment${activeTab === GRO_ACTIVE_TABS.vesselInwardRegistration ? " gro-pass-segment--active" : ""}`}
-                        onClick={selectVesselInwardRegistrationTab}
-                        disabled={!isAllGroDocumentsVerified}
-                        title={isAllGroDocumentsVerified ? undefined : "Verify all documents to continue"}
-                      >
-                        <span className="gro-tab-inner">
-                          {isAllGroDocumentsVerified ? <FiAnchor aria-hidden /> : <FiLock aria-hidden />}
-                          {taskPanelTitle}
-                        </span>
-                      </button>
-                    ) : null}
-                    {isCrewChangeStage ? (
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={activeTab === GRO_ACTIVE_TABS.crewChange}
-                        className={`gro-pass-segment${activeTab === GRO_ACTIVE_TABS.crewChange ? " gro-pass-segment--active" : ""}`}
-                        onClick={selectCrewChangeTab}
-                        disabled={!isAllGroDocumentsVerified}
-                        title={isAllGroDocumentsVerified ? undefined : "Verify all documents to continue"}
-                      >
-                        <span className="gro-tab-inner">
-                          {isAllGroDocumentsVerified ? <FiRepeat aria-hidden /> : <FiLock aria-hidden />}
-                          {taskPanelTitle}
-                        </span>
-                      </button>
-                    ) : null}
-                  </>
-                ) : (
                   <>
                     <button
                       type="button"
@@ -1927,152 +1994,10 @@ const GROCardView = forwardRef(function GROCardView(
                       Documents
                     </button>
                   </>
-                )}
               </div>
-              {showDynamicUploadIcon ? (
-                <div className="gro-inward-anchor">
-                  <button
-                    type="button"
-                    className={`gro-stage-upload-icon-btn${showDynamicUploadModal ? " gro-pass-segment--popover-open" : ""}`}
-                    title={dynamicUploadTitle}
-                    aria-label={dynamicUploadTitle}
-                    aria-expanded={showDynamicUploadModal}
-                    onClick={showDynamicUploadModal ? closeDynamicUploadModal : openDynamicUploadModal}
-                  >
-                    {dynamicUploadButtonLabel}
-                  </button>
-                  {showDynamicUploadModal ? (
-                    <div
-                      className="gro-inward-popover"
-                      role="dialog"
-                      aria-label={dynamicUploadTitle}
-                    >
-                      <div className="gro-inward-popover-header">{dynamicUploadTitle}</div>
-                      <form onSubmit={handleDynamicUploadSubmit}>
-                        <div className="gro-inward-popover-body">
-                          {!dynamicUploadShowsTimeFields ? null : timeObjectsLoading ? (
-                            <div className="gro-inward-popover-field">
-                              <span className="gro-inward-popover-label gro-inward-popover-loading">
-                                Loading time fields…
-                              </span>
-                            </div>
-                          ) : (
-                            <div style={{ display: "contents" }}>
-                            {dynamicUploadTimeFields.map((field) => (
-                              <div
-                                key={field.fieldKey}
-                                className={`gro-inward-popover-field gro-inward-popover-datetime-full${field.error ? " gro-inward-popover-field--error" : ""}`}
-                              >
-                                <span className="gro-inward-popover-label">
-                                  {field.label}
-                                </span>
-                                <div className="gro-inward-popover-datetime-row">
-                                  <DateTimePickerField
-                                    dateValue={field.pickerParts?.date ?? ""}
-                                    timeValue={field.pickerParts?.time ?? ""}
-                                    onDateTimeChange={field.onDateTimeChange}
-                                    placeholder="DD/MM/YYYY HH:mm"
-                                    popperClassName="gro-inward-datetime-popper"
-                                    hasError={Boolean(field.error)}
-                                  />
-                                </div>
-                                {field.error ? (
-                                  <span className="gro-inward-popover-field-error">{field.error}</span>
-                                ) : null}
-                              </div>
-                            ))}
-                            </div>
-                          )}
-                          <div className="gro-inward-popover-field">
-                            <span className="gro-inward-popover-label">
-                              Signed Document
-                            </span>
-                            <div className="gro-premium-upload">
-                              <input
-                                ref={dynamicUploadFileInputRef}
-                                type="file"
-                                className="gro-premium-upload-input-hidden"
-                                disabled={isDynamicUploadSubmitting}
-                                onChange={(e) => handleDynamicUploadFileSelect(e.target.files?.[0] ?? null)}
-                              />
-                              <button
-                                type="button"
-                                className="gro-premium-upload-btn"
-                                disabled={isDynamicUploadSubmitting}
-                                onClick={() => dynamicUploadFileInputRef.current?.click()}
-                              >
-                                Choose file
-                              </button>
-                              {dynamicUploadFile ? (
-                                <span className="gro-premium-upload-filename" title={dynamicUploadFile.name}>
-                                  {dynamicUploadFile.name}
-                                </span>
-                              ) : vesselRegSignedDocInfo ? (
-                                <a
-                                  className="gro-premium-upload-filename gro-premium-upload-filename--uploaded"
-                                  href={vesselRegSignedDocInfo.file_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  title={vesselRegSignedDocInfo.file_name}
-                                >
-                                  {vesselRegSignedDocInfo.file_name}
-                                </a>
-                              ) : (
-                                <span className="gro-premium-upload-filename">No file chosen</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="gro-inward-popover-footer">
-                          <button
-                            type="button"
-                            className="gro-inward-popover-btn-cancel"
-                            disabled={isDynamicUploadSubmitting}
-                            onClick={closeDynamicUploadModal}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="submit"
-                            className="gro-inward-popover-btn-submit"
-                            disabled={isDynamicUploadSubmitting}
-                          >
-                            {isDynamicUploadSubmitting ? "Saving..." : "Submit"}
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-              {(hidePassTabs &&
-                !isCrewImmigrationStage &&
-                !isVesselInwardRegistrationStage &&
-                !isCrewChangeStage &&
-                activeTab === GRO_ACTIVE_TABS.documents) ||
-                (!hidePassTabs && groMainView === GRO_MAIN_VIEWS.inward) ? (
-                <InwardClearanceToolbar
-                  inwardAnchorRef={inwardAnchorRef}
-                  showMainFileUpload={false}
-                  showInwardClearance={showInwardClearance}
-                  onToggleInwardPopover={() => setShowInwardClearance(!showInwardClearance)}
-                  inwardActionLabel={inwardPanelLabel}
-                  inwardPopoverTitle={taskPanelTitle}
-                  timeObjectFields={groStageId === 10 ? [] : inwardTimeObjectFields}
-                  timeObjectsLoading={groStageId === 10 ? false : timeObjectsLoading}
-                  extraStageFieldsContent={extraStageFieldsContent}
-                  onInwardCancel={handleInwardCancel}
-                  onInwardSubmit={handleInwardSubmit}
-                  isSavingInward={isSavingArrivalDocument}
-                  isGroLoadingDisabled={
-                    isGroLoading ||
-                    isSavingArrivalDocument ||
-                    callId == null ||
-                    callId === "" ||
-                    !taskId ||
-                    !isAllGroDocumentsVerified
-                  }
-                />
+              {!hidePassTabs && showDynamicUploadIcon ? dynamicUploadControl : null}
+              {!hidePassTabs && groMainView === GRO_MAIN_VIEWS.inward ? (
+                inwardClearanceControl
               ) : !hidePassTabs &&
                 (groMainView === GRO_MAIN_VIEWS.cg || groMainView === GRO_MAIN_VIEWS.zawil) &&
                 passSelectedRowIds.size > 0 ? (
@@ -2100,6 +2025,7 @@ const GROCardView = forwardRef(function GROCardView(
             </div>
           </div>
         </div>
+        ) : null}
 
         {hidePassTabs && activeTab === GRO_ACTIVE_TABS.crewImmigration ? (
           <CrewImmigrationPanel
@@ -2115,7 +2041,7 @@ const GROCardView = forwardRef(function GROCardView(
             view={crewImmigrationView}
             onViewChange={setCrewImmigrationView}
             batchStatus={crewImmigrationBatchStatus}
-            navigation={crewImmigrationNav}
+            navigation={taskNav}
             formContent={
               <CrewImmigrationFormView
                 portId={groPortId}
@@ -2126,16 +2052,6 @@ const GROCardView = forwardRef(function GROCardView(
               />
             }
           />
-        ) : useCrewImmigrationBand ? (
-          <CrewImmigrationDocumentsPanel
-            navigation={crewImmigrationNav}
-            documents={documents}
-            isGroLoading={isGroLoading}
-            isSubmittingAction={isSubmittingAction}
-            showDocumentVerifyActions={!isFirstColumn}
-            onApproveClick={handleApproveClick}
-            onRejectClick={handleRejectClick}
-          />
         ) : hidePassTabs && activeTab === GRO_ACTIVE_TABS.vesselInwardRegistration ? (
           <VesselInwardRegistrationView
             ref={vesselRegistrationRef}
@@ -2143,10 +2059,29 @@ const GROCardView = forwardRef(function GROCardView(
             isSaving={isGeneratingVesselPdf}
             portId={groPortId}
             callId={callId}
+            navigation={taskNav}
+            actions={showDynamicUploadIcon ? dynamicUploadControl : null}
           />
         ) : hidePassTabs && activeTab === GRO_ACTIVE_TABS.crewChange ? (
-          <CrewChangePassPanel callId={callId} portId={groPortId} />
-        ) : hidePassTabs || groMainView === GRO_MAIN_VIEWS.inward ? (
+          <CrewChangePassPanel callId={callId} portId={groPortId} navigation={taskNav} />
+        ) : hidePassTabs ? (
+          <GroTaskDocumentsPanel
+            navigation={taskNav}
+            taskTitle={taskPanelTitle}
+            actions={
+              <>
+                {showDynamicUploadIcon ? dynamicUploadControl : null}
+                {taskTab ? null : inwardClearanceControl}
+              </>
+            }
+            documents={documents}
+            isGroLoading={isGroLoading}
+            isSubmittingAction={isSubmittingAction}
+            showDocumentVerifyActions={!isFirstColumn}
+            onApproveClick={handleApproveClick}
+            onRejectClick={handleRejectClick}
+          />
+        ) : groMainView === GRO_MAIN_VIEWS.inward ? (
           <InwardClearanceView
             documents={documents}
             isGroLoading={isGroLoading}

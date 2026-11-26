@@ -18,7 +18,7 @@ import CrewChangeCgPassGenerateView from "./CrewChangeCgPassGenerateView";
 const PAGE_SIZE = 10;
 
 /** Crew Change stage: crew roster + CG Pass (templated or AI-read) / Zawil Pass (AI-read) upload flows. */
-export default function CrewChangePassPanel({ callId, portId }) {
+export default function CrewChangePassPanel({ callId, portId, navigation = null }) {
   const [rows, setRows] = useState([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: PAGE_SIZE });
   const [loading, setLoading] = useState(false);
@@ -279,8 +279,16 @@ export default function CrewChangePassPanel({ callId, portId }) {
   }
 
   return (
-    <div className="gro-crew-immigration-panel">
-      <div className="gro-crew-immigration-toolbar gro-crew-change-toolbar">
+    <div className={`gro-crew-immigration-panel${navigation ? " gro-crew-imm-panel" : ""}`}>
+      <div
+        className={`gro-crew-immigration-toolbar gro-crew-change-toolbar${navigation ? " gro-crew-imm-toolbar" : ""}`}
+      >
+        {navigation ? (
+          <>
+            {navigation}
+            <span className="gro-crew-imm-toolbar-divider" aria-hidden />
+          </>
+        ) : null}
         <div className="gro-pass-segments" role="tablist" aria-label="Crew change view">
           <button
             type="button"
@@ -583,6 +591,7 @@ export default function CrewChangePassPanel({ callId, portId }) {
 }
 
 CrewChangePassPanel.propTypes = {
+  navigation: PropTypes.node,
   callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   portId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };

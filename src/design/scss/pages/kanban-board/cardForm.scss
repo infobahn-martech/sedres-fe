@@ -1848,6 +1848,81 @@
   }
 }
 
+/* Task actions in the band (Upload Signed Document, the task popover, Generate CG Pass…):
+   solid white call-to-action, so they read as actions rather than tabs. */
+.gro-card-view .gro-crew-imm-toolbar {
+  .gro-crew-imm-actions .gro-pass-segment,
+  .gro-crew-imm-actions .gro-stage-upload-icon-btn,
+  .gro-crew-change-action-btn {
+    height: 34px;
+    margin: 0;
+    padding: 0 14px;
+    border: 1px solid #ffffff !important;
+    border-radius: 9px;
+    background: #ffffff !important;
+    color: var(--color-primary) !important;
+    font-size: 12.5px;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+
+    &:hover:not(:disabled) {
+      background: color-mix(in srgb, #ffffff 88%, var(--color-primary)) !important;
+      color: var(--color-primary) !important;
+    }
+
+    &:disabled {
+      opacity: 0.55;
+      box-shadow: none;
+    }
+  }
+
+  .gro-crew-imm-actions .gro-pass-segment--popover-open,
+  .gro-crew-imm-actions .gro-stage-upload-icon-btn.gro-pass-segment--popover-open {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35);
+  }
+
+  .gro-crew-imm-actions {
+    gap: 8px;
+    background: transparent;
+    border: none;
+    padding: 0;
+  }
+}
+
+/* Crew Change: nav · divider · sub-tabs on the left, its action pushed right. */
+.gro-card-view .gro-crew-change-toolbar.gro-crew-imm-toolbar {
+  justify-content: flex-start;
+
+  .gro-crew-change-toolbar-actions {
+    margin-left: auto;
+  }
+}
+
+/* Vessel Inward Registration: band sits on top of the two-pane body. */
+.gro-card-view .gro-vir-panel > .gro-crew-imm-toolbar {
+  flex-shrink: 0;
+}
+
+/* No documents: the whole panel body becomes one centred empty state in the brand colour. */
+.gro-card-view .gro-docs-lib-none {
+  --card-color: var(--color-primary);
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  margin: -16px -18px -18px;
+  padding: 40px 24px;
+  border-radius: 0 0 18px 18px;
+  background:
+    radial-gradient(
+      ellipse 60% 55% at 50% 45%,
+      color-mix(in srgb, var(--color-primary) 6%, transparent) 0%,
+      transparent 70%
+    ),
+    var(--surface-primary);
+}
+
 .gro-card-view .gro-crew-imm-toolbar-divider {
   width: 1px;
   height: 24px;

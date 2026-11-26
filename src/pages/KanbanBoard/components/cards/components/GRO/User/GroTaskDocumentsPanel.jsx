@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import PropTypes from "prop-types";
-import { FiSearch, FiX, FiCheckCircle, FiCheck, FiUploadCloud } from "react-icons/fi";
+import { FiSearch, FiX, FiCheckCircle, FiCheck, FiUploadCloud, FiFileText, FiShield } from "react-icons/fi";
+import TabEmptyState from "@/components/TabEmptyState";
 import DocumentPreview from "@/pages/KanbanBoard/CardFormTabs/Import/tabs/appointment/documentLibrary/DocumentPreview";
 import { TaskDocumentFilePreview } from "../../shared/TaskDocuments";
 import {
@@ -45,12 +46,14 @@ const toLibraryDocument = (doc) => {
 };
 
 /**
- * Documents tab of the Crew Immigration card, laid out like the Document Library:
- * a document list on the left and a live preview on the right, inside the same brand band
- * as the crew list so switching tabs keeps the card's frame still.
+ * Documents tab of a GRO / Custom Clearance task card, laid out like the Document Library:
+ * a document list on the left and a live preview on the right, under the same brand band
+ * as the task's own tab so switching tabs keeps the card's frame still.
  */
-export default function CrewImmigrationDocumentsPanel({
+export default function GroTaskDocumentsPanel({
   navigation = null,
+  actions = null,
+  taskTitle = "",
   documents,
   isGroLoading,
   isSubmittingAction = false,
@@ -125,7 +128,7 @@ export default function CrewImmigrationDocumentsPanel({
           ) : null}
           {isGroLoading ? (
             <span className="gro-skeleton gro-skel-on-brand gro-skel-pill" aria-hidden="true" />
-          ) : (
+          ) : total === 0 ? null : (
             <span
               className={`gro-crew-imm-band-stat${allVerified ? " gro-crew-imm-band-stat--done" : ""}`}
               aria-live="polite"
@@ -137,6 +140,7 @@ export default function CrewImmigrationDocumentsPanel({
         </div>
 
         <div className="gro-crew-imm-toolbar-group gro-crew-imm-toolbar-group--end">
+          {total > 0 ? (
           <label className="gro-crew-imm-search">
             <FiSearch aria-hidden />
             <input
@@ -157,9 +161,29 @@ export default function CrewImmigrationDocumentsPanel({
               </button>
             ) : null}
           </label>
+          ) : null}
+          {actions ? <div className="gro-pass-segments gro-crew-imm-actions">{actions}</div> : null}
         </div>
       </div>
 
+      {!isGroLoading && total === 0 ? (
+        <div className="gro-docs-lib-none">
+          <TabEmptyState
+            variant="documents"
+            title="No documents yet"
+            description={
+              taskTitle
+                ? `Documents for ${taskTitle} will appear here as soon as they are uploaded or generated, ready to preview and verify.`
+                : "Documents for this task will appear here as soon as they are uploaded or generated, ready to preview and verify."
+            }
+            hints={[
+              { icon: FiUploadCloud, label: "Uploaded files" },
+              { icon: FiFileText, label: "Generated letters" },
+              { icon: FiShield, label: "Verification" },
+            ]}
+          />
+        </div>
+      ) : (
       <div className="gro-docs-lib">
         <section className="gro-docs-lib-list" aria-label="Documents">
           {isGroLoading ? (
@@ -248,12 +272,15 @@ export default function CrewImmigrationDocumentsPanel({
           )}
         </aside>
       </div>
+      )}
     </div>
   );
 }
 
-CrewImmigrationDocumentsPanel.propTypes = {
+GroTaskDocumentsPanel.propTypes = {
   navigation: PropTypes.node,
+  actions: PropTypes.node,
+  taskTitle: PropTypes.string,
   documents: PropTypes.array.isRequired,
   isGroLoading: PropTypes.bool.isRequired,
   isSubmittingAction: PropTypes.bool,

@@ -18,6 +18,8 @@ const TRANSLATE_DEBOUNCE_MS = 500;
  */
 const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistrationView(
   {
+    navigation = null,
+    actions = null,
     onSave,
     isSaving = false,
     portId,
@@ -207,6 +209,16 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
 
   return (
     <div className="gro-crew-immigration-panel gro-vir-panel">
+      {navigation || actions ? (
+        <div className="gro-crew-immigration-toolbar gro-crew-imm-toolbar">
+          <div className="gro-crew-imm-toolbar-group">{navigation}</div>
+          {actions ? (
+            <div className="gro-crew-imm-toolbar-group gro-crew-imm-toolbar-group--end">
+              <div className="gro-pass-segments gro-crew-imm-actions">{actions}</div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <div className="gro-crew-immigration-bulk-body gro-vir-body">
         <div className="gro-crew-immigration-bulk-left gro-vir-col">
           <GroTranslationModeBar mode={translationMode} onChange={setTranslationMode} />
@@ -305,6 +317,8 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
 });
 
 VesselInwardRegistrationView.propTypes = {
+  navigation: PropTypes.node,
+  actions: PropTypes.node,
   onSave: PropTypes.func,
   isSaving: PropTypes.bool,
   portId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
