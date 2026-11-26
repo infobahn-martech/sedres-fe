@@ -16,7 +16,7 @@ export const EMPTY_DEADLINE = { mode: DEADLINE_MODE_OPTIONS[0].key, days: '0', d
 export const DEFAULT_LIST_MODE = LIST_UPDATE_MODE_OPTIONS[1].key;
 export const LIST_MODE_CHOICES = [...LIST_UPDATE_MODE_OPTIONS].reverse().map((mode) => ({ value: mode.key, label: mode.label }));
 
-export const EMPTY_GENERIC_ACTION_VALUE = { thenActionId: null, title: '', fields: {}, extraValues: {}, deadlines: {}, listModes: {}, position: EMPTY_BOARD_POSITION, cards: [], noFields: false, filterConditions: [], more: [] };
+export const EMPTY_GENERIC_ACTION_VALUE = { thenActionId: null, title: '', fields: {}, extraValues: {}, deadlines: {}, listModes: {}, position: EMPTY_BOARD_POSITION, cards: null, noFields: false, filterConditions: [], more: [] };
 
 // One card of the recurring "Create cards" action.
 export const EMPTY_CREATE_CARD = { thenActionId: null, title: '', fields: {}, position: EMPTY_BOARD_POSITION };

@@ -1,6 +1,11 @@
 // Compact operator dropdown for every AND / WHEN condition row ("Attachments are present v"):
 // sized to its options with tighter padding instead of the shared 260px panel.
 .business-rule-form-condition-operator-group {
+  // Long field names wrap; a button centres its text by default.
+  .business-rule-form-condition-label-btn {
+    text-align: left;
+  }
+
   // The field name keeps its blue label colour; the operator beside it ("are present v") is body text.
   .br-condition-operator-trigger {
     color: var(--text-primary);
@@ -186,41 +191,45 @@
   }
 }
 
-// Smaller text in the create-card header dropdown list.
-.business-rule-form-action-detail-title .br-condition-operator-panel {
-  .br-condition-operator-option {
-    font-size: 12px;
-    padding: 7px 12px;
-  }
-
-  .br-inline-dropdown-group {
-    font-size: 12px;
-  }
-
-  .board-minimap-picker-search {
-    padding: 6px 12px;
-
-    input {
-      font-size: 12px;
-    }
-  }
-}
-
-// Tighter spacing between the rows of the create-card header dropdown list.
-.business-rule-form-action-detail-title .br-condition-operator-panel {
-  gap: 4px;
-  padding: 8px;
+// Every dropdown list of the form (operators, values, link operators): rounded panel, boxed
+// filter input without an icon, evenly spaced 13px rows.
+.board-minimap-picker-panel.br-condition-operator-panel,
+.board-minimap-picker-panel.br-link-operator-panel {
+  gap: 6px;
+  padding: 6px;
+  border-radius: 18px;
 
   .board-minimap-picker-scroll {
     gap: 0;
   }
 
-  .br-condition-operator-option {
-    padding: 4px 10px;
+  .br-condition-operator-option,
+  .br-link-operator-option {
+    padding: 8px 12px;
+    font-size: 13px;
   }
 
   .br-inline-dropdown-group {
-    padding: 6px 10px 2px;
+    padding: 6px 12px 2px;
+    font-size: 12px;
+  }
+
+  .board-minimap-picker-search {
+    padding: 8px 12px;
+    border-radius: 6px;
+
+    &:focus-within {
+      border-color: var(--brand-bright);
+    }
+
+    input {
+      min-width: 0;
+      font-size: 13px;
+    }
+  }
+
+  .board-minimap-picker-search-icon {
+    display: none;
   }
 }
 
