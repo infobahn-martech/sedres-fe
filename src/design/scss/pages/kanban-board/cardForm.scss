@@ -1549,22 +1549,302 @@
   color: #4ade80;
 }
 
-/* The panel already frames the list, so the list drops its own card chrome. */
-.gro-card-view .gro-crew-imm-docs-body {
-  padding-top: 2px;
+/* ---------- Crew Immigration › Documents: Document Library layout (list | preview) ---------- */
+.gro-card-view .gro-crew-imm-panel--docs {
+  min-height: 480px;
+}
 
-  > .gro-document-list {
-    padding: 0;
-    border: none;
-    box-shadow: none;
-    background: transparent !important;
+.gro-card-view .gro-docs-lib {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  /* Fixed-width preview, same as the Document Library; the list takes the rest. */
+  grid-template-columns: minmax(0, 1fr) 440px;
+  /* Bleed to the panel edges under the band; the panes draw their own dividers. */
+  margin: -16px -18px -18px;
+  border-radius: 0 0 18px 18px;
+  overflow: hidden;
+}
+
+.gro-card-view .gro-docs-lib-list {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px;
+  border-right: 1px solid var(--border-primary);
+
+  [role="listbox"] {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    outline: none;
+  }
+}
+
+.gro-card-view .gro-docs-lib-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-left: 3px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+
+  &:hover:not(.is-selected) {
+    background: var(--surface-secondary);
   }
 
-  > .gro-crew-imm-empty {
-    margin: 24px 0;
-    text-align: center;
-    color: var(--text-secondary);
-    font-size: 13px;
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+  }
+
+  &.is-selected {
+    background: color-mix(in srgb, var(--color-primary) 8%, var(--surface-primary));
+    border-color: color-mix(in srgb, var(--color-primary) 22%, transparent);
+    border-left-color: var(--color-primary);
+  }
+
+  &.is-empty .gro-document-preview-icon {
+    opacity: 0.55;
+  }
+}
+
+.gro-card-view .gro-docs-lib-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.gro-card-view .gro-docs-lib-row-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gro-card-view .gro-docs-lib-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 11.5px;
+  color: var(--text-muted, var(--text-secondary));
+}
+
+.gro-card-view .gro-docs-lib-row-file {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gro-card-view .gro-docs-lib-status {
+  flex-shrink: 0;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+}
+
+.gro-card-view .gro-docs-lib-status--verified { background: rgba(22, 163, 74, 0.12); color: #15803d; }
+.gro-card-view .gro-docs-lib-status--pending { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
+.gro-card-view .gro-docs-lib-status--warning { background: rgba(245, 158, 11, 0.15); color: #b45309; }
+.gro-card-view .gro-docs-lib-status--danger { background: rgba(220, 38, 38, 0.12); color: #b91c1c; }
+
+.gro-card-view .gro-docs-lib-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* Preview pane: Document Library's preview, stretched to the pane height. */
+.gro-card-view .gro-docs-lib-preview {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--surface-primary);
+
+  > .doc-lib-preview {
+    flex: 1 1 auto;
+    height: auto;
+  }
+
+  /* Compact header: file name · View · Download on one row, no uploaded-by/at meta. */
+  .doc-lib-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .doc-lib-preview-details {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .doc-lib-preview-filename {
+    margin: 0;
+  }
+
+  .doc-lib-preview-meta {
+    display: none;
+  }
+
+  .doc-lib-preview-actions {
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+  }
+
+  .doc-lib-preview-action-btn {
+    height: 32px;
+    padding: 0 10px;
+  }
+
+  .doc-lib-preview-body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .document-preview__iframe {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 420px;
+  }
+}
+
+/* Verification strip above the preview (pending → Approve / Reject, or remarks). */
+.gro-card-view .gro-docs-lib-review {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--surface-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.gro-card-view .gro-docs-lib-review--pending { background: rgba(37, 99, 235, 0.07); }
+.gro-card-view .gro-docs-lib-review--warning { background: rgba(245, 158, 11, 0.09); }
+.gro-card-view .gro-docs-lib-review--danger { background: rgba(220, 38, 38, 0.07); }
+
+.gro-card-view .gro-docs-lib-review-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gro-card-view .gro-docs-lib-review-remarks {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.gro-card-view .gro-docs-lib-review-actions {
+  display: inline-flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.gro-card-view .gro-docs-lib-review-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.gro-card-view .gro-docs-lib-review-btn--approve {
+  background: #16a34a;
+  color: #ffffff;
+
+  &:hover:not(:disabled) { background: #15803d; }
+}
+
+.gro-card-view .gro-docs-lib-review-btn--reject {
+  background: var(--surface-primary);
+  border-color: rgba(220, 38, 38, 0.4);
+  color: #b91c1c;
+
+  &:hover:not(:disabled) { background: rgba(220, 38, 38, 0.06); }
+}
+
+.gro-card-view .gro-docs-lib-empty {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 32px;
+  text-align: center;
+  color: var(--text-muted, var(--text-secondary));
+
+  svg {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 6px;
+  }
+}
+
+.gro-card-view .gro-docs-lib-empty-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.gro-card-view .gro-docs-lib-empty-text {
+  margin: 0;
+  font-size: 12.5px;
+}
+
+@media (max-width: 980px) {
+  .gro-card-view .gro-docs-lib {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(180px, 40%) minmax(0, 1fr);
+  }
+
+  .gro-card-view .gro-docs-lib-list {
+    border-right: none;
+    border-bottom: 1px solid var(--border-primary);
   }
 }
 

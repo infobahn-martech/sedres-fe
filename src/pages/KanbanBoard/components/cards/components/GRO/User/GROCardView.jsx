@@ -2135,7 +2135,6 @@ const GROCardView = forwardRef(function GROCardView(
             showDocumentVerifyActions={!isFirstColumn}
             onApproveClick={handleApproveClick}
             onRejectClick={handleRejectClick}
-            onDocumentDownload={handleDocumentDownload}
           />
         ) : hidePassTabs && activeTab === GRO_ACTIVE_TABS.vesselInwardRegistration ? (
           <VesselInwardRegistrationView
