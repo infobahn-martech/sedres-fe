@@ -26,6 +26,7 @@ import {
 } from "@/services/cgAndZwailpassService";
 import useGROReducer from "@/store/GROReducer";
 import GroSummaryCard, { GroSummaryFieldCard } from "./GroSummaryCard";
+import GroCardContextBar from "./GroCardContextBar";
 import InwardClearanceView, { DocumentActionConfirmModal, InwardClearanceToolbar } from "./InwardClearanceView";
 import PassRequestsView from "./PassRequestsView";
 import GroPassUploadPopoverForm from "./GroPassUploadPopoverForm";
@@ -73,6 +74,7 @@ import {
   firstNonEmptyGroDisplay,
   parseGroUsersByRoleResponse,
   resolveGroRequestedOperatorDisplay,
+  buildGroCallTimeFacts,
   resolveGroAssignedUserIdFromDetail,
   resolveGroAssignedUserDisplayName,
   getGroDocumentVerifyStatus,
@@ -305,6 +307,8 @@ const GROCardView = forwardRef(function GROCardView(
   );
   const vesselNameSummary = firstNonEmptyGroDisplay(callDetail?.vessel_name, card?.vesselName);
   const requestedOperatorSummary = resolveGroRequestedOperatorDisplay(callDetail);
+  // ETA / ATA / ETD… from the call's own time objects, shown in the header.
+  const callTimeFacts = useMemo(() => buildGroCallTimeFacts(callDetail?.time_objects), [callDetail]);
   const assignedUserReadOnlySummary = resolveGroAssignedUserDisplayName(
     callDetail,
     assignedUserId || resolveGroAssignedUserIdFromDetail(callDetail),
@@ -1917,31 +1921,39 @@ const GROCardView = forwardRef(function GROCardView(
 
   return (
     <div className="gro-card-view">
-      <div className={`gro-summary-grid${showAssignedUserSelect || mode === "gro" ? " gro-summary-grid--six-col" : ""}`}>
-        <GroSummaryCard label="Call Type" value={callTypeSummary} />
-        <GroSummaryCard label="Billing Entity" value={billingEntitySummary} />
-        <GroSummaryCard label="Port" value={portSummary} />
-        <GroSummaryCard label="Vessel Name" value={vesselNameSummary} />
-        <GroSummaryCard label="Requested Operator" value={requestedOperatorSummary} />
-        {showAssignedUserSelect ? (
-          <GroSummaryFieldCard label="Assigned User" error={assignedUserError}>
-            <SearchableSelect
-              value={assignedUserId}
-              onChange={handleAssignedUserChange}
-              options={assignedUserSelectOptions}
-              placeholder={groUsersLoading ? "Loading…" : "Select user"}
-              searchPlaceholder={deriveSearchPlaceholder("Select user")}
-              disabled={groUsersLoading || isGroLoading || isAssigningUser}
-              hasError={Boolean(assignedUserError)}
-              className="gro-summary-searchable-select"
-              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
-              menuPosition="fixed"
-            />
-          </GroSummaryFieldCard>
-        ) : mode === "gro" ? (
-          <GroSummaryCard label="Assigned User" value={assignedUserReadOnlySummary} />
-        ) : null}
-      </div>
+      <GroCardContextBar
+        vesselName={vesselNameSummary}
+        vesselMeta={[
+          { label: "Owner", value: callDetail?.vessel_owner ?? "" },
+        ]}
+        facts={[
+          { label: "Call Type", value: callTypeSummary },
+          { label: "Port", value: portSummary },
+          ...callTimeFacts,
+          { label: "Billing Entity", value: billingEntitySummary },
+          { label: "Requested Operator", value: requestedOperatorSummary },
+        ]}
+        assignee={
+          showAssignedUserSelect ? (
+            <GroSummaryFieldCard label="Assigned User" error={assignedUserError}>
+              <SearchableSelect
+                value={assignedUserId}
+                onChange={handleAssignedUserChange}
+                options={assignedUserSelectOptions}
+                placeholder={groUsersLoading ? "Loading…" : "Select user"}
+                searchPlaceholder={deriveSearchPlaceholder("Select user")}
+                disabled={groUsersLoading || isGroLoading || isAssigningUser}
+                hasError={Boolean(assignedUserError)}
+                className="gro-summary-searchable-select"
+                menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                menuPosition="fixed"
+              />
+            </GroSummaryFieldCard>
+          ) : mode === "gro" ? (
+            <GroSummaryCard label="Assigned User" value={assignedUserReadOnlySummary} />
+          ) : null
+        }
+      />
 
       <div className="gro-document-section">
         {!hidePassTabs ? (
@@ -2071,7 +2083,8 @@ const GROCardView = forwardRef(function GROCardView(
             actions={
               <>
                 {showDynamicUploadIcon ? dynamicUploadControl : null}
-                {taskTab ? null : inwardClearanceControl}
+                {/* The task's own action (Inward Clearance, Bayan…) only makes sense once there are documents. */}
+                {taskTab || documents.length === 0 ? null : inwardClearanceControl}
               </>
             }
             documents={documents}

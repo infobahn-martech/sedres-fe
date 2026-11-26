@@ -322,6 +322,46 @@ export const GRO_FILE_BADGE = {
   default: "",
 };
 
+const GRO_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "2026-10-22 14:05:00" → "22 Oct 2026, 14:05"; blank / unparseable → "" (or the raw text). */
+export const formatGroDateTimeDisplay = (raw) => {
+  const text = String(raw ?? "").trim();
+  if (!text) return "";
+  const m = text.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/);
+  if (!m) return text;
+  const [, y, mo, d, h, mi] = m;
+  const month = GRO_MONTHS[Number(mo) - 1];
+  if (!month) return text;
+  return `${Number(d)} ${month} ${y}${h != null ? `, ${h}:${mi}` : ""}`;
+};
+
+/**
+ * Call-level time objects (ETA, ATA, ETD…) as header facts. Short field keys ("ATA") make
+ * compact labels; the full name ("Actual Time of Arrival") goes in the tooltip.
+ */
+export const buildGroCallTimeFacts = (timeObjects) =>
+  (Array.isArray(timeObjects) ? timeObjects : [])
+    .filter((item) => String(item?.time_object ?? item?.field_key ?? "").trim() !== "")
+    .map((item) => {
+      const name = String(item?.time_object ?? "").trim();
+      const key = String(item?.field_key ?? "").trim();
+      const isShortKey = /^[A-Z]{2,4}$/.test(key);
+      return {
+        label: isShortKey ? key : name || key,
+        title: name || key,
+        value: formatGroDateTimeDisplay(item?.time_object_value),
+        icon: "time",
+      };
+    });
+
+/** True for empty / placeholder display values ("", "-", "—", "N/A"). */
+export const isGroBlankDisplay = (value) => {
+  if (value == null) return true;
+  const text = String(value).trim();
+  return text === "" || text === "-" || text === "—" || text === "N/A";
+};
+
 export const firstNonEmptyGroDisplay = (...candidates) => {
   for (const c of candidates) {
     if (c === null || c === undefined) continue;

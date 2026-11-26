@@ -1,500 +1,162 @@
 {
     "status": "success",
-    "da_board": 0,
-    "port_id": 1,
-    "data": [
-        {
-            "workflow_id": "114",
-            "board_id": "27",
-            "entity_id": null,
-            "sub_entity_id": null,
-            "port_id": null,
-            "call_type_id": null,
-            "workflow_name": "GRO",
-            "is_default": "0",
-            "is_active": "1",
-            "is_pinned": "0",
-            "workflow_order": "3",
-            "pinned_at": null,
-            "pinned_by": null,
-            "is_collapsed": "0",
+    "data": {
+        "call": {
+            "call_id": "608",
+            "call_type_id": "1",
+            "call_type": "Import Call",
+            "appointment_type": "Vessel",
+            "port_id": "1",
+            "port": "Jubail",
+            "main_billing_entity_id": "24",
+            "billing_entity": "LARSEN TOUBRO ARABIA LLC",
+            "assigned_operator_id": "85",
+            "assigned_operator": "Infobahn Operator",
             "created_by": "83",
-            "created_date": "2026-11-04 10:37:32",
-            "updated_date": "2026-11-25 07:48:51",
-            "updated_by": "13",
-            "workflow_role_id": "82",
-            "role_id": "6",
-            "visibility_scope": "own",
-            "card_scope": "my",
-            "allow_all_cards": 1,
-            "swimlanes": [
+            "time_objects": [
                 {
-                    "swimlane_id": "169",
-                    "swimlane_name": "Default Lane",
-                    "swimlane_order": "1",
-                    "color_code": null
+                    "time_object_id": "11",
+                    "time_object": "Actual Time of Arrival",
+                    "field_key": "ATA",
+                    "time_object_value": "2026-10-22 00:00:00"
+                }
+            ]
+        },
+        "vessel": {
+            "vessel_id": "84",
+            "vessel_name": "BRITOIL DIGNITY",
+            "vessel_type_id": null,
+            "tug_type_id": null,
+            "vessel_owner": "BRITOIL OFFSHORE SERVICES PTE LTD",
+            "vessel_principal": "L&T",
+            "vessel_manager": null
+        },
+        "task": {
+            "card_id": "1042",
+            "task_id": "3",
+            "task_name": "Inward Clearance",
+            "stage_id": "8",
+            "is_first_column": false,
+            "assigned_user_id": null,
+            "assigned_user_name": null,
+            "assignees": [],
+            "assignable_users": [
+                {
+                    "user_id": "5",
+                    "name": "GRO user"
                 }
             ],
-            "stages": [
-                {
-                    "stage_id": "581",
-                    "stage_name": "Backlog",
-                    "color_code": "#9e9e9e",
-                    "columns": [
-                        {
-                            "column_id": "919",
-                            "column_name": "Backlog",
-                            "parent_column_id": null,
-                            "column_order": "1",
-                            "cards_per_row": "2",
-                            "background_color": "#ffffff",
-                            "column_description": null,
-                            "cards_by_swimlane": {
-                                "169": [
-                                    {
-                                        "card_id": "1017",
-                                        "card_name": "Vessel Inward Registration",
-                                        "call_id": "607",
-                                        "call_type_id": "1",
-                                        "vessel_id": null,
-                                        "card_color": "#2e7d32",
-                                        "vessel_name": "AESEN GALAXY",
-                                        "port_id": "1",
-                                        "billing_entity": "LARSEN TOUBRO ARABIA LLC",
-                                        "customer_type": "Credit",
-                                        "billing_entity_color": "#008000",
-                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/24_larsen_turbo.png",
-                                        "username": "GRO Supervisor",
-                                        "user_id": null,
-                                        "created_date": "2026-11-25 07:55:08",
-                                        "task_id": "7",
-                                        "task_name": "Vessel Inward Registration",
-                                        "kpi_percentage": "0",
-                                        "card_type_id": null,
-                                        "card_type_name": null,
-                                        "card_type_color": null,
-                                        "card_type_icon": null,
-                                        "card_blocker_id": null,
-                                        "blocker_name": null,
-                                        "blocker_description": null,
-                                        "blocker_color": null,
-                                        "blocker_icon": null,
-                                        "card_sticker_id": null,
-                                        "sticker_name": null,
-                                        "sticker_color": null,
-                                        "sticker_icon": null,
-                                        "tag_id": null,
-                                        "tag_name": null,
-                                        "tag_color": null,
-                                        "request_type": null,
-                                        "request_id": null,
-                                        "task_card_docs": 0,
-                                        "task_details": {
-                                            "documents_total": 1,
-                                            "documents_uploaded": 0,
-                                            "documents_verified": 0,
-                                            "documents_pending": 1,
-                                            "documents_rejected": 0,
-                                            "documents_label": "0\/1"
-                                        },
-                                        "timeline": "22m 58s",
-                                        "vendor_id": null,
-                                        "assignees": [],
-                                        "assigned_operators": [
-                                            {
-                                                "user_id": 85,
-                                                "name": "Infobahn Operator"
-                                            },
-                                            {
-                                                "user_id": 10,
-                                                "name": "DANY THOMAS"
-                                            }
-                                        ],
-                                        "da_board": 0,
-                                        "checklist_doc": 0,
-                                        "checklist_doc_rejected": []
-                                    },
-                                    {
-                                        "card_id": "1018",
-                                        "card_name": "Crew Immigration",
-                                        "call_id": "607",
-                                        "call_type_id": "1",
-                                        "vessel_id": null,
-                                        "card_color": "#2e7d32",
-                                        "vessel_name": "AESEN GALAXY",
-                                        "port_id": "1",
-                                        "billing_entity": "LARSEN TOUBRO ARABIA LLC",
-                                        "customer_type": "Credit",
-                                        "billing_entity_color": "#008000",
-                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/24_larsen_turbo.png",
-                                        "username": "GRO Supervisor",
-                                        "user_id": null,
-                                        "created_date": "2026-11-25 07:55:08",
-                                        "task_id": "2",
-                                        "task_name": "Crew Immigration",
-                                        "kpi_percentage": "0",
-                                        "card_type_id": null,
-                                        "card_type_name": null,
-                                        "card_type_color": null,
-                                        "card_type_icon": null,
-                                        "card_blocker_id": null,
-                                        "blocker_name": null,
-                                        "blocker_description": null,
-                                        "blocker_color": null,
-                                        "blocker_icon": null,
-                                        "card_sticker_id": null,
-                                        "sticker_name": null,
-                                        "sticker_color": null,
-                                        "sticker_icon": null,
-                                        "tag_id": null,
-                                        "tag_name": null,
-                                        "tag_color": null,
-                                        "request_type": null,
-                                        "request_id": null,
-                                        "task_card_docs": 0,
-                                        "task_details": {
-                                            "documents_total": 3,
-                                            "documents_uploaded": 0,
-                                            "documents_verified": 0,
-                                            "documents_pending": 3,
-                                            "documents_rejected": 0,
-                                            "documents_label": "0\/3"
-                                        },
-                                        "timeline": "22m 58s",
-                                        "vendor_id": null,
-                                        "assignees": [],
-                                        "assigned_operators": [
-                                            {
-                                                "user_id": 85,
-                                                "name": "Infobahn Operator"
-                                            },
-                                            {
-                                                "user_id": 10,
-                                                "name": "DANY THOMAS"
-                                            }
-                                        ],
-                                        "da_board": 0,
-                                        "checklist_doc": 0,
-                                        "checklist_doc_rejected": []
-                                    }
-                                ]
+            "details": {
+                "customs_status": "pending",
+                "customs_remarks": "",
+                "inward_clearance_issued": null,
+                "inward_clearance_doc": null,
+                "inward_clearance_doc_url": null,
+                "immigration_status": "Pending",
+                "immigration_remarks": null,
+                "immigration_doc": "",
+                "immigration_doc_url": null,
+                "fields": [
+                    {
+                        "field_key": "customs_status",
+                        "label": "Custom Inspection Status",
+                        "field_type": "status",
+                        "value": "pending",
+                        "options": [
+                            {
+                                "label": "Pending",
+                                "value": "pending"
                             },
-                            "children": []
-                        }
-                    ]
+                            {
+                                "label": "Passed",
+                                "value": "passed"
+                            },
+                            {
+                                "label": "Failed",
+                                "value": "failed"
+                            }
+                        ]
+                    },
+                    {
+                        "field_key": "customs_remarks",
+                        "label": "Custom Remarks",
+                        "field_type": "textarea",
+                        "value": null
+                    },
+                    {
+                        "field_key": "inward_clearance_issued",
+                        "label": "Inward Clearance Issued",
+                        "field_type": "datetime",
+                        "value": null
+                    },
+                    {
+                        "field_key": "inward_clearance_doc",
+                        "label": "Inward Clearance Document",
+                        "field_type": "document",
+                        "value": null,
+                        "file_url": null
+                    },
+                    {
+                        "field_key": "immigration_status",
+                        "label": "Crew Immigration Status",
+                        "field_type": "status",
+                        "value": "Pending",
+                        "options": [
+                            {
+                                "label": "Pending",
+                                "value": "Pending"
+                            },
+                            {
+                                "label": "Completed",
+                                "value": "Completed"
+                            }
+                        ]
+                    },
+                    {
+                        "field_key": "immigration_remarks",
+                        "label": "Crew Immigration Remarks",
+                        "field_type": "textarea",
+                        "value": null
+                    },
+                    {
+                        "field_key": "immigration_doc",
+                        "label": "Crew Immigration Document",
+                        "field_type": "document",
+                        "value": null,
+                        "file_url": null
+                    }
+                ]
+            },
+            "documents": [],
+            "stage_time_objects": [
+                {
+                    "time_object_id": "9",
+                    "time_object": "Custom Inspection Commenced",
+                    "field_key": "CIC",
+                    "is_required": "0",
+                    "sort_order": "1",
+                    "stage_id": "8",
+                    "time_object_value": null
                 },
                 {
-                    "stage_id": "481",
-                    "stage_name": "Requested",
-                    "color_code": "#1976d2",
-                    "columns": [
-                        {
-                            "column_id": "793",
-                            "column_name": "Requested",
-                            "parent_column_id": null,
-                            "column_order": "2",
-                            "cards_per_row": "2",
-                            "background_color": "",
-                            "column_description": null,
-                            "cards_by_swimlane": {
-                                "169": [
-                                    {
-                                        "card_id": "992",
-                                        "card_name": "Vessel Inward Registration",
-                                        "call_id": "601",
-                                        "call_type_id": "1",
-                                        "vessel_id": null,
-                                        "card_color": "#2e7d32",
-                                        "vessel_name": "MAG HANDLER",
-                                        "port_id": "1",
-                                        "billing_entity": "LARSEN TOUBRO ARABIA LLC",
-                                        "customer_type": "Credit",
-                                        "billing_entity_color": "#008000",
-                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/24_larsen_turbo.png",
-                                        "username": "GRO Supervisor",
-                                        "user_id": null,
-                                        "created_date": "2026-11-24 13:25:46",
-                                        "task_id": "7",
-                                        "task_name": "Vessel Inward Registration",
-                                        "kpi_percentage": "0",
-                                        "card_type_id": null,
-                                        "card_type_name": null,
-                                        "card_type_color": null,
-                                        "card_type_icon": null,
-                                        "card_blocker_id": null,
-                                        "blocker_name": null,
-                                        "blocker_description": null,
-                                        "blocker_color": null,
-                                        "blocker_icon": null,
-                                        "card_sticker_id": null,
-                                        "sticker_name": null,
-                                        "sticker_color": null,
-                                        "sticker_icon": null,
-                                        "tag_id": null,
-                                        "tag_name": null,
-                                        "tag_color": null,
-                                        "request_type": null,
-                                        "request_id": null,
-                                        "task_card_docs": 1,
-                                        "task_details": {
-                                            "documents_total": 5,
-                                            "documents_uploaded": 5,
-                                            "documents_verified": 0,
-                                            "documents_pending": 0,
-                                            "documents_rejected": 0,
-                                            "documents_label": "5\/5"
-                                        },
-                                        "timeline": "18h 52m 20s",
-                                        "vendor_id": null,
-                                        "assignees": [],
-                                        "assigned_operators": [
-                                            {
-                                                "user_id": 85,
-                                                "name": "Infobahn Operator"
-                                            }
-                                        ],
-                                        "da_board": 0,
-                                        "checklist_doc": 0,
-                                        "checklist_doc_rejected": []
-                                    }
-                                ]
-                            },
-                            "children": []
-                        }
-                    ]
+                    "time_object_id": "10",
+                    "time_object": "Custom Inspection Completed",
+                    "field_key": "CIC_1",
+                    "is_required": "0",
+                    "sort_order": "2",
+                    "stage_id": "8",
+                    "time_object_value": null
                 },
                 {
-                    "stage_id": "482",
-                    "stage_name": "Inprogress",
-                    "color_code": "#fb8c00",
-                    "columns": [
-                        {
-                            "column_id": "794",
-                            "column_name": "In Progress",
-                            "parent_column_id": null,
-                            "column_order": "1",
-                            "cards_per_row": "2",
-                            "background_color": "",
-                            "column_description": null,
-                            "cards_by_swimlane": {
-                                "169": [
-                                    {
-                                        "card_id": "993",
-                                        "card_name": "Crew Immigration",
-                                        "call_id": "601",
-                                        "call_type_id": "1",
-                                        "vessel_id": null,
-                                        "card_color": "#2e7d32",
-                                        "vessel_name": "MAG HANDLER",
-                                        "port_id": "1",
-                                        "billing_entity": "LARSEN TOUBRO ARABIA LLC",
-                                        "customer_type": "Credit",
-                                        "billing_entity_color": "#008000",
-                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/24_larsen_turbo.png",
-                                        "username": "GRO user",
-                                        "user_id": "5",
-                                        "created_date": "2026-11-24 13:25:46",
-                                        "task_id": "2",
-                                        "task_name": "Crew Immigration",
-                                        "kpi_percentage": "0",
-                                        "card_type_id": null,
-                                        "card_type_name": null,
-                                        "card_type_color": null,
-                                        "card_type_icon": null,
-                                        "card_blocker_id": null,
-                                        "blocker_name": null,
-                                        "blocker_description": null,
-                                        "blocker_color": null,
-                                        "blocker_icon": null,
-                                        "card_sticker_id": null,
-                                        "sticker_name": null,
-                                        "sticker_color": null,
-                                        "sticker_icon": null,
-                                        "tag_id": null,
-                                        "tag_name": null,
-                                        "tag_color": null,
-                                        "request_type": null,
-                                        "request_id": null,
-                                        "task_card_docs": 1,
-                                        "task_details": {
-                                            "documents_total": 7,
-                                            "documents_uploaded": 7,
-                                            "documents_verified": 7,
-                                            "documents_pending": 0,
-                                            "documents_rejected": 0,
-                                            "documents_label": "7\/7"
-                                        },
-                                        "timeline": "18h 52m 20s",
-                                        "vendor_id": null,
-                                        "assignees": [
-                                            {
-                                                "user_id": "5",
-                                                "name": "GRO user"
-                                            }
-                                        ],
-                                        "assigned_operators": [
-                                            {
-                                                "user_id": 85,
-                                                "name": "Infobahn Operator"
-                                            }
-                                        ],
-                                        "da_board": 0,
-                                        "checklist_doc": 0,
-                                        "checklist_doc_rejected": []
-                                    },
-                                    {
-                                        "card_id": "983",
-                                        "card_name": "Vessel Inward Registration",
-                                        "call_id": "598",
-                                        "call_type_id": "1",
-                                        "vessel_id": null,
-                                        "card_color": "#2e7d32",
-                                        "vessel_name": "IRON TIDE",
-                                        "port_id": "1",
-                                        "billing_entity": "LARSEN TOUBRO ARABIA LLC",
-                                        "customer_type": "Credit",
-                                        "billing_entity_color": "#008000",
-                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/24_larsen_turbo.png",
-                                        "username": "GRO Supervisor",
-                                        "user_id": null,
-                                        "created_date": "2026-11-24 08:25:28",
-                                        "task_id": "7",
-                                        "task_name": "Vessel Inward Registration",
-                                        "kpi_percentage": "0",
-                                        "card_type_id": null,
-                                        "card_type_name": null,
-                                        "card_type_color": null,
-                                        "card_type_icon": null,
-                                        "card_blocker_id": null,
-                                        "blocker_name": null,
-                                        "blocker_description": null,
-                                        "blocker_color": null,
-                                        "blocker_icon": null,
-                                        "card_sticker_id": null,
-                                        "sticker_name": null,
-                                        "sticker_color": null,
-                                        "sticker_icon": null,
-                                        "tag_id": null,
-                                        "tag_name": null,
-                                        "tag_color": null,
-                                        "request_type": null,
-                                        "request_id": null,
-                                        "task_card_docs": 1,
-                                        "task_details": {
-                                            "documents_total": 2,
-                                            "documents_uploaded": 2,
-                                            "documents_verified": 2,
-                                            "documents_pending": 0,
-                                            "documents_rejected": 0,
-                                            "documents_label": "2\/2"
-                                        },
-                                        "timeline": "23h 52m 38s",
-                                        "vendor_id": null,
-                                        "assignees": [],
-                                        "assigned_operators": [
-                                            {
-                                                "user_id": 85,
-                                                "name": "Infobahn Operator"
-                                            }
-                                        ],
-                                        "da_board": 0,
-                                        "checklist_doc": 0,
-                                        "checklist_doc_rejected": []
-                                    }
-                                ]
-                            },
-                            "children": []
-                        }
-                    ]
-                },
-                {
-                    "stage_id": "483",
-                    "stage_name": "Done",
-                    "color_code": "#43a047",
-                    "columns": [
-                        {
-                            "column_id": "795",
-                            "column_name": "Completed",
-                            "parent_column_id": null,
-                            "column_order": "1",
-                            "cards_per_row": "2",
-                            "background_color": "",
-                            "column_description": null,
-                            "cards_by_swimlane": {
-                                "169": [
-                                    {
-                                        "card_id": "984",
-                                        "card_name": "Crew Immigration",
-                                        "call_id": "598",
-                                        "call_type_id": "1",
-                                        "vessel_id": null,
-                                        "card_color": "#2e7d32",
-                                        "vessel_name": "IRON TIDE",
-                                        "port_id": "1",
-                                        "billing_entity": "LARSEN TOUBRO ARABIA LLC",
-                                        "customer_type": "Credit",
-                                        "billing_entity_color": "#008000",
-                                        "entity_logo": "https:\/\/onlinebareed.com\/sedres\/uploads\/entity_logo\/24_larsen_turbo.png",
-                                        "username": "GRO Supervisor",
-                                        "user_id": null,
-                                        "created_date": "2026-11-24 08:25:28",
-                                        "task_id": "2",
-                                        "task_name": "Crew Immigration",
-                                        "kpi_percentage": "0",
-                                        "card_type_id": null,
-                                        "card_type_name": null,
-                                        "card_type_color": null,
-                                        "card_type_icon": null,
-                                        "card_blocker_id": null,
-                                        "blocker_name": null,
-                                        "blocker_description": null,
-                                        "blocker_color": null,
-                                        "blocker_icon": null,
-                                        "card_sticker_id": null,
-                                        "sticker_name": null,
-                                        "sticker_color": null,
-                                        "sticker_icon": null,
-                                        "tag_id": null,
-                                        "tag_name": null,
-                                        "tag_color": null,
-                                        "request_type": null,
-                                        "request_id": null,
-                                        "task_card_docs": 1,
-                                        "task_details": {
-                                            "documents_total": 5,
-                                            "documents_uploaded": 5,
-                                            "documents_verified": 5,
-                                            "documents_pending": 0,
-                                            "documents_rejected": 0,
-                                            "documents_label": "5\/5"
-                                        },
-                                        "timeline": "23h 52m 38s",
-                                        "vendor_id": null,
-                                        "assignees": [],
-                                        "assigned_operators": [
-                                            {
-                                                "user_id": 85,
-                                                "name": "Infobahn Operator"
-                                            }
-                                        ],
-                                        "da_board": 0,
-                                        "checklist_doc": 0,
-                                        "checklist_doc_rejected": []
-                                    }
-                                ]
-                            },
-                            "children": []
-                        }
-                    ]
+                    "time_object_id": "47",
+                    "time_object": "Custom Clearance Time",
+                    "field_key": "CCT",
+                    "is_required": "0",
+                    "sort_order": "3",
+                    "stage_id": "8",
+                    "time_object_value": null
                 }
             ]
         }
-    ],
-    "background": {
-        "board_id": "27",
-        "board_name": "Jubail Marine",
-        "background_type": "color",
-        "color": null,
-        "background_file": null
     }
 }

@@ -10,6 +10,7 @@ import {
   FiUser,
   FiUserCheck,
 } from "react-icons/fi";
+import { isGroBlankDisplay as isBlankValue } from "./groCardUtils";
 
 /**
  * Icon + tone per summary label, so every card view (GRO, Custom, Taxi Boat…)
@@ -29,8 +30,10 @@ const SUMMARY_ICON_RULES = [
 const resolveSummaryIcon = (label) =>
   SUMMARY_ICON_RULES.find((rule) => rule.match.test(label || "")) ?? { Icon: FiInfo, tone: "slate" };
 
-const SummaryIcon = ({ label, icon }) => {
-  const { Icon, tone } = resolveSummaryIcon(label);
+const TIME_ICON = { Icon: FiCalendar, tone: "violet" };
+
+export const SummaryIcon = ({ label, icon, kind }) => {
+  const { Icon, tone } = kind === "time" ? TIME_ICON : resolveSummaryIcon(label);
   return (
     <span className={`gro-summary-icon gro-summary-icon--${tone}`} aria-hidden="true">
       {icon ?? <Icon size={17} />}
@@ -40,13 +43,8 @@ const SummaryIcon = ({ label, icon }) => {
 
 SummaryIcon.propTypes = {
   label: PropTypes.string,
+  kind: PropTypes.oneOf(["time"]),
   icon: PropTypes.node,
-};
-
-const isBlankValue = (value) => {
-  if (value == null) return true;
-  const text = String(value).trim();
-  return text === "" || text === "-" || text === "—" || text === "N/A";
 };
 
 const GroSummaryCard = ({ label, value, icon }) => {
