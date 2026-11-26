@@ -2262,6 +2262,64 @@
   line-clamp: 1;
 }
 
+/* ---------- Summary counters: Sedres left accent ----------
+   Icons keep their own tones; each card carries a slim Sedres-blue bar on its left edge
+   and a whisper of brand tint, so the strip echoes the brand band without shouting. */
+.gro-card-view .gro-summary-card {
+  overflow: hidden;
+  padding-left: 15px;
+  border-color: var(--border-primary);
+  background: var(--surface-primary);
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    left: 0;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: color-mix(in srgb, var(--color-primary) 45%, transparent);
+    transition: background 0.18s ease, top 0.18s ease, bottom 0.18s ease;
+  }
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--color-primary) 28%, var(--border-primary));
+    background: color-mix(in srgb, var(--color-primary) 3%, var(--surface-primary));
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--color-primary) 9%, transparent);
+
+    &::before {
+      top: 0;
+      bottom: 0;
+      border-radius: 0;
+      background: var(--color-primary);
+    }
+  }
+}
+
+/* Assigned User is the one editable counter: full-height brand bar + brand focus ring. */
+.gro-card-view .gro-summary-card--field {
+  &::before {
+    top: 0;
+    bottom: 0;
+    border-radius: 0;
+    background: var(--color-primary);
+  }
+
+  &:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 14%, transparent);
+  }
+}
+
+.gro-card-view .gro-summary-card--error {
+  border-color: #dc2626;
+
+  &::before {
+    background: #dc2626;
+  }
+}
+
 .gro-card-view .gro-document-header {
   margin-bottom: 10px;
 }
