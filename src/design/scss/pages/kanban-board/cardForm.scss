@@ -111,13 +111,6 @@
   color: var(--text-muted, var(--text-secondary));
 }
 
-.gro-skeleton-summary-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 11px;
-  flex-shrink: 0;
-}
-
 .gro-summary-grid--six-col {
   grid-template-columns: repeat(6, minmax(0, 1fr));
 }
@@ -3626,16 +3619,92 @@
   min-height: 0;
 }
 
-.gro-card-view--skeleton .gro-summary-card:hover {
-  transform: none;
-  border-color: var(--border-primary);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+/* Card skeleton: same frame as the real card (context bar → brand band → list | preview),
+   shimmering in a faint brand tint instead of plain grey. */
+.gro-card-view--skeleton {
+  .gro-skeleton:not(.gro-skel-on-brand) {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--color-primary) 7%, rgba(148, 163, 184, 0.14)) 25%,
+      color-mix(in srgb, var(--color-primary) 14%, rgba(148, 163, 184, 0.24)) 37%,
+      color-mix(in srgb, var(--color-primary) 7%, rgba(148, 163, 184, 0.14)) 63%
+    );
+    background-size: 400% 100%;
+  }
+
+  .gro-docs-lib {
+    min-height: 420px;
+  }
 }
 
-.gro-skeleton-label { width: 45%; height: 12px; }
-.gro-skeleton-value { width: 75%; height: 16px; margin-top: 4px; }
-.gro-skeleton-heading { width: 130px; height: 20px; }
-.gro-skeleton-tabs { width: 240px; height: 38px; border-radius: 12px; }
+.gro-skel-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.gro-skel-label { height: 9px; border-radius: 5px; max-width: 100%; }
+.gro-skel-value { height: 12px; border-radius: 6px; max-width: 100%; }
+.gro-skel-vessel { width: 150px; height: 16px; border-radius: 6px; }
+.gro-skel-identity-icon { width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; }
+.gro-skel-fact-icon { width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; }
+.gro-skel-assignee { width: 100%; height: 48px; border-radius: 11px; }
+.gro-skel-pill--nav { width: 150px; }
+.gro-skel-search { width: 280px; height: 34px; border-radius: 9px; }
+
+.gro-skel-doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gro-skel-doc-row-lib {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-left: 3px solid transparent;
+  border-radius: 10px;
+
+  &.is-first {
+    background: color-mix(in srgb, var(--color-primary) 5%, var(--surface-primary));
+    border-color: color-mix(in srgb, var(--color-primary) 14%, transparent);
+    border-left-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
+  }
+}
+
+.gro-skel-doc-icon { width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0; }
+.gro-skel-doc-text { flex: 1 1 auto; }
+
+.gro-skel-doc-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gro-skel-status { width: 52px; height: 14px; border-radius: 999px; flex-shrink: 0; }
+
+.gro-skel-preview-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-primary);
+
+  > :first-child { margin-right: auto; }
+}
+
+.gro-skel-btn { width: 64px; height: 32px; border-radius: 8px; }
+.gro-skel-btn--wide { width: 96px; }
+
+.gro-skel-preview-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  padding: 16px;
+}
 
 .gro-skeleton-rows {
   display: flex;

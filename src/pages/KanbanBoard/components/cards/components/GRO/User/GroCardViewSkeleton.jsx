@@ -126,29 +126,91 @@ GroTimeFieldsSkeleton.propTypes = {
   fields: PropTypes.number,
 };
 
-/** Full-layout skeleton mirroring GROCardView (summary cards + documents section). */
-function GroCardViewSkeleton({ summaryCards = 6 }) {
+const FACT_WIDTHS = [64, 52, 96, 120, 104];
+const DOC_ROW_WIDTHS = [46, 38, 54, 42, 50, 34];
+
+/**
+ * Full-layout skeleton mirroring GROCardView, so nothing jumps when data lands:
+ * context bar (vessel · facts · assignee) → brand band → documents list | preview.
+ */
+function GroCardViewSkeleton({ facts = 5, docRows = 6 }) {
   return (
     <div className="gro-card-view gro-card-view--skeleton" role="status" aria-live="polite">
       <span className="visually-hidden">Loading card details…</span>
-      <div className="gro-summary-grid gro-summary-grid--six-col" aria-hidden="true">
-        {Array.from({ length: summaryCards }, (_, i) => (
-          <div key={i} className="gro-summary-card">
-            <span className="gro-skeleton gro-skeleton-summary-icon" />
-            <div className="gro-summary-body">
-              <span className="gro-skeleton gro-skeleton-label" />
-              <span className="gro-skeleton gro-skeleton-value" />
+
+      <section className="gro-context-bar" aria-hidden="true">
+        <div className="gro-context-identity">
+          <span className="gro-skeleton gro-skel-identity-icon" />
+          <div className="gro-context-identity-text gro-skel-stack">
+            <span className="gro-skeleton gro-skel-label" style={{ width: 44 }} />
+            <span className="gro-skeleton gro-skel-vessel" />
+            <span className="gro-skeleton gro-skel-label" style={{ width: 150 }} />
+          </div>
+        </div>
+        <div className="gro-context-facts">
+          {Array.from({ length: facts }, (_, i) => (
+            <div key={i} className="gro-context-fact">
+              <span className="gro-skeleton gro-skel-fact-icon" />
+              <div className="gro-context-fact-text gro-skel-stack">
+                <span className="gro-skeleton gro-skel-label" style={{ width: 48 }} />
+                <span className="gro-skeleton gro-skel-value" style={{ width: FACT_WIDTHS[i % FACT_WIDTHS.length] }} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="gro-context-assignee">
+          <span className="gro-skeleton gro-skel-assignee" />
+        </div>
+      </section>
+
+      <div className="gro-document-section" aria-hidden="true">
+        <div className="gro-crew-immigration-panel gro-crew-imm-panel gro-crew-imm-panel--docs">
+          <div className="gro-crew-immigration-toolbar gro-crew-imm-toolbar">
+            <div className="gro-crew-imm-toolbar-group">
+              <span className="gro-skeleton gro-skel-on-brand gro-skel-pill gro-skel-pill--nav" />
+              <span className="gro-crew-imm-toolbar-divider" />
+              <span className="gro-skeleton gro-skel-on-brand gro-skel-pill" />
+            </div>
+            <div className="gro-crew-imm-toolbar-group gro-crew-imm-toolbar-group--end">
+              <span className="gro-skeleton gro-skel-on-brand gro-skel-search" />
             </div>
           </div>
-        ))}
-      </div>
-      <div className="gro-document-section" aria-hidden="true">
-        <div className="gro-document-header">
-          <span className="gro-skeleton gro-skeleton-heading" />
-          <span className="gro-skeleton gro-skeleton-tabs" />
-        </div>
-        <div className="gro-document-list">
-          <GroDocumentRowsSkeleton rows={3} />
+
+          <div className="gro-docs-lib">
+            <section className="gro-docs-lib-list">
+              <div className="gro-skel-doc-list">
+                {Array.from({ length: docRows }, (_, i) => (
+                  <div key={i} className={`gro-skel-doc-row-lib${i === 0 ? " is-first" : ""}`}>
+                    <span className="gro-skeleton gro-skel-doc-icon" />
+                    <span className="gro-skel-stack gro-skel-doc-text">
+                      <span
+                        className="gro-skeleton gro-skel-value"
+                        style={{ width: `${DOC_ROW_WIDTHS[i % DOC_ROW_WIDTHS.length]}%` }}
+                      />
+                      <span className="gro-skel-doc-meta">
+                        <span className="gro-skeleton gro-skel-status" />
+                        <span
+                          className="gro-skeleton gro-skel-label"
+                          style={{ width: `${DOC_ROW_WIDTHS[(i + 2) % DOC_ROW_WIDTHS.length]}%` }}
+                        />
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <aside className="gro-docs-lib-preview">
+              <div className="gro-skel-preview-head">
+                <span className="gro-skeleton gro-skel-value" style={{ width: "42%" }} />
+                <span className="gro-skeleton gro-skel-btn" />
+                <span className="gro-skeleton gro-skel-btn gro-skel-btn--wide" />
+              </div>
+              <div className="gro-skel-preview-body">
+                <GroLetterPreviewSkeleton />
+              </div>
+            </aside>
+          </div>
         </div>
       </div>
     </div>
@@ -156,7 +218,8 @@ function GroCardViewSkeleton({ summaryCards = 6 }) {
 }
 
 GroCardViewSkeleton.propTypes = {
-  summaryCards: PropTypes.number,
+  facts: PropTypes.number,
+  docRows: PropTypes.number,
 };
 
 export default GroCardViewSkeleton;
