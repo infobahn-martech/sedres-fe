@@ -99,7 +99,8 @@ function GenericActionFields({ action, value, defaultBoardId, startOpen = false,
 
   // Recurring "Create cards": title, where, card fields (guide 5.10) in the create-card card.
   if (isCreateCardsAction(action)) {
-    const cards = value.cards ?? [];
+    // null = untouched: show one default card (saved only once edited). [] = the user closed it.
+    const cards = value.cards ?? [EMPTY_CREATE_CARD];
     const setCards = (next) => onChange({ ...value, cards: next });
     return (
       <div className="br-link-card-list">
