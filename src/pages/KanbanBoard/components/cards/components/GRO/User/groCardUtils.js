@@ -438,7 +438,8 @@ export const formatGroDocumentDisplayName = (raw) => {
 };
 
 /**
- * GRO custom document status (API): 0 = not uploaded, 1 = uploaded, 2 = verified, 3 = reupload, 4 = rejected.
+ * GRO custom document status (API): 0 = not uploaded, 1 = uploaded, 2 = verified, 3 = reuploaded, 4 = rejected.
+ * 3 is set when a rejected document is replaced from the call checklist, so it needs verifying again.
  * Unknown values fall back to 0.
  */
 export const getGroDocumentVerifyStatus = (doc) => {
@@ -448,6 +449,12 @@ export const getGroDocumentVerifyStatus = (doc) => {
   if (Number.isNaN(n)) return 0;
   if (n >= 0 && n <= 4) return n;
   return 0;
+};
+
+/** Uploaded (1) or re-uploaded after a rejection (3): waiting for the task card to approve / reject. */
+export const isGroDocumentAwaitingVerification = (doc) => {
+  const status = getGroDocumentVerifyStatus(doc);
+  return status === 1 || status === 3;
 };
 
 export const groDocumentHasDownloadableUrl = (doc) => {

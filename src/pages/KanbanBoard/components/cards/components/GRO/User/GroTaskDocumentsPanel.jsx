@@ -12,12 +12,12 @@ import {
 } from "./groCardUtils";
 import "@/design/scss/documentLibrary.scss";
 
-// GRO status: 0 not uploaded · 1 awaiting verification · 2 verified · 3 reupload · 4 rejected.
+// GRO status: 0 not uploaded · 1 awaiting verification · 2 verified · 3 re-uploaded (awaiting verification) · 4 rejected.
 const STATUS_META = {
   0: { label: "Not uploaded", tone: "muted" },
   1: { label: "Pending", tone: "pending" },
   2: { label: "Verified", tone: "verified" },
-  3: { label: "Reupload", tone: "warning" },
+  3: { label: "Reuploaded", tone: "pending" },
   4: { label: "Rejected", tone: "danger" },
 };
 
@@ -114,7 +114,9 @@ export default function GroTaskDocumentsPanel({
 
   const selectedStatus = selectedDoc ? getGroDocumentVerifyStatus(selectedDoc) : 0;
   const selectedRemarks = String(selectedDoc?.remarks ?? "").trim();
-  const canVerifySelected = showDocumentVerifyActions && selectedStatus === 1;
+  const canVerifySelected = showDocumentVerifyActions && (selectedStatus === 1 || selectedStatus === 3);
+  // On a re-uploaded document the remarks are the earlier rejection reason.
+  const remarksPrefix = selectedStatus === 3 ? "Previously rejected: " : "";
 
   // Verification strip (pending → Approve / Reject, or the review remarks), shown inside
   // the selected document's row.
@@ -122,8 +124,14 @@ export default function GroTaskDocumentsPanel({
     selectedDoc && (canVerifySelected || selectedRemarks) ? (
       <div className={`gro-docs-lib-review gro-docs-lib-review--${STATUS_META[selectedStatus].tone}`}>
         <span className="gro-docs-lib-review-text" title={selectedRemarks || undefined}>
-          {canVerifySelected ? "Awaiting your verification" : `${STATUS_META[selectedStatus].label}`}
-          {selectedRemarks ? <span className="gro-docs-lib-review-remarks">{` · ${selectedRemarks}`}</span> : null}
+          {canVerifySelected
+            ? selectedStatus === 3
+              ? "Re-uploaded, awaiting your verification"
+              : "Awaiting your verification"
+            : `${STATUS_META[selectedStatus].label}`}
+          {selectedRemarks ? (
+            <span className="gro-docs-lib-review-remarks">{` · ${remarksPrefix}${selectedRemarks}`}</span>
+          ) : null}
         </span>
         {canVerifySelected ? (
           <span className="gro-docs-lib-review-actions">

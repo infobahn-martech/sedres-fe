@@ -18,14 +18,6 @@ const IconTick = () => (
   </svg>
 );
 
-const IconReupload = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-    <polyline points="17 8 12 3 7 8" />
-    <line x1="12" y1="3" x2="12" y2="15" />
-  </svg>
-);
-
 const IconDownload = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -53,9 +45,10 @@ function TaskDocumentItem({
   const label = formatGroDocumentDisplayName(doc.document_name ?? "");
   const status = getGroDocumentVerifyStatus(doc);
   const isNotUploaded = status === 0;
-  const isPendingVerification = status === 1;
+  // 3 = re-uploaded after a rejection: verified again like a fresh upload.
+  const isReuploaded = status === 3;
+  const isPendingVerification = status === 1 || isReuploaded;
   const isVerified = status === 2;
-  const isReupload = status === 3;
   const isRejected = status === 4;
   const remarksTextRaw = doc?.remarks != null && String(doc.remarks).trim() !== "" ? String(doc.remarks).trim() : "";
   const showRemarksBadge = Boolean(remarksTextRaw) && !isNotUploaded && !isVerified;
@@ -65,7 +58,6 @@ function TaskDocumentItem({
   let rowStatusClass = "gro-document-row-status-not-uploaded";
   if (isPendingVerification) rowStatusClass = "gro-document-row-status-pending";
   else if (isVerified) rowStatusClass = "gro-document-row-status-verified";
-  else if (isReupload) rowStatusClass = "gro-document-row-status-reupload";
   else if (isRejected) rowStatusClass = "gro-document-row-status-rejected";
 
   return (
@@ -76,7 +68,7 @@ function TaskDocumentItem({
           <span className="gro-document-title">{label}</span>
           {showRemarksBadge ? (
             <span className="gro-document-remarks-badge" title={remarksTextRaw}>
-              Remarks: {remarksTextRaw}
+              {isReuploaded ? "Previously rejected" : "Remarks"}: {remarksTextRaw}
             </span>
           ) : null}
         </div>
@@ -104,12 +96,6 @@ function TaskDocumentItem({
           >
             <IconCross />
             <span>Reject</span>
-          </button>
-        ) : null}
-        {isReupload ? (
-          <button type="button" className="gro-doc-action-btn gro-doc-action-btn--reupload gro-doc-action-btn--readonly" tabIndex={-1} aria-label="Reupload required">
-            <IconReupload />
-            <span>Reupload</span>
           </button>
         ) : null}
         {isRejected ? (

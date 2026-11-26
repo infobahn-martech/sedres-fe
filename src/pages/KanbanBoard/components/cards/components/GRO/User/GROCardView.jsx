@@ -78,6 +78,7 @@ import {
   resolveGroAssignedUserIdFromDetail,
   resolveGroAssignedUserDisplayName,
   getGroDocumentVerifyStatus,
+  isGroDocumentAwaitingVerification,
   flattenGroPassRows,
   buildGroPassIssueDateString,
   computeGroPassUploadPopoverPosition,
@@ -1373,7 +1374,7 @@ const GROCardView = forwardRef(function GROCardView(
   const openConfirmModal = useCallback((doc, action) => {
     if (isSubmittingAction) return;
     if (isFirstColumn) return;
-    if (getGroDocumentVerifyStatus(doc) !== 1) return;
+    if (!isGroDocumentAwaitingVerification(doc)) return;
     setSelectedDocument(doc);
     setConfirmAction(action);
     setConfirmRemarks(action === "reject" ? (doc?.remarks ?? "") : "");
@@ -1397,7 +1398,7 @@ const GROCardView = forwardRef(function GROCardView(
       notify("This document cannot be updated (missing reference).", "error");
       return;
     }
-    if (getGroDocumentVerifyStatus(doc) !== 1) {
+    if (!isGroDocumentAwaitingVerification(doc)) {
       notify(
         confirmAction === "approve"
           ? "Only uploaded documents can be approved."
