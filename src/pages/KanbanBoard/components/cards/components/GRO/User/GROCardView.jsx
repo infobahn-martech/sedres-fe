@@ -31,6 +31,7 @@ import PassRequestsView from "./PassRequestsView";
 import GroPassUploadPopoverForm from "./GroPassUploadPopoverForm";
 import GroPopoverStageExtraFields from "./GroPopoverStageExtraFields";
 import CrewImmigrationPanel from "./CrewImmigrationPanel";
+import CrewImmigrationDocumentsPanel from "./CrewImmigrationDocumentsPanel";
 import CrewChangePassPanel from "./CrewChangePassPanel";
 import VesselInwardRegistrationView from "./VesselInwardRegistrationView";
 import CrewImmigrationFormView from "./CrewImmigrationFormView";
@@ -1657,28 +1658,35 @@ const GROCardView = forwardRef(function GROCardView(
       ? `${crewImmigrationTotalCrew} crew across ${crewImmigrationBatchOptions.length} batch${crewImmigrationBatchOptions.length === 1 ? "" : "es"}`
       : "";
 
-  // On the Crew Immigration tab the section header row is dropped; its Documents / Crew Immigration
-  // switch moves into the panel's brand band so the card is just counters + table.
+  // The Crew Immigration card drops the section header row on both of its tabs; the
+  // Documents / Crew Immigration switch lives in the panel's brand band instead.
+  const useCrewImmigrationBand = hidePassTabs && isCrewImmigrationStage;
+  const isDocumentsTabActive = activeTab === GRO_ACTIVE_TABS.documents;
   const crewImmigrationNav = (
     <div className="gro-crew-imm-nav" role="tablist" aria-label={`Documents and ${taskPanelTitle}`}>
       <button
         type="button"
         role="tab"
-        aria-selected={false}
-        className="gro-crew-imm-nav-btn"
+        aria-selected={isDocumentsTabActive}
+        className={`gro-crew-imm-nav-btn${isDocumentsTabActive ? " gro-crew-imm-nav-btn--active" : ""}`}
         onClick={selectDocumentsTab}
       >
         <FiFolder aria-hidden />
         Documents
+        {!isGroLoading ? <span className="gro-crew-imm-nav-count">{documents.length}</span> : null}
       </button>
       <button
         type="button"
         role="tab"
-        aria-selected
-        className="gro-crew-imm-nav-btn gro-crew-imm-nav-btn--active"
-        title={crewImmigrationSummary || undefined}
+        aria-selected={isCrewImmigrationTabActive}
+        className={`gro-crew-imm-nav-btn${isCrewImmigrationTabActive ? " gro-crew-imm-nav-btn--active" : ""}`}
+        onClick={selectCrewImmigrationTab}
+        disabled={!isAllGroDocumentsVerified}
+        title={
+          isAllGroDocumentsVerified ? crewImmigrationSummary || undefined : "Verify all documents to continue"
+        }
       >
-        <FiUsers aria-hidden />
+        {isAllGroDocumentsVerified ? <FiUsers aria-hidden /> : <FiLock aria-hidden />}
         {taskPanelTitle}
       </button>
     </div>
@@ -1806,7 +1814,7 @@ const GROCardView = forwardRef(function GROCardView(
       </div>
 
       <div className="gro-document-section">
-        <div className="gro-document-header" hidden={isCrewImmigrationTabActive}>
+        <div className="gro-document-header" hidden={useCrewImmigrationBand}>
           <h3 className="gro-documents-heading">
             {documentsSectionTitle}
             {isDocumentsListVisible && !isGroLoading ? (
@@ -2117,6 +2125,17 @@ const GROCardView = forwardRef(function GROCardView(
                 isPrinting={isGeneratingCrewImmigrationPdf}
               />
             }
+          />
+        ) : useCrewImmigrationBand ? (
+          <CrewImmigrationDocumentsPanel
+            navigation={crewImmigrationNav}
+            documents={documents}
+            isGroLoading={isGroLoading}
+            isSubmittingAction={isSubmittingAction}
+            showDocumentVerifyActions={!isFirstColumn}
+            onApproveClick={handleApproveClick}
+            onRejectClick={handleRejectClick}
+            onDocumentDownload={handleDocumentDownload}
           />
         ) : hidePassTabs && activeTab === GRO_ACTIVE_TABS.vesselInwardRegistration ? (
           <VesselInwardRegistrationView

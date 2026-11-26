@@ -1506,6 +1506,68 @@
   cursor: default;
 }
 
+.gro-card-view .gro-crew-imm-nav-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gro-card-view .gro-crew-imm-nav-count {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* Documents tab of the Crew Immigration card: verification progress, read-only in the band. */
+.gro-card-view .gro-crew-imm-band-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+}
+
+.gro-card-view .gro-crew-imm-band-stat--done svg {
+  color: #4ade80;
+}
+
+/* The panel already frames the list, so the list drops its own card chrome. */
+.gro-card-view .gro-crew-imm-docs-body {
+  padding-top: 2px;
+
+  > .gro-document-list {
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent !important;
+  }
+
+  > .gro-crew-imm-empty {
+    margin: 24px 0;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+}
+
 .gro-card-view .gro-crew-imm-toolbar-divider {
   width: 1px;
   height: 24px;
