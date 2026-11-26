@@ -74,6 +74,7 @@ function InlineTextDropdown({ value, options, placeholder, triggerClassName, tri
                       setOpen(false);
                     }}
                   >
+                    {option.icon}
                     {(option.colorCode || option.iconName) && (
                       <OptionColorBadge colorCode={option.colorCode} iconName={option.iconName} />
                     )}
@@ -96,6 +97,7 @@ InlineTextDropdown.propTypes = {
     label: PropTypes.string,
     colorCode: PropTypes.string,
     iconName: PropTypes.string,
+    icon: PropTypes.node,
     group: PropTypes.string,
   })).isRequired,
   placeholder: PropTypes.string,

@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
-import { FiPlus, FiTrash2, FiX } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiUser, FiX } from 'react-icons/fi';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
+import useAuthReducer from '../../../store/AuthReducer';
 import SearchableSelect from '../../../components/form/SearchableSelect';
 import InlineTextDropdown from './InlineTextDropdown';
 import BusinessRuleFieldValue from './BusinessRuleFieldValue';
 import { isCustomGenericField } from './genericThenAction';
-import { getDatePeriods, getOperatorKey, normalizeConnector } from './businessRuleFieldUtils';
+import { fieldTakesValue, getDateFieldEmptyLabel, getDatePeriods, getOperatorKey, isYesNoOptions, operatorTakesValue, normalizeConnector, splitMultiValue, splitNoValueOperatorLabel, NOT_SET_LABEL } from './businessRuleFieldUtils';
 import BoardMinimapModal from './BoardMinimapModal';
+import BoardFilterPicker from './BoardFilterPicker';
 import { findLoadedColumnName, isPositionColumnField } from './positionColumnFields';
 
 // "if <relative> card matches this filter" box of a relative-card action (updates guide 2.3):
@@ -15,12 +17,19 @@ import { findLoadedColumnName, isPositionColumnField } from './positionColumnFie
 // A row is { id, fieldType: 'regular' | 'custom', fieldId, fieldLabel, operatorKey, value, timeUnitId }.
 const detailsKeyOf = (row) => `${row.fieldType}-${row.fieldId}`;
 
+// master_key of a field whose options are users (Owner ...).
+const USERS_MASTER_KEY = 'users';
+const userAvatar = (content) => <span className="br-filter-user-avatar" aria-hidden>{content}</span>;
+
 // renderPropertyPicker draws the Card Property Match modal (the same field picker as the AND column);
 // it is handed in because that modal lives in BusinessRuleFormModal.jsx.
-function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId = '', onChange }) {
+function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId = '', cardLayout = false, onChange }) {
   const {
     regularFields, customFields, fieldDetailsByKey, getFieldDetails, valueTimeUnits, boardWorkflowsByBoard,
+    boardPickerWorkspaces, getBoardPickerWorkspaces,
   } = useBusinessRuleReducer((s) => s);
+  const userProfile = useAuthReducer((s) => s.userProfile);
+  const loggedInUserId = String(userProfile?.user_id ?? userProfile?.userid ?? '');
   const [showPicker, setShowPicker] = useState(false);
   // Board Minimap of a "Last date moved to"-type row: the row it picks columns for and its board.
   const [columnPickRowId, setColumnPickRowId] = useState(null);
@@ -29,8 +38,8 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
 
-  // Rows whose date field already opened on its "Today" period, so choosing "Select date" afterwards
-  // is not overwritten by the default.
+  // Rows that already got their default (date "Today", current board, logged-in user), so a later choice such as
+  // "Select date" is not overwritten by it.
   const todayDefaultedRowIds = useRef(new Set());
 
   // The first operator of a field is its default; its details (operators, options) load on demand.
@@ -47,13 +56,30 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
         return;
       }
       if (row.value !== '' || todayDefaultedRowIds.current.has(row.id)) return;
+      // cardLayout: a new Board row opens on the current board (the AND "Board is" one).
+      if (cardLayout && details.structure_level === 'board' && defaultBoardId) {
+        todayDefaultedRowIds.current.add(row.id);
+        onChange(rows.map((r) => (r.id === row.id ? { ...r, value: String(defaultBoardId) } : r)));
+        return;
+      }
+      // cardLayout: a new user row (Owner) opens on the logged-in user, when the list has them.
+      if (cardLayout && details.master_key === USERS_MASTER_KEY && details.field_type === 'dropdown'
+        && details.options?.some((o) => String(o.option_value) === loggedInUserId)) {
+        todayDefaultedRowIds.current.add(row.id);
+        onChange(rows.map((r) => (r.id === row.id ? { ...r, value: loggedInUserId } : r)));
+        return;
+      }
       const operator = (details.operators ?? []).find((op) => getOperatorKey(op) === row.operatorKey);
       const today = (getDatePeriods(details, operator)).find((period) => String(period.option_label).trim().toLowerCase() === 'today');
       if (!today) return;
       todayDefaultedRowIds.current.add(row.id);
       onChange(rows.map((r) => (r.id === row.id ? { ...r, value: String(today.option_value) } : r)));
     });
-  }, [rows, fieldDetailsByKey]);
+  }, [rows, fieldDetailsByKey, defaultBoardId, loggedInUserId]);
+
+  useEffect(() => {
+    if (cardLayout) getBoardPickerWorkspaces();
+  }, [cardLayout]);
 
   const catalog = [...(regularFields ?? []), ...(customFields ?? [])];
   const findCatalogField = (row) => catalog.find((f) => (row.fieldType === 'custom'
@@ -110,17 +136,71 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
         const columnNames = pickedColumns
           .map((column) => column.name || findLoadedColumnName(boardWorkflowsByBoard, column.id) || `Column ${column.id}`)
           .join(', ');
-        const isColumnCard = isColumnRow && pickedColumns.length > 0;
+        // cardLayout ("Parent card is moved"): every row is a card, "are present" splits into "are" / "present".
+        const isColumnCard = cardLayout || (isColumnRow && pickedColumns.length > 0);
+        const operatorParts = (op) => (cardLayout ? splitNoValueOperatorLabel(op) : { head: op?.operator_label, tail: '' });
+        // The fixed line under the title: "present", or the field's own name for a state field ("Blocked is / Blocked").
+        const isStateField = cardLayout && details && operator && !fieldTakesValue(details) && operatorTakesValue(operator);
+        const operatorTail = operatorParts(operator).tail || (isStateField ? rowLabel : '');
         const removeRow = () => onChange(rows.filter((r) => r.id !== row.id));
+        const toggleConnector = () => setRow(row.id, { connector: normalizeConnector(row.connector) === 'AND' ? 'OR' : 'AND' });
+        // cardLayout: only a row with a typed or chosen value (Blocker) gets the OR / bin pill, same as the AND column.
+        const hasValueRowActions = cardLayout && fieldTakesValue(details) && operatorTakesValue(operator)
+          && !isYesNoOptions(details?.options ?? []) && !getDateFieldEmptyLabel(details);
+        // cardLayout: a Board value is picked on the same workspace board picker as the AND "Board is" row.
+        const isBoardValue = cardLayout && details?.structure_level === 'board';
+        const boardIds = splitMultiValue(row.value);
+        // cardLayout: a single user value (Owner) shows the user's initial beside the name.
+        const isUserValue = cardLayout && details?.master_key === USERS_MASTER_KEY && details.field_type === 'dropdown' && details.options?.length > 0;
+        const userOptions = isUserValue
+          ? details.options.map((o) => ({ value: String(o.option_value), label: String(o.option_label), icon: userAvatar(String(o.option_label).charAt(0).toUpperCase()) }))
+          : [];
+        const selectedUser = userOptions.find((o) => o.value === String(row.value));
+        let valueControl = isBoardValue ? (
+          <BoardFilterPicker
+            workspaces={boardPickerWorkspaces ?? []}
+            value={row.value}
+            onChange={(boardId) => setRow(row.id, { value: String(boardId) })}
+            wrapClassName="br-board-condition-wrap"
+            triggerClassName="business-rule-form-condition-label-btn br-condition-value-text d-inline-flex align-items-center gap-1"
+            triggerIconSize={16}
+            panelClassName="br-board-condition-panel"
+            placeholder={boardIds.length > 1 ? `${boardIds.length} selected` : NOT_SET_LABEL}
+          />
+        ) : (
+          <BusinessRuleFieldValue
+            details={details}
+            operator={operator}
+            value={row.value}
+            timeUnitId={row.timeUnitId}
+            timeUnits={valueTimeUnits}
+            label={rowLabel}
+            onChange={(next) => setRow(row.id, { value: next })}
+            onTimeUnitChange={(unitId) => setRow(row.id, { timeUnitId: unitId })}
+          />
+        );
+        if (isUserValue) {
+          valueControl = (
+            <InlineTextDropdown
+              value={row.value}
+              options={[{ value: '', label: NOT_SET_LABEL }, ...userOptions]}
+              placeholder={NOT_SET_LABEL}
+              triggerIcon={selectedUser?.icon ?? userAvatar(<FiUser size={16} />)}
+              triggerClassName="business-rule-form-condition-label-btn br-condition-value-text d-inline-flex align-items-center gap-2"
+              searchable
+              onChange={(next) => setRow(row.id, { value: next })}
+            />
+          );
+        }
         return (
-          <div key={row.id} className={`d-flex flex-column gap-2 mb-2 w-100${isColumnCard ? ' br-filter-card' : ''}`}>
+          <div key={row.id} className={`d-flex flex-column gap-2 mb-2 w-100${isColumnCard ? ' br-filter-card' : ''}${cardLayout ? ' br-filter-card--roomy' : ''}`}>
             <div className="d-flex align-items-center justify-content-between gap-2">
               <div className="d-flex align-items-center flex-wrap gap-1">
                 <span className={isColumnCard ? 'br-filter-card-title' : 'business-rule-form-action-chip-label'}>{columnNames ? `${rowLabel} ${columnNames}` : rowLabel}</span>
                 {operators.length > 0 && isColumnCard && (
                   <InlineTextDropdown
                     value={row.operatorKey}
-                    options={operators.map((op) => ({ value: getOperatorKey(op), label: op.operator_label }))}
+                    options={operators.map((op) => ({ value: getOperatorKey(op), label: operatorParts(op).head }))}
                     placeholder="Operator"
                     triggerClassName="br-condition-operator-trigger"
                     onChange={(operatorKey) => setRow(row.id, { operatorKey, value: '', timeUnitId: '' })}
@@ -129,11 +209,11 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
               </div>
               {isColumnCard ? (
                 <>
-                  {rows.length > 1 && (
+                  {!cardLayout && rows.length > 1 && (
                     <button
                       type="button"
                       className="business-rule-form-or-btn"
-                      onClick={() => setRow(row.id, { connector: normalizeConnector(row.connector) === 'AND' ? 'OR' : 'AND' })}
+                      onClick={toggleConnector}
                       aria-label={`Connector of ${rowLabel}`}
                     >
                       {normalizeConnector(row.connector)}
@@ -148,7 +228,7 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
                   <button
                     type="button"
                     className="business-rule-form-or-btn"
-                    onClick={() => setRow(row.id, { connector: normalizeConnector(row.connector) === 'AND' ? 'OR' : 'AND' })}
+                    onClick={toggleConnector}
                     aria-label={`Connector of ${rowLabel}`}
                   >
                     {normalizeConnector(row.connector)}
@@ -170,6 +250,7 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
                 menuPlacement="auto"
               />
             )}
+            {operatorTail && <span className={`br-condition-value-text${isStateField ? '' : ' text-capitalize'}`}>{operatorTail}</span>}
             {isColumnRow && pickedColumns.length === 0 && (
               <div className="br-position-column-row">
                 <button type="button" className="business-rule-form-add-link" onClick={() => handleOpenColumnPick(row.id)}>
@@ -178,23 +259,33 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
                 </button>
               </div>
             )}
-            <BusinessRuleFieldValue
-              details={details}
-              operator={operator}
-              value={row.value}
-              timeUnitId={row.timeUnitId}
-              timeUnits={valueTimeUnits}
-              label={rowLabel}
-              onChange={(next) => setRow(row.id, { value: next })}
-              onTimeUnitChange={(unitId) => setRow(row.id, { timeUnitId: unitId })}
-            />
+            {hasValueRowActions ? (
+              <div className="br-board-condition-value-row">
+                {valueControl}
+                <div className="business-rule-form-filter-row-actions">
+                  <button type="button" className="business-rule-form-or-btn" onClick={toggleConnector} aria-label={`Connector of ${rowLabel}`}>
+                    {normalizeConnector(row.connector)}
+                  </button>
+                  <button type="button" className="business-rule-form-filter-row-delete" onClick={removeRow} aria-label={`Remove ${rowLabel}`}>
+                    <FiTrash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ) : valueControl}
           </div>
         );
       })}
-      <button type="button" className="business-rule-form-add-link" onClick={() => setShowPicker(true)}>
-        <FiPlus size={14} aria-hidden />
-        Add new property
-      </button>
+      <div className="br-link-footer-actions w-100">
+        <button type="button" className="business-rule-form-add-link" onClick={() => setShowPicker(true)}>
+          <FiPlus size={14} aria-hidden />
+          Add new property
+        </button>
+        {cardLayout && rows.length > 1 && (
+          <button type="button" className="business-rule-form-add-link" onClick={() => onChange([])}>
+            Clear all
+          </button>
+        )}
+      </div>
 
       <BoardMinimapModal
         show={Boolean(columnPickRowId)}
@@ -221,6 +312,7 @@ RelativeFilterBox.propTypes = {
   renderPropertyPicker: PropTypes.func.isRequired,
   defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   rows: PropTypes.arrayOf(PropTypes.object).isRequired,
+  cardLayout: PropTypes.bool,
   onChange: PropTypes.func.isRequired,
 };
 
