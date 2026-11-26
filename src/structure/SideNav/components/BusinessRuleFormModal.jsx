@@ -26,7 +26,7 @@ import { findLoadedColumnName, isPositionColumnField } from './positionColumnFie
 import SearchableSelect from '../../../components/form/SearchableSelect';
 import BoardFilterPicker from './BoardFilterPicker';
 import FormTemplateFilter from './FormTemplateFilter';
-import { fieldTakesValue, getOperatorId, operatorTakesValue, operatorNeedsTimeUnit, isYesNoOptions, getDateFieldEmptyLabel, getDateFieldEmptyOperatorKey, getOperatorKey, normalizeConnector } from './businessRuleFieldUtils';
+import { fieldTakesValue, getOperatorId, operatorTakesValue, operatorNeedsTimeUnit, isYesNoOptions, getDateFieldEmptyLabel, getDateFieldEmptyOperatorKey, getOperatorKey, normalizeConnector, splitNoValueOperatorLabel } from './businessRuleFieldUtils';
 import DynamicIcon from './DynamicIcon';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import useAlertReducer from '../../../store/AlertReducer';
@@ -398,16 +398,6 @@ const PROPERTY_DOT_COLORS = [...PRIMARY_PRESET_COLORS, ...SECONDARY_PRESET_COLOR
 
 const getFieldLabel = (field) =>
   field.field_label ?? field.unit_label ?? field.field_name ?? field.custom_field_name ?? field.unit_name ?? '';
-
-// An operator with no value box ("are present" / "are not present") reads as "Attachments are v"
-// with its last word ("present") fixed on the line below like a value, so the dropdown only
-// switches the leading part ("are" / "are not").
-const splitNoValueOperatorLabel = (operator) => {
-  const label = String(operator?.operator_label ?? '');
-  const words = label.split(' ');
-  if (operatorTakesValue(operator) || words.length < 2) return { head: label, tail: '' };
-  return { head: words.slice(0, -1).join(' '), tail: words[words.length - 1] };
-};
 
 const getPropertyDotColor = (idx) => PROPERTY_DOT_COLORS[idx % PROPERTY_DOT_COLORS.length];
 
@@ -8121,6 +8111,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                         action={section.action}
                         title={section.title}
                         allowRepeat={rule?.icon !== TRIGGER_CODE_TO_ICON.card_created}
+                        filterCardLayout={rule?.icon === TRIGGER_CODE_TO_ICON.parent_card_moved}
                         renderPropertyPicker={(pickerProps) => (
                           <CardPropertyMatchModal
                             {...pickerProps}

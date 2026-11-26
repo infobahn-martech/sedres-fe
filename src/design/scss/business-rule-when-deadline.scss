@@ -456,6 +456,35 @@
   }
 }
 
+// "Parent card is moved" filter cards: "Owner is v" reads as one line at one size.
+.br-filter-card.br-filter-card--roomy {
+  .br-filter-card-title,
+  .br-condition-operator-trigger,
+  .br-condition-value-text {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .br-condition-operator-wrap {
+    display: flex;
+  }
+}
+
+// Initial of a picked user: pale round chip, as in the reference design.
+.br-filter-user-avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
 .br-filter-card-title {
   font-size: 13px;
   font-weight: 400;

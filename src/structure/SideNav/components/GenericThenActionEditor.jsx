@@ -337,7 +337,7 @@ GenericActionFields.propTypes = { ...editorPropTypes, startOpen: PropTypes.bool,
 
 // The action's own fields, then (parent / child / relative actions) the filter box that limits
 // which related cards the action applies to.
-function GenericInstance({ action, value, defaultBoardId, renderPropertyPicker, startOpen = false, inCard = false, onChange }) {
+function GenericInstance({ action, value, defaultBoardId, renderPropertyPicker, filterCardLayout = false, startOpen = false, inCard = false, onChange }) {
   const filterKind = getActionFilterKind(action);
   return (
     <div className="d-flex flex-column gap-3">
@@ -345,6 +345,7 @@ function GenericInstance({ action, value, defaultBoardId, renderPropertyPicker, 
       {filterKind && renderPropertyPicker && (
         <RelativeFilterBox
           renderPropertyPicker={renderPropertyPicker}
+          cardLayout={filterCardLayout}
           defaultBoardId={defaultBoardId}
           label={`if ${filterKind.kind} card matches this filter`}
           rows={value.filterConditions ?? []}
@@ -360,12 +361,13 @@ GenericInstance.propTypes = {
   startOpen: PropTypes.bool,
   inCard: PropTypes.bool,
   renderPropertyPicker: PropTypes.func,
+  filterCardLayout: PropTypes.bool,
 };
 
 // An action that moves a card to a board position can be added again, each time with its own target
 // and filter (value.more holds the extra ones): "Add new move action". The link's verb is the first
 // word of the action's own action_code (move_parent_card -> move).
-function GenericThenActionEditor({ action, title, value, defaultBoardId, renderPropertyPicker, onChange, allowRepeat = true }) {
+function GenericThenActionEditor({ action, title, value, defaultBoardId, renderPropertyPicker, filterCardLayout = false, onChange, allowRepeat = true }) {
   const more = value.more ?? [];
   const hasFirstTarget = Object.values(value.position ?? {}).some(Boolean);
   const canRepeat = allowRepeat && isRepeatableAction(action) && (hasFirstTarget || more.length > 0);
@@ -403,6 +405,7 @@ function GenericThenActionEditor({ action, title, value, defaultBoardId, renderP
               value={card}
               defaultBoardId={defaultBoardId}
               renderPropertyPicker={renderPropertyPicker}
+              filterCardLayout={filterCardLayout}
               onChange={(next) => setCard(index, next)}
             />
           </div>
@@ -426,6 +429,7 @@ function GenericThenActionEditor({ action, title, value, defaultBoardId, renderP
         value={value}
         defaultBoardId={defaultBoardId}
         renderPropertyPicker={renderPropertyPicker}
+        filterCardLayout={filterCardLayout}
         onChange={onChange}
       />
       {more.map((extra, index) => (
@@ -444,6 +448,7 @@ function GenericThenActionEditor({ action, title, value, defaultBoardId, renderP
             startOpen
             defaultBoardId={defaultBoardId}
             renderPropertyPicker={renderPropertyPicker}
+            filterCardLayout={filterCardLayout}
             onChange={(next) => onChange({ ...value, more: more.map((m, i) => (i === index ? next : m)) })}
           />
         </div>
@@ -466,6 +471,7 @@ GenericThenActionEditor.propTypes = {
   ...editorPropTypes,
   renderPropertyPicker: PropTypes.func,
   allowRepeat: PropTypes.bool,
+  filterCardLayout: PropTypes.bool,
   title: PropTypes.string,
 };
 

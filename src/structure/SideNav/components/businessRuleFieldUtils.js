@@ -85,3 +85,13 @@ export const getDateFieldEmptyOperatorKey = (details) => getDateFieldEmptyState(
 // A Yes/No field (e.g. Blocked) is a two-option dropdown labelled Yes and No.
 export const isYesNoOptions = (options) =>
   options.length === 2 && options.every((opt) => ['yes', 'no'].includes(String(opt.option_label).trim().toLowerCase()));
+
+// An operator with no value box ("are present" / "are not present") reads as "Attachments are v"
+// with its last word ("present") fixed on the line below like a value, so the dropdown only
+// switches the leading part ("are" / "are not").
+export const splitNoValueOperatorLabel = (operator) => {
+  const label = String(operator?.operator_label ?? '');
+  const words = label.split(' ');
+  if (operatorTakesValue(operator) || words.length < 2) return { head: label, tail: '' };
+  return { head: words.slice(0, -1).join(' '), tail: words[words.length - 1] };
+};
