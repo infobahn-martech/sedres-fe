@@ -11,6 +11,8 @@ import {
   isSubmittedInvoicesColumnTitle,
   isLamprellAlgihazSendSoColumn,
   isLamprellAlgihazAwaitingSoColumn,
+  isBgpReadyToSubmit,
+  isAwaitingProofCard,
 } from "../../utils/columnTitles";
 import "@/design/scss/pages/kanban-board/batch-group.scss";
 
@@ -67,7 +69,12 @@ export default function BatchGroup({
 
   /* Loose cards render as a plain grid: no header, never collapsed. */
   const isUngrouped = Boolean(batch.isUngrouped);
-  const isSeFlowBatch = !isUngrouped && !MCDERMOTT_WORKFLOW_PATTERN.test(workflowTitle ?? "");
+  /* BGP "Ready to Submit": the same invoice submission email, for the ticked cards not yet sent (no Awaiting proof sticker). */
+  const isBgpReadyToSubmitBatch =
+    !isUngrouped && isBgpReadyToSubmit(workflowTitle, columnTitle, batch.cards[0]?.swimlaneTitle);
+  /* The DA Supervisor's BGP lane has no SE steps either, and its ticks must reach the board-wide selection. */
+  const isSeFlowBatch =
+    !isUngrouped && !isBgpReadyToSubmitBatch && !MCDERMOTT_WORKFLOW_PATTERN.test(workflowTitle ?? "");
   /* McDermott batches in "Ready for PO Request" send the PO request email from the header. */
   const isPoRequestBatch =
     !isUngrouped &&
@@ -85,9 +92,10 @@ export default function BatchGroup({
     ZAMIL_WORKFLOW_PATTERN.test(workflowTitle ?? "") &&
     CONVERT_TO_AR_INVOICE_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   const isSubmitByEmailBatch =
-    !isUngrouped &&
-    SUBMIT_BY_EMAIL_WORKFLOW_PATTERN.test(workflowTitle ?? "") &&
-    SUBMIT_BY_EMAIL_COLUMN_PATTERN.test((columnTitle ?? "").trim());
+    isBgpReadyToSubmitBatch ||
+    (!isUngrouped &&
+      SUBMIT_BY_EMAIL_WORKFLOW_PATTERN.test(workflowTitle ?? "") &&
+      SUBMIT_BY_EMAIL_COLUMN_PATTERN.test((columnTitle ?? "").trim()));
   /* Batches already emailed for SE creation sit in "Awaiting SE" (live title "Awaiting for SE"). */
   const isAwaitingSeColumn = AWAITING_SE_COLUMN_PATTERN.test((columnTitle ?? "").trim());
   /* Batches whose SE approval is back sit in "SE Received" and move on to invoicing. */
@@ -191,6 +199,10 @@ export default function BatchGroup({
     ? batch.cards
     : batch.cards.filter((card) => selectedActionCardIds.includes(card.id));
 
+  const submitCards = isBgpReadyToSubmitBatch
+    ? tickedActionCards.filter((card) => !isAwaitingProofCard(card))
+    : tickedActionCards;
+
   const openSoEmailModal = useLamprellAlgihazSoApprovalStore((state) => state.openSoEmailModal);
   const openSoUploadModal = useLamprellAlgihazSoApprovalStore((state) => state.openSoUploadModal);
   const isSoDraftLoading = useLamprellAlgihazSoApprovalStore((state) => state.isSoDraftLoading);
@@ -253,10 +265,10 @@ export default function BatchGroup({
             <button
               type="button"
               className="batch-group__action"
-              onClick={() => onSubmitByEmail?.(tickedActionCards)}
-              disabled={!tickedActionCards.length}
+              onClick={() => onSubmitByEmail?.(submitCards)}
+              disabled={!submitCards.length}
             >
-              Submit by Email
+              {isBgpReadyToSubmitBatch ? "Submit" : "Submit by Email"}
             </button>
           ) : isUploadPosBatch ? (
             <button

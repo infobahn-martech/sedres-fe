@@ -55,6 +55,7 @@ import {
   isSubseaWorkflow,
   isUploadedToPortalColumnTitle,
   isLntReadyToSubmit,
+  isBgpReadyToSubmit,
 } from "../../../../utils/columnTitles";
 
 const SRT_RECEIVED_COLUMN_PATTERN = /^srt rec(?:ie|ei)ved$/i;
@@ -1066,7 +1067,7 @@ function CardItem({
     (isSrtRejectedForSignature && isSubseaSrtReceivedCard) ||
     isSccLeftUnsigned;
   /* The tooltip names the document the column takes: the dispatch proof, the SRT, or (L&T) the SCC. */
-  const signatureDocumentName = isUploadedToPortalColumnTitle(columnTitle) || isLntReadyToSubmit(workflowTitle, columnTitle)
+  const signatureDocumentName = isUploadedToPortalColumnTitle(columnTitle) || isLntReadyToSubmit(workflowTitle, columnTitle) || isBgpReadyToSubmit(workflowTitle, columnTitle)
     ? "dispatch proof"
     : SRT_RECEIVED_COLUMN_PATTERN.test(String(columnTitle ?? "").trim()) ||
         (isSubseaSwimlane({ title: laneTitle }) && isApprovalReceivedColumnTitle(columnTitle))
