@@ -598,11 +598,11 @@ export function ReportTemplatesModal({
   } = useForm({ defaultValues });
 
   // ---- Dynamic fields (Insert Field pickers on Subject and Body) ----
-  // Fields depend on the selected call type; they're only requested once a picker is opened.
-  const selectedCallTypeId = watch("call_type_id");
+  // Fields depend on the selected report type; they're only requested once a picker is opened.
+  const selectedReportTypeId = watch("report_type_id");
   const [fieldsRequested, setFieldsRequested] = useState(false);
   const placeholderFields = useReportPlaceholderFields({
-    callTypeId: selectedCallTypeId,
+    reportTypeId: selectedReportTypeId,
     enabled: fieldsRequested,
   });
   const requestFields = useCallback(() => setFieldsRequested(true), []);
@@ -635,7 +635,7 @@ export function ReportTemplatesModal({
       groups={placeholderFields.groups}
       status={placeholderFields.status}
       error={placeholderFields.error}
-      hasCallType={placeholderFields.hasCallType}
+      hasReportType={placeholderFields.hasReportType}
       onOpen={requestFields}
       onRetry={placeholderFields.retry}
       onSelect={onSelect}

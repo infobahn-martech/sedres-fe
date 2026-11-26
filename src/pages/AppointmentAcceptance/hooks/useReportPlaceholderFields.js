@@ -1,27 +1,27 @@
 import { useCallback, useEffect, useState } from "react";
-import formTemplateService from "../../../services/formTemplateService";
+import appointmentAcceptanceService from "../../../services/appointmentAcceptanceService";
 import { normalizePlaceholderGroups } from "../utils/reportPlaceholders";
 
 const IDLE = { status: "idle", groups: [], error: "" };
 
-// Insertable fields for the selected call type, grouped by tab / sub-tab.
-// Loads only once `enabled` (the picker has been opened) and again whenever the call type
-// changes. status: "idle" (no call type) | "loading" | "ready" | "error".
-export default function useReportPlaceholderFields({ callTypeId, enabled }) {
+// Insertable fields for the selected report type (GET report_template/placeholders).
+// Loads only once `enabled` (the picker has been opened) and again whenever the report type
+// changes. status: "idle" (no report type) | "loading" | "ready" | "error".
+export default function useReportPlaceholderFields({ reportTypeId, enabled }) {
   const [state, setState] = useState(IDLE);
   const [reloadKey, setReloadKey] = useState(0);
-  const resolvedCallTypeId = String(callTypeId ?? "").trim();
+  const resolvedReportTypeId = String(reportTypeId ?? "").trim();
 
   useEffect(() => {
-    if (!resolvedCallTypeId) {
+    if (!resolvedReportTypeId) {
       setState(IDLE);
       return undefined;
     }
     if (!enabled) return undefined;
     let cancelled = false;
     setState((prev) => ({ ...prev, status: "loading", error: "" }));
-    formTemplateService
-      .getSystemBindings(resolvedCallTypeId)
+    appointmentAcceptanceService
+      .getReportPlaceholders(resolvedReportTypeId)
       .then(({ data }) => {
         if (cancelled) return;
         setState({ status: "ready", groups: normalizePlaceholderGroups(data?.data), error: "" });
@@ -37,9 +37,9 @@ export default function useReportPlaceholderFields({ callTypeId, enabled }) {
     return () => {
       cancelled = true;
     };
-  }, [resolvedCallTypeId, enabled, reloadKey]);
+  }, [resolvedReportTypeId, enabled, reloadKey]);
 
   const retry = useCallback(() => setReloadKey((key) => key + 1), []);
 
-  return { ...state, hasCallType: Boolean(resolvedCallTypeId), retry };
+  return { ...state, hasReportType: Boolean(resolvedReportTypeId), retry };
 }

@@ -12,7 +12,7 @@ const VIEWPORT_GAP = 8;
 // "Insert Field" button + searchable, grouped popover of dynamic fields. The popover is
 // portalled to document.body with position:fixed so the modal's scroll container can't clip it.
 // The parent decides where the chosen field goes (onSelect).
-function DynamicFieldPicker({ groups, status, error, hasCallType, onOpen, onRetry, onSelect, ariaLabel }) {
+function DynamicFieldPicker({ groups, status, error, hasReportType, onOpen, onRetry, onSelect, ariaLabel }) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -123,8 +123,8 @@ function DynamicFieldPicker({ groups, status, error, hasCallType, onOpen, onRetr
   };
 
   const renderState = () => {
-    if (!hasCallType) {
-      return <div className="rt-field-picker__state">Select a Call Type to see the available fields.</div>;
+    if (!hasReportType) {
+      return <div className="rt-field-picker__state">Select a Report Type to see the available fields.</div>;
     }
     if (status === "loading" || status === "idle") {
       return (
@@ -145,7 +145,7 @@ function DynamicFieldPicker({ groups, status, error, hasCallType, onOpen, onRetr
       );
     }
     if (!groups.length) {
-      return <div className="rt-field-picker__state">No fields are configured for this call type.</div>;
+      return <div className="rt-field-picker__state">No fields are configured for this report type.</div>;
     }
     if (!visibleGroups.length) {
       return <div className="rt-field-picker__state">No fields match “{query.trim()}”.</div>;
@@ -181,7 +181,7 @@ function DynamicFieldPicker({ groups, status, error, hasCallType, onOpen, onRetr
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search fields..."
                 aria-label="Search fields"
-                disabled={!hasCallType || status !== "ready" || !groups.length}
+                disabled={!hasReportType || status !== "ready" || !groups.length}
               />
             </div>
             <div className="rt-field-picker__list" ref={listRef} role="listbox" aria-label="Dynamic fields">
@@ -255,7 +255,7 @@ DynamicFieldPicker.propTypes = {
   ).isRequired,
   status: PropTypes.oneOf(["idle", "loading", "ready", "error"]).isRequired,
   error: PropTypes.string,
-  hasCallType: PropTypes.bool.isRequired,
+  hasReportType: PropTypes.bool.isRequired,
   onOpen: PropTypes.func,
   onRetry: PropTypes.func,
   onSelect: PropTypes.func.isRequired,

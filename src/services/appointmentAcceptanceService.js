@@ -6,6 +6,9 @@ const getReportTemplates = ({ params }) =>
 const getReportTypes = () =>
   Gateway.get('/report_template/all_report_types');
 
+const getReportPlaceholders = (report_type_id) =>
+  Gateway.get('/report_template/placeholders', { params: { report_type_id } });
+
 const getTemplateByTemplateId = (template_id) =>
   Gateway.get(`/report_template/template_by_templateid/${template_id}`);
 
@@ -27,6 +30,7 @@ const getArrivalTemplateByPortCallType = (payload) =>
 export default {
   getReportTemplates,
   getReportTypes,
+  getReportPlaceholders,
   getTemplateByTemplateId,
   createReportTemplate,
   updateReportTemplate,

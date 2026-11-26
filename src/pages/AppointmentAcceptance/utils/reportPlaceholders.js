@@ -1,58 +1,34 @@
 // Dynamic field placeholders for report templates.
 //
-// Fields come from GET form_template/system_bindings?call_type_id= (the same structure the
-// custom template builder uses): tabs in display order, each with its fields and sub_tabs.
-// Nothing here knows any tab or field name — groups and fields are built from the response.
+// Fields come from GET report_template/placeholders?report_type_id= as a flat list:
+//   [{ key: "vessel_name", token: "{vessel_name}", label: "Vessel name" }, ...]
+// The picker shows them in response order. If an item carries a `group` label, items are
+// grouped under it; otherwise everything goes into a single "Fields" group.
 
-// Saved token format — unchanged from the manually typed placeholders (e.g. "{vessel_name}"),
-// so existing templates keep working.
+// Fallback token format when the API omits `token` (e.g. "{vessel_name}").
 export const toPlaceholderToken = (key) => `{${key}}`;
 
-const byDisplayOrder = (a, b) =>
-  (Number(a?.display_order) || 0) - (Number(b?.display_order) || 0);
+const DEFAULT_GROUP = "Fields";
 
-// system_bindings identifies a field by field_key (older responses used system_binding_key).
-const fieldKeyOf = (field) => String(field?.field_key ?? field?.system_binding_key ?? "").trim();
-const fieldLabelOf = (field) => String(field?.label ?? field?.field_label ?? "").trim();
-const tabLabelOf = (tab) => String(tab?.tab_name ?? tab?.tab_label ?? tab?.tab_key ?? "").trim();
-const subTabsOf = (tab) => (Array.isArray(tab?.sub_tabs) ? tab.sub_tabs : Array.isArray(tab?.subtabs) ? tab.subtabs : []);
-
-const toGroupFields = (fields) => {
-  const seen = new Set();
-  return (Array.isArray(fields) ? fields : []).flatMap((field) => {
-    const key = fieldKeyOf(field);
-    if (!key || seen.has(key)) return [];
-    seen.add(key);
-    return [{ key, label: fieldLabelOf(field) || key, token: toPlaceholderToken(key) }];
-  });
-};
-
-// system_bindings response data → [{ key, label, fields: [{ key, label, token }] }].
-// Sub-tabs become their own groups ("Operation › Pre Arrival"); empty groups are dropped.
+// API response data → [{ key, label, fields: [{ key, label, token }] }].
 export const normalizePlaceholderGroups = (data) => {
   if (!Array.isArray(data) || data.length === 0) return [];
-  const isTabbed = data.some((item) => item && ("tab_name" in item || "tab_key" in item));
-  // An older flat list of bindings is the Appointment Details tab (as in the template builder).
-  const tabs = isTabbed
-    ? data
-    : [{ tab_key: "appointment_details", tab_name: "Appointment Details", fields: data }];
-
-  const groups = [];
-  const walk = (list, parentKey, parentLabel) => {
-    [...list]
-      .filter((tab) => tab && typeof tab === "object")
-      .sort(byDisplayOrder)
-      .forEach((tab, index) => {
-        const ownLabel = tabLabelOf(tab) || `Tab ${index + 1}`;
-        const key = `${parentKey ? `${parentKey}/` : ""}${tab.tab_key ?? ownLabel}`;
-        const label = parentLabel ? `${parentLabel} › ${ownLabel}` : ownLabel;
-        const fields = toGroupFields(tab.fields);
-        if (fields.length) groups.push({ key, label, fields });
-        walk(subTabsOf(tab), key, label);
-      });
-  };
-  walk(tabs, "", "");
-  return groups;
+  const groups = new Map();
+  const seen = new Set();
+  data.forEach((item) => {
+    if (!item || typeof item !== "object") return;
+    const key = String(item.key ?? "").trim();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    const groupLabel = String(item.group ?? "").trim() || DEFAULT_GROUP;
+    if (!groups.has(groupLabel)) groups.set(groupLabel, { key: groupLabel, label: groupLabel, fields: [] });
+    groups.get(groupLabel).fields.push({
+      key,
+      label: String(item.label ?? "").trim() || key,
+      token: String(item.token ?? "").trim() || toPlaceholderToken(key),
+    });
+  });
+  return [...groups.values()];
 };
 
 // Case-insensitive match on field label, key or group label.
