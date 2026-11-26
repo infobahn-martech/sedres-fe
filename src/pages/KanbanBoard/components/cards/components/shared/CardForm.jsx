@@ -122,6 +122,15 @@ const ADD_CARD_TOPBAR_DEFAULT_HEX = "#00368c";
 /** GRO / custom pass task card modal — default header until user picks another in SedresColorPicker. */
 const GRO_TASK_HEADER_DEFAULT_HEX = "#10b981";
 
+/** GRO header color: a valid hex from the card / API, else the emerald default. */
+const resolveGroHeaderHex = (...candidates) => {
+  for (const value of candidates) {
+    const s = String(value ?? "").trim();
+    if (/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(s)) return normalizeHexColor(s);
+  }
+  return GRO_TASK_HEADER_DEFAULT_HEX;
+};
+
 /** Map header CSS color (hex or rgb/rgba) to normalized hex for SedresColorPicker. */
 const appearanceColorToPickerHex = (value, fallbackHex = ADD_CARD_TOPBAR_DEFAULT_HEX) => {
   if (value === undefined || value === null) return fallbackHex;
@@ -1946,6 +1955,23 @@ function CardForm({
   // The get_call_detail_by_id response fetched here is handed to GROCardView (prefetchedDetail)
   // so it binds from it instead of requesting the same API again once it mounts.
   const [groPrefetchedDetail, setGroPrefetchedDetail] = useState(null);
+  // { title, color } of the open GRO / Custom Clearance task card, from call.card_title /
+  // call.card_color in get_call_detail_by_id (reported by GROCardView on every bind).
+  // Keyed by card id, so a previous card's title/color is never shown for the next one.
+  const [groHeaderMetaState, setGroHeaderMeta] = useState(null);
+  const groHeaderCardKey = String(card?.id ?? card?.card_id ?? "");
+  const groHeaderCardKeyRef = useRef(groHeaderCardKey);
+  groHeaderCardKeyRef.current = groHeaderCardKey;
+  const handleGroHeaderMetaChange = useCallback((meta) => {
+    const cardKey = groHeaderCardKeyRef.current;
+    setGroHeaderMeta((prev) =>
+      prev?.cardKey === cardKey && prev?.title === meta?.title && prev?.color === meta?.color
+        ? prev
+        : { cardKey, title: meta?.title ?? null, color: meta?.color ?? null }
+    );
+  }, []);
+  const groHeaderMeta =
+    groHeaderMetaState?.cardKey === groHeaderCardKey ? groHeaderMetaState : null;
   const groCheckCallIdRaw = card?.call_id ?? card?.callId;
   const groCheckCallId = groCheckCallIdRaw != null ? String(groCheckCallIdRaw).trim() : "";
   const groCheckCardIdRaw = resolveGroCardId(card);
@@ -2076,7 +2102,7 @@ function CardForm({
       return ADD_CARD_TOPBAR_DEFAULT_HEX;
     }
     if (isGROStyleView) {
-      return GRO_TASK_HEADER_DEFAULT_HEX;
+      return resolveGroHeaderHex(card?.color);
     }
     return card?.color || DEFAULT_ACCENT_COLOR;
   });
@@ -2448,9 +2474,11 @@ function CardForm({
   // Card passed to the TopBar: card management metadata from the call detail
   // seeds the selection, while live card values (e.g. after a picker edit) win.
   const topbarCard = useMemo(() => {
-    if (!cardMetaFromSnapshot) return card;
-    return { ...cardMetaFromSnapshot, ...card };
-  }, [card, cardMetaFromSnapshot]);
+    const base = cardMetaFromSnapshot ? { ...cardMetaFromSnapshot, ...card } : card;
+    // GRO / Custom Clearance task cards: title from get_call_detail_by_id (call.card_title).
+    if (isGROStyleView && groHeaderMeta?.title) return { ...base, title: groHeaderMeta.title };
+    return base;
+  }, [card, cardMetaFromSnapshot, isGROStyleView, groHeaderMeta?.title]);
 
   // Husbandry Call (call_type_id === "4") has no Operation stage.
   const isHusbandryCall = String(formValues.call_type_id ?? "") === "4";
@@ -2915,11 +2943,22 @@ function CardForm({
     }
   }, [show, card?.id, card?.color, isAddMode, isGROStyleView, cardMetaFromSnapshot]);
 
-  // GRO / custom clearance task card: default emerald header when opening or switching cards.
+  // GRO / custom clearance task card: header color from get_call_detail_by_id (call.card_color),
+  // falling back to the default emerald until it arrives or when the API sends none.
   useEffect(() => {
     if (!show || isAddMode || !isGROStyleView) return;
-    setTopbarColor(GRO_TASK_HEADER_DEFAULT_HEX);
-  }, [show, card?.id, isAddMode, isGROStyleView]);
+    // API color first; while loading, the board card's own color (same card_color), so the
+    // header doesn't flash the emerald default before the API color lands.
+    setTopbarColor(resolveGroHeaderHex(groHeaderMeta?.color, card?.color));
+  }, [show, card?.id, card?.color, isAddMode, isGROStyleView, groHeaderMeta?.color]);
+
+  // Keep the title editor in step with the API title once it lands.
+  useEffect(() => {
+    if (!isGROStyleView || !groHeaderMeta?.title) return;
+    setFormValues((prev) =>
+      prev.cardTitle === groHeaderMeta.title ? prev : { ...prev, cardTitle: groHeaderMeta.title }
+    );
+  }, [isGROStyleView, groHeaderMeta?.title]);
 
   // Everything else uses card's unique color
   const accentColor = useMemo(() => card?.color || DEFAULT_ACCENT_COLOR, [card?.color]);
@@ -3258,7 +3297,7 @@ function CardForm({
       if (isAddMode) return;
 
       const trimmed = String(newTitle ?? "").trim();
-      const previousTitle = card?.title || "";
+      const previousTitle = topbarCard?.title || "";
 
       if (!trimmed) {
         notify("Card title cannot be empty.", "error");
@@ -3291,6 +3330,7 @@ function CardForm({
             throw new Error(msg);
           }
           patchCardTitle?.(id, trimmed);
+          setGroHeaderMeta((prev) => (prev?.title ? { ...prev, title: trimmed } : prev));
           setFormValues((prev) => ({ ...prev, cardTitle: trimmed }));
           notify("Card title updated.", "success");
         })
@@ -3305,7 +3345,7 @@ function CardForm({
         })
         .finally(() => setIsTitleSaving(false));
     },
-    [isAddMode, card?.id, card?.card_id, card?.title, patchCardTitle]
+    [isAddMode, card?.id, card?.card_id, topbarCard?.title, patchCardTitle]
   );
 
   const ownerInitial = useMemo(
@@ -3363,7 +3403,12 @@ function CardForm({
           <GroCardViewSkeleton />
         ) : isGROStyleView ? (
           isCustomVariant ? (
-            <CustomCardView ref={groCardViewRef} card={card} userRoleId={userRoleId} />
+            <CustomCardView
+              ref={groCardViewRef}
+              card={card}
+              userRoleId={userRoleId}
+              onHeaderMetaChange={handleGroHeaderMetaChange}
+            />
           ) : isCoordinatorTransport ? (
             <CoordinatorTransportCardView cardData={card} cardColor={topbarColor} />
           ) : (
@@ -3373,6 +3418,7 @@ function CardForm({
               mode="gro"
               userRoleId={userRoleId}
               prefetchedDetail={groPrefetchedDetail}
+              onHeaderMetaChange={handleGroHeaderMetaChange}
             />
           )
         ) : (

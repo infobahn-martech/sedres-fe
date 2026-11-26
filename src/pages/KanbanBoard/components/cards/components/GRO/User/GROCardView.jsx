@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from "react";
 import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
-import { FiClock, FiFolder, FiUsers, FiLock, FiAnchor, FiRepeat } from "react-icons/fi";
+import { FiClock, FiFolder, FiUsers, FiAnchor, FiRepeat } from "react-icons/fi";
 import { notify } from "@/components/Toaster";
 import SearchableSelect, { deriveSearchPlaceholder } from "@/components/form/SearchableSelect";
 import userService from "@/services/userService";
@@ -98,9 +98,14 @@ const GROCardView = forwardRef(function GROCardView(
     selectedTask: selectedTaskProp = null,
     // get_call_detail_by_id response CardForm already fetched: { callId, cardId, response }.
     prefetchedDetail = null,
+    // Receives { title, color } from call.card_title / call.card_color on every bind,
+    // so the drawer's header shows the task card's own title and color.
+    onHeaderMetaChange = null,
   },
   ref
 ) {
+  const onHeaderMetaChangeRef = useRef(onHeaderMetaChange);
+  onHeaderMetaChangeRef.current = onHeaderMetaChange;
   const isCustomClearance = mode === "custom";
   const hidePassTabs = mode === "gro" || isCustomClearance;
   const isGroSupervisorViewer =
@@ -227,6 +232,10 @@ const GROCardView = forwardRef(function GROCardView(
       setTimeObjects(parsed.stageTimeObjects);
       setStage11TimeObjects(parsed.stage11TimeObjects);
       setAssignableUsersFromApi(parsed.assignableUsers);
+      const apiCall = res?.data?.data?.call;
+      const headerTitle = String(apiCall?.card_title ?? "").trim();
+      const headerColor = String(apiCall?.card_color ?? "").trim();
+      onHeaderMetaChangeRef.current?.({ title: headerTitle || null, color: headerColor || null });
       return parsed;
     },
     [applyTaskDocuments]
@@ -1662,8 +1671,17 @@ const GROCardView = forwardRef(function GROCardView(
       : isCrewChangeStage
         ? { key: GRO_ACTIVE_TABS.crewChange, icon: FiRepeat, onSelect: selectCrewChangeTab }
         : null;
-  const isTaskTabSelected = taskTab != null && activeTab === taskTab.key;
-  const TaskTabIcon = isAllGroDocumentsVerified ? taskTab?.icon : FiLock;
+  // The task tab only appears once every document is verified (hidden, not disabled, before).
+  const showTaskTab = taskTab != null && isAllGroDocumentsVerified;
+  const isTaskTabSelected = showTaskTab && activeTab === taskTab.key;
+  const TaskTabIcon = taskTab?.icon;
+  // If the task tab disappears while open (e.g. a document was rejected), fall back to Documents.
+  const taskTabKey = taskTab?.key ?? null;
+  useEffect(() => {
+    if (isGroLoading || !taskTabKey || isAllGroDocumentsVerified) return;
+    if (activeTab === taskTabKey) selectDocumentsTab();
+  }, [isGroLoading, taskTabKey, isAllGroDocumentsVerified, activeTab, selectDocumentsTab]);
+
   const taskNav = (
     <div className="gro-crew-imm-nav" role="tablist" aria-label={`Documents and ${taskPanelTitle}`}>
       <button
@@ -1677,15 +1695,14 @@ const GROCardView = forwardRef(function GROCardView(
         Documents
         {!isGroLoading ? <span className="gro-crew-imm-nav-count">{documents.length}</span> : null}
       </button>
-      {taskTab ? (
+      {showTaskTab ? (
         <button
           type="button"
           role="tab"
           aria-selected={isTaskTabSelected}
           className={`gro-crew-imm-nav-btn${isTaskTabSelected ? " gro-crew-imm-nav-btn--active" : ""}`}
           onClick={taskTab.onSelect}
-          disabled={!isAllGroDocumentsVerified}
-          title={isAllGroDocumentsVerified ? taskTab.hint || undefined : "Verify all documents to continue"}
+          title={taskTab.hint || undefined}
         >
           <TaskTabIcon aria-hidden />
           {taskPanelTitle}
@@ -2161,6 +2178,7 @@ GROCardView.propTypes = {
     response: PropTypes.object,
   }),
   mode: PropTypes.oneOf(["gro", "custom"]),
+  onHeaderMetaChange: PropTypes.func,
   userRoleId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   selectedTask: PropTypes.shape({
     task_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
