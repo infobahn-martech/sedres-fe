@@ -164,6 +164,16 @@ $cl-resubmit-border: #fde68a;
     transform: translateY(1px);
   }
 
+  &:disabled {
+    opacity: 0.75;
+    cursor: progress;
+    transform: none;
+  }
+
+  .cl-spin {
+    animation: cl-reupload-spin 0.9s linear infinite;
+  }
+
   &:focus-visible {
     outline: 2px solid $cl-reject;
     outline-offset: 2px;
@@ -332,5 +342,11 @@ $cl-resubmit-border: #fde68a;
 @media (prefers-reduced-motion: reduce) {
   .cl-excel-table .checklist-table-row.cl-item-row--flash td {
     animation: none;
+  }
+}
+
+@keyframes cl-reupload-spin {
+  to {
+    transform: rotate(360deg);
   }
 }

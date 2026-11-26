@@ -74,7 +74,9 @@ const normalizeExpiryDateForUi = (value) => {
 
 /**
  * Task-card document review status — same codes as task_card/verify_docs:
- * 0 not uploaded · 1 uploaded · 2 verified · 3 re-upload requested · 4 rejected.
+ * 0 not uploaded · 1 uploaded · 2 verified · 3 re-uploaded · 4 rejected.
+ * Status 3 is set by call_checklist/reupload_checklist_file once a rejected document has been
+ * replaced, so it is awaiting verification again — only 4 still needs action.
  */
 export const CHECKLIST_REVIEW_STATUS = {
   UPLOADED: 1,
@@ -101,8 +103,10 @@ const toStatusCode = (...values) => {
 };
 
 /** True when a review status means the document must be uploaded again. */
-export const isChecklistReviewRejected = (status) =>
-  status === CHECKLIST_REVIEW_STATUS.REJECTED || status === CHECKLIST_REVIEW_STATUS.REUPLOAD;
+export const isChecklistReviewRejected = (status) => status === CHECKLIST_REVIEW_STATUS.REJECTED;
+
+/** True when a rejected document was replaced and is waiting to be verified again. */
+export const isChecklistReviewReuploaded = (status) => status === CHECKLIST_REVIEW_STATUS.REUPLOAD;
 
 /**
  * Review state from get_call_detail `checklist[].sections[].items[].task_documents[]`
@@ -115,7 +119,10 @@ const extractTaskDocumentReview = (taskDocuments) => {
     .filter(({ status }) => status != null && status > 0);
   if (!docs.length) return null;
 
-  const picked = docs.find(({ status }) => isChecklistReviewRejected(status)) ?? docs[docs.length - 1];
+  const picked =
+    docs.find(({ status }) => isChecklistReviewRejected(status)) ??
+    docs.find(({ status }) => isChecklistReviewReuploaded(status)) ??
+    docs[docs.length - 1];
   const { doc, status } = picked;
   return {
     status,

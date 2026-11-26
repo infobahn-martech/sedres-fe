@@ -44,6 +44,7 @@ const ChecklistTypeBlock = ({
   sectionTree,
   itemsData,
   onItemChange,
+  onItemReupload,
   openSections,
   onSectionToggle,
   onSelectAll,
@@ -174,6 +175,7 @@ const ChecklistTypeBlock = ({
                   node={node}
                   itemsData={itemsData}
                   onItemChange={onItemChange}
+                  onItemReupload={onItemReupload}
                   openSections={openSections}
                   onSectionToggle={onSectionToggle}
                   onSelectAll={onSelectAll}
@@ -198,6 +200,7 @@ ChecklistTypeBlock.propTypes = {
   sectionTree: PropTypes.array.isRequired,
   itemsData: PropTypes.object.isRequired,
   onItemChange: PropTypes.func.isRequired,
+  onItemReupload: PropTypes.func,
   openSections: PropTypes.object.isRequired,
   onSectionToggle: PropTypes.func.isRequired,
   onSelectAll: PropTypes.func.isRequired,

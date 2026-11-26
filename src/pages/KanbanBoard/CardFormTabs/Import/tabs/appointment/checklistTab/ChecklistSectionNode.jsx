@@ -17,6 +17,7 @@ const ChecklistSectionNode = ({
   node,
   itemsData,
   onItemChange,
+  onItemReupload,
   openSections,
   onSectionToggle,
   onSelectAll,
@@ -84,6 +85,7 @@ const ChecklistSectionNode = ({
           item={item}
           itemData={itemsData[item.id] || {}}
           onChange={onItemChange}
+          onReupload={onItemReupload}
           isViewOnly={isViewOnly}
           isDAModule={isDAModule}
         />
@@ -95,6 +97,7 @@ const ChecklistSectionNode = ({
           node={sub}
           itemsData={itemsData}
           onItemChange={onItemChange}
+          onItemReupload={onItemReupload}
           openSections={openSections}
           onSectionToggle={onSectionToggle}
           onSelectAll={onSelectAll}
@@ -147,6 +150,7 @@ ChecklistSectionNode.propTypes = {
   node: PropTypes.object.isRequired,
   itemsData: PropTypes.object.isRequired,
   onItemChange: PropTypes.func.isRequired,
+  onItemReupload: PropTypes.func,
   openSections: PropTypes.object.isRequired,
   onSectionToggle: PropTypes.func.isRequired,
   onSelectAll: PropTypes.func.isRequired,

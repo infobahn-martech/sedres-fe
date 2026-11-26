@@ -4,9 +4,9 @@ import { FiUploadCloud, FiAlertOctagon, FiRefreshCw, FiClock } from "react-icons
 import DatePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DatePickerField";
 import { FormTextarea } from "./checklistFormPrimitives";
 import {
-  CHECKLIST_REVIEW_STATUS,
   getBackendFileSessionRemovalKey,
   isChecklistReviewRejected,
+  isChecklistReviewReuploaded,
 } from "./checklistMappers";
 
 /** "YYYY-MM-DD HH:mm:ss" -> "DD/MM/YYYY HH:mm" for the rejection note. */
@@ -209,6 +209,7 @@ const ChecklistItemRow = ({
   item,
   itemData,
   onChange,
+  onReupload,
   isViewOnly = false,
 }) => {
   const {
@@ -231,6 +232,8 @@ const ChecklistItemRow = ({
     Array.isArray(itemData?.uploadedFiles) ? itemData.uploadedFiles : []
   );
   const fileInputRef = useRef(null);
+  const reuploadInputRef = useRef(null);
+  const [reuploading, setReuploading] = useState(false);
   const uploadFilesRef = useRef(null);
   const [moreUploadFilesOpen, setMoreUploadFilesOpen] = useState(false);
 
@@ -257,7 +260,9 @@ const ChecklistItemRow = ({
   const review = itemData?.review ?? null;
   const isRejected = isChecklistReviewRejected(review?.status);
   const hasReplacement = isRejected && uploadColumnFiles.some(isLocalFileEntry);
-  const reviewVerb = review?.status === CHECKLIST_REVIEW_STATUS.REUPLOAD ? "Re-upload requested" : "Rejected";
+  const reviewVerb = "Rejected";
+  // Re-uploaded (status 3): the replacement is with the task card, waiting to be verified again.
+  const isReuploaded = !isRejected && isChecklistReviewReuploaded(review?.status);
   const isFileRejected = (entry) => {
     if (!isRejected || isLocalFileEntry(entry)) return false;
     if (entry?.reviewStatus != null) return isChecklistReviewRejected(entry.reviewStatus);
@@ -372,6 +377,24 @@ const ChecklistItemRow = ({
   };
 
   const handleBrowseClick = () => fileInputRef.current?.click();
+
+  const handleReuploadClick = () => {
+    if (reuploading) return;
+    if (typeof onReupload === "function") reuploadInputRef.current?.click();
+    else handleBrowseClick();
+  };
+
+  const handleReuploadFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || reuploading) return;
+    setReuploading(true);
+    try {
+      await onReupload(item, file);
+    } finally {
+      setReuploading(false);
+    }
+  };
 
   const handleRemarksChange = (e) => {
     const newRemarks = e.target.value;
@@ -697,6 +720,18 @@ const ChecklistItemRow = ({
               ) : null}
             </div>
           ) : null}
+          {isReuploaded ? (
+            <div className="cl-review-note cl-review-note--resubmit" role="status">
+              <div className="cl-review-note__head">
+                <FiClock className="cl-review-note__icon" aria-hidden />
+                <span className="cl-review-note__status">Re-uploaded</span>
+                {review?.taskName ? (
+                  <span className="cl-review-note__task">{review.taskName}</span>
+                ) : null}
+              </div>
+              <p className="cl-review-note__reason">Awaiting verification.</p>
+            </div>
+          ) : null}
           {showMetaRow ? (
             <div className="cl-item-meta-row cl-item-meta-row--inline">
               {expiryDateRequired ? (
@@ -760,11 +795,13 @@ const ChecklistItemRow = ({
             <button
               type="button"
               className="cl-reupload-btn"
-              onClick={handleBrowseClick}
+              onClick={handleReuploadClick}
+              disabled={reuploading}
+              aria-busy={reuploading || undefined}
               title={review?.reason ? `Re-upload — ${review.reason}` : "Re-upload document"}
             >
-              <FiRefreshCw size={14} aria-hidden />
-              Re-upload
+              <FiRefreshCw size={14} aria-hidden className={reuploading ? "cl-spin" : undefined} />
+              {reuploading ? "Uploading…" : "Re-upload"}
             </button>
           ) : !isViewOnly ? (
             <button
@@ -783,6 +820,13 @@ const ChecklistItemRow = ({
             multiple
             id={`file-upload-${id}`}
             onChange={handleFileChange}
+            className="checklist-file-input"
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+          />
+          <input
+            ref={reuploadInputRef}
+            type="file"
+            onChange={handleReuploadFileChange}
             className="checklist-file-input"
             accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
           />
@@ -809,6 +853,7 @@ ChecklistItemRow.propTypes = {
   item: PropTypes.object.isRequired,
   itemData: PropTypes.object,
   onChange: PropTypes.func.isRequired,
+  onReupload: PropTypes.func,
   isViewOnly: PropTypes.bool,
 };
 

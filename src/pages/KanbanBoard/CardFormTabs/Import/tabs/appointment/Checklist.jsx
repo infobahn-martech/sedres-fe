@@ -448,6 +448,42 @@ function Checklist({
     runAutoSave();
   }, [itemsData, runAutoSave]);
 
+  // Re-upload of a rejected document goes straight to its own endpoint (not the checklist save),
+  // then the call detail is re-read so the row shows the new file and review state.
+  const handleItemReupload = useCallback(
+    async (item, file) => {
+      if (!currentCallId) {
+        notify("Call ID is missing. Please save general details first.", "error");
+        return false;
+      }
+      const checklistItemId =
+        getChecklistItemIdFromUiItem(item) || item?.checklist_item_id || item?.id;
+      const formData = new FormData();
+      formData.append("call_id", String(currentCallId));
+      formData.append("checklist_item_id", String(checklistItemId));
+      formData.append("file", file);
+      try {
+        const res = await checklistService.reuploadChecklistFile(formData);
+        notify(res?.data?.message || "Document re-uploaded.", "success");
+      } catch (error) {
+        const msg =
+          error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "Failed to re-upload document.";
+        notify(typeof msg === "string" ? msg : "Failed to re-upload document.", "error");
+        return false;
+      }
+      try {
+        await reloadChecklistFromCallDetail();
+      } catch {
+        /* upload succeeded; refresh is best-effort */
+      }
+      return true;
+    },
+    [currentCallId, reloadChecklistFromCallDetail]
+  );
+
   // Items a task card rejected (or asked to re-upload) that still have no replacement file.
   const rejectedSummary = useMemo(() => {
     const list = [];
@@ -540,6 +576,7 @@ function Checklist({
                   sectionTree={block.tree}
                   itemsData={itemsData}
                   onItemChange={handleItemChange}
+                  onItemReupload={handleItemReupload}
                   openSections={openSections}
                   onSectionToggle={handleSectionToggle}
                   onSelectAll={handleSelectAll}
