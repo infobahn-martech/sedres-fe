@@ -50,6 +50,7 @@ export default function CrewImmigrationPanel({
   actions = null,
   batchStatus = {},
   batchesLoading = false,
+  navigation = null,
 }) {
   const [search, setSearch] = useState("");
   const safeRows = useMemo(() => (Array.isArray(rows) ? rows : []), [rows]);
@@ -84,6 +85,12 @@ export default function CrewImmigrationPanel({
     <div className="gro-crew-immigration-panel gro-crew-imm-panel">
       <div className="gro-crew-immigration-toolbar gro-crew-imm-toolbar">
         <div className="gro-crew-imm-toolbar-group">
+          {navigation ? (
+            <>
+              {navigation}
+              <span className="gro-crew-imm-toolbar-divider" aria-hidden />
+            </>
+          ) : null}
           {safeBatchOptions.length > 0 ? (
             <div className="gro-pass-segments" role="tablist" aria-label="Batch">
               {safeBatchOptions.map((b) => {
@@ -288,4 +295,5 @@ CrewImmigrationPanel.propTypes = {
   actions: PropTypes.node,
   batchStatus: PropTypes.objectOf(PropTypes.oneOf(["done", "progress", "pending"])),
   batchesLoading: PropTypes.bool,
+  navigation: PropTypes.node,
 };

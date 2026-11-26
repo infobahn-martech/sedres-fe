@@ -1449,6 +1449,70 @@
   margin-left: auto;
 }
 
+/* Section header row is folded into the band on the Crew Immigration tab. */
+.gro-card-view .gro-document-header[hidden] {
+  display: none !important;
+}
+
+/* Page-level nav (Documents / Crew Immigration) inside the band: an inset track, so it
+   reads as a level above the batch tabs and the Crew List / Form switch. */
+.gro-card-view .gro-crew-imm-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.gro-card-view .gro-crew-imm-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  &:hover:not(.gro-crew-imm-nav-btn--active) {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 1px;
+  }
+}
+
+.gro-card-view .gro-crew-imm-nav-btn--active {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  cursor: default;
+}
+
+.gro-card-view .gro-crew-imm-toolbar-divider {
+  width: 1px;
+  height: 24px;
+  margin: 0 4px;
+  background: rgba(255, 255, 255, 0.28);
+}
+
 .gro-card-view .gro-crew-imm-toolbar-empty {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.75);

@@ -1638,7 +1638,7 @@ const GROCardView = forwardRef(function GROCardView(
     ]
   );
 
-  // Heading follows the active tab, so the Crew Immigration view isn't titled "Documents".
+  // Heading follows the active tab, so a task view isn't titled "Documents".
   const crewImmigrationTotalCrew = useMemo(
     () => Object.values(crewImmigrationBatchCounts ?? {}).reduce((sum, n) => sum + (Number(n) || 0), 0),
     [crewImmigrationBatchCounts]
@@ -1652,11 +1652,37 @@ const GROCardView = forwardRef(function GROCardView(
       GRO_ACTIVE_TABS.crewChange,
     ].includes(activeTab);
   const documentsSectionTitle = isTaskTabActive ? taskPanelTitle : "Documents";
-  const documentsSectionSubtitle = isCrewImmigrationTabActive
-    ? crewImmigrationBatchOptions.length > 0
+  const crewImmigrationSummary =
+    crewImmigrationBatchOptions.length > 0
       ? `${crewImmigrationTotalCrew} crew across ${crewImmigrationBatchOptions.length} batch${crewImmigrationBatchOptions.length === 1 ? "" : "es"}`
-      : ""
-    : "";
+      : "";
+
+  // On the Crew Immigration tab the section header row is dropped; its Documents / Crew Immigration
+  // switch moves into the panel's brand band so the card is just counters + table.
+  const crewImmigrationNav = (
+    <div className="gro-crew-imm-nav" role="tablist" aria-label={`Documents and ${taskPanelTitle}`}>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={false}
+        className="gro-crew-imm-nav-btn"
+        onClick={selectDocumentsTab}
+      >
+        <FiFolder aria-hidden />
+        Documents
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected
+        className="gro-crew-imm-nav-btn gro-crew-imm-nav-btn--active"
+        title={crewImmigrationSummary || undefined}
+      >
+        <FiUsers aria-hidden />
+        {taskPanelTitle}
+      </button>
+    </div>
+  );
 
   const handleAssignedUserChange = useCallback(
     async (e) => {
@@ -1780,16 +1806,13 @@ const GROCardView = forwardRef(function GROCardView(
       </div>
 
       <div className="gro-document-section">
-        <div className="gro-document-header">
+        <div className="gro-document-header" hidden={isCrewImmigrationTabActive}>
           <h3 className="gro-documents-heading">
             {documentsSectionTitle}
             {isDocumentsListVisible && !isGroLoading ? (
               <span className="gro-documents-count" aria-label={`${documents.length} documents`}>
                 {documents.length}
               </span>
-            ) : null}
-            {documentsSectionSubtitle ? (
-              <span className="gro-documents-subtitle">{documentsSectionSubtitle}</span>
             ) : null}
           </h3>
           <div className="gro-document-header-actions gro-document-header-actions--with-segments">
@@ -2084,6 +2107,7 @@ const GROCardView = forwardRef(function GROCardView(
             view={crewImmigrationView}
             onViewChange={setCrewImmigrationView}
             batchStatus={crewImmigrationBatchStatus}
+            navigation={crewImmigrationNav}
             formContent={
               <CrewImmigrationFormView
                 portId={groPortId}
