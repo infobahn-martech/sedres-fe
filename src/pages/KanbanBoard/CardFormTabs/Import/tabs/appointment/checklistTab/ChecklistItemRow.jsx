@@ -221,6 +221,7 @@ const ChecklistItemRow = ({
     requirement,
     requireCopyOnlyFromApi,
     requireInfoOnlyFromApi = false,
+    documentNotRequired = false,
     taskNames = [],
   } = item;
   const displayTaskNames = Array.isArray(taskNames) ? taskNames.filter(Boolean) : [];
@@ -601,6 +602,7 @@ const ChecklistItemRow = ({
         <div className="cl-req-content">
           {requirementMetaLabel ? (
             <span className="cl-req-label" title={requirementMetaLabel}>
+              {documentNotRequired ? null : (
               <span className="cl-item-meta-icon" aria-hidden>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                   <path d="M14 3H7C5.9 3 5 3.9 5 5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V8L14 3Z" stroke="currentColor" strokeWidth="1.8" />
@@ -608,6 +610,7 @@ const ChecklistItemRow = ({
                   <path d="M9 12H15M9 16H15" stroke="currentColor" strokeWidth="1.8" />
                 </svg>
               </span>
+              )}
               <span className="cl-req-label-text">{requirementMetaLabel}</span>
             </span>
           ) : (
@@ -747,7 +750,13 @@ const ChecklistItemRow = ({
       </td>
       <td className="checklist-table-upload cl-col-upload cl-col-upload--multi checklist-upload-compact-wrap">
         <div className="checklist-upload-compact checklist-upload-compact--icon">
-          {!isViewOnly && isRejected && !hasReplacement ? (
+          {documentNotRequired ? (
+            uploadColumnFiles.length === 0 ? (
+              <span className="cl-role-empty" aria-label="No document required">
+                -
+              </span>
+            ) : null
+          ) : !isViewOnly && isRejected && !hasReplacement ? (
             <button
               type="button"
               className="cl-reupload-btn"

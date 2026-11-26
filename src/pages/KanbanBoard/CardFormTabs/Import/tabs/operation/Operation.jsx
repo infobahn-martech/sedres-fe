@@ -277,6 +277,49 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
       setActiveOperationTab(allowedOperationTabIds[0]);
     }
   }, [allowedOperationTabIds, activeOperationTab]);
+  // Opening a sub-tab re-reads GET call_file/get_call_detail/{callId} (like Check List does),
+  // so it renders from fresh server data rather than the copy loaded when the card opened.
+  // Crew Immigration binds from its own APIs; Check List already re-reads on open itself.
+  // Skipped while the shared detail is already loading (that response is fresh) and for the
+  // automatic switch to the template's first sub-tab right after the initial load.
+  const [tabOpenFetching, setTabOpenFetching] = useState(false);
+  const refetchCallDetailRef = useRef(refetchCallDetail);
+  refetchCallDetailRef.current = refetchCallDetail;
+  const isCallDetailFetchingRef = useRef(isCallDetailFetching);
+  isCallDetailFetchingRef.current = isCallDetailFetching;
+  const subtabOpenedRef = useRef(false);
+  useEffect(() => {
+    subtabOpenedRef.current = false;
+  }, [currentCallId]);
+  useEffect(() => {
+    if (
+      activeOperationTab === OPERATION_TABS.CREW_IMMIGRATION ||
+      activeOperationTab === OPERATION_TABS.CHECK_LIST
+    ) {
+      return undefined;
+    }
+    const isFirstOpen = !subtabOpenedRef.current;
+    subtabOpenedRef.current = true;
+    const refetch = refetchCallDetailRef.current;
+    if (!currentCallId || typeof refetch !== "function") return undefined;
+    if (isCallDetailFetchingRef.current) return undefined;
+    if (!isFirstOpen && !userPickedOperationTabRef.current) return undefined;
+
+    let cancelled = false;
+    setTabOpenFetching(true);
+    Promise.resolve(refetch())
+      .catch(() => {
+        /* the existing call detail stays on screen */
+      })
+      .finally(() => {
+        if (!cancelled) setTabOpenFetching(false);
+      });
+    return () => {
+      cancelled = true;
+      setTabOpenFetching(false);
+    };
+  }, [activeOperationTab, currentCallId]);
+
   const activeTemplateSubtab = useMemo(
     () => operationTabDefinitions.find((tab) => tab.id === activeOperationTab)?.template ?? null,
     [operationTabDefinitions, activeOperationTab]
@@ -669,7 +712,8 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
           onChangeCapture={markDirtyFromInput}
           onInputCapture={markDirtyFromInput}
         >
-          {isUnmappedTemplateTabId(activeOperationTab) && (
+          {isUnmappedTemplateTabId(activeOperationTab) && tabOpenFetching && <StageFormSkeleton />}
+          {isUnmappedTemplateTabId(activeOperationTab) && !tabOpenFetching && (
             <TemplateTabPanel tab={activeTemplateSubtab} detail={callDetailData} />
           )}
           {activeOperationTab === OPERATION_TABS.CREW_IMMIGRATION && (
@@ -679,10 +723,11 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               cardColor="#00368c"
             />
           )}
-          {isStageTab(activeOperationTab) && (callDetailLoading || (legacyStagesEnabled && !eventFieldsReady)) && (
+          {isStageTab(activeOperationTab) &&
+            (tabOpenFetching || callDetailLoading || (legacyStagesEnabled && !eventFieldsReady)) && (
             <StageFormSkeleton />
           )}
-          {isTemplateStageTab(activeOperationTab) && activeOperationTab === OPERATION_TABS.PRE_ARRIVAL &&
+          {!tabOpenFetching && isTemplateStageTab(activeOperationTab) && activeOperationTab === OPERATION_TABS.PRE_ARRIVAL &&
             renderTemplateStage(OPERATION_TABS.PRE_ARRIVAL, {
               canEdit: canEditPreArrival,
               canPreviewEmail: canPreviewPreArrivalEmail,
@@ -690,7 +735,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               canAddTimeObject: canAddPreArrivalTimeObject,
               canDeleteTimeObject: canDeletePreArrivalTimeObject,
             })}
-          {isTemplateStageTab(activeOperationTab) && activeOperationTab === OPERATION_TABS.ARRIVAL &&
+          {!tabOpenFetching && isTemplateStageTab(activeOperationTab) && activeOperationTab === OPERATION_TABS.ARRIVAL &&
             renderTemplateStage(OPERATION_TABS.ARRIVAL, {
               canEdit: canEditArrival,
               canPreviewEmail: canPreviewArrivalEmail,
@@ -698,7 +743,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               canAddTimeObject: canAddArrivalTimeObject,
               canDeleteTimeObject: canDeleteArrivalTimeObject,
             })}
-          {isTemplateStageTab(activeOperationTab) && activeOperationTab === OPERATION_TABS.DEPARTURE &&
+          {!tabOpenFetching && isTemplateStageTab(activeOperationTab) && activeOperationTab === OPERATION_TABS.DEPARTURE &&
             renderTemplateStage(OPERATION_TABS.DEPARTURE, {
               canEdit: canEditDeparture,
               canPreviewEmail: canPreviewDepartureEmail,
@@ -706,7 +751,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               canAddTimeObject: canAddDepartureTimeObject,
               canDeleteTimeObject: canDeleteDepartureTimeObject,
             })}
-          {activeOperationTab === OPERATION_TABS.PRE_ARRIVAL && legacyStagesEnabled && eventFieldsReady && (
+          {activeOperationTab === OPERATION_TABS.PRE_ARRIVAL && legacyStagesEnabled && eventFieldsReady && !tabOpenFetching && (
             <PreArrival
               card={card}
               formValues={viewOnlyFormValues}
@@ -732,7 +777,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               onSaveSuccess={handleSaveSuccess}
             />
           )}
-          {activeOperationTab === OPERATION_TABS.ARRIVAL && legacyStagesEnabled && eventFieldsReady && (
+          {activeOperationTab === OPERATION_TABS.ARRIVAL && legacyStagesEnabled && eventFieldsReady && !tabOpenFetching && (
             <Arrival
               formValues={viewOnlyFormValues}
               handleChange={trackedHandleChange}
@@ -757,7 +802,7 @@ function Operation({ card, formValues, handleChange, ownerInitial, isDAModule = 
               onSaveSuccess={handleSaveSuccess}
             />
           )}
-          {activeOperationTab === OPERATION_TABS.DEPARTURE && legacyStagesEnabled && eventFieldsReady && (
+          {activeOperationTab === OPERATION_TABS.DEPARTURE && legacyStagesEnabled && eventFieldsReady && !tabOpenFetching && (
             <Departure
               formValues={viewOnlyFormValues}
               handleChange={trackedHandleChange}

@@ -472,7 +472,11 @@ const mapItemToRow = (it, i, sectionId) => {
     || rawInfoOnly === 1
     || String(rawInfoOnly) === "1"
     || String(rawInfoOnly).toLowerCase() === "true";
-  const req = mapDocumentDetailsToRequirement(it);
+  // document_required explicitly 0/false: no document for this item (no doc icon, no upload).
+  // Older payloads without the flag keep the document UI.
+  const documentNotRequired =
+    rawInfoOnly != null && String(rawInfoOnly).trim() !== "" && !requireInfoOnlyFromApi;
+  const req =mapDocumentDetailsToRequirement(it);
   let requirement =
     req.variant !== "none" && req.label
       ? { variant: req.variant, label: req.label }
@@ -522,6 +526,7 @@ const mapItemToRow = (it, i, sectionId) => {
     requirement,
     requireCopyOnlyFromApi,
     requireInfoOnlyFromApi,
+    documentNotRequired,
     expiryDateRequired: String(it.expiry_date_reqd) === "1" || it.expiry_date_reqd === 1,
     taskNames: mapItemTaskNamesFromApi(it),
     uploadedFromApi,
