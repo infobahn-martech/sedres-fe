@@ -1594,6 +1594,7 @@ const GROCardView = forwardRef(function GROCardView(
         task_id: Number(taskId),
         file_name: "Vessel_Registration",
         html: vesselRegistrationRef.current?.getPreviewHtml(),
+        values: vesselRegistrationRef.current?.getFormValues?.() ?? null,
       });
 
       const detailRes = await groService.getCallDetailById(callId, cardId);
@@ -1676,6 +1677,12 @@ const GROCardView = forwardRef(function GROCardView(
   // The upload button is always offered on the Vessel Inward Registration card,
   // whether or not the registration PDF has been generated yet.
   const showDynamicUploadIcon = isVesselInwardRegistrationStage;
+
+  // task.generated_document (Vessel Inward Registration): its saved `html` / `values` drive the preview.
+  const vesselRegGeneratedDocument = useMemo(() => {
+    const doc = taskDetails?.generated_document;
+    return doc && typeof doc === "object" && !Array.isArray(doc) ? doc : null;
+  }, [taskDetails]);
 
   const dynamicUploadButtonLabel = "Upload Signed Document";
   const dynamicUploadTitle = "Upload Signed Document";
@@ -2216,6 +2223,8 @@ const GROCardView = forwardRef(function GROCardView(
             callId={callId}
             navigation={taskNav}
             actions={showDynamicUploadIcon ? dynamicUploadControl : null}
+            savedHtml={vesselRegGeneratedDocument?.html || null}
+            savedValues={vesselRegGeneratedDocument?.values ?? null}
           />
         ) : hidePassTabs && activeTab === GRO_ACTIVE_TABS.crewChange ? (
           <CrewChangePassPanel callId={callId} portId={groPortId} navigation={taskNav} />

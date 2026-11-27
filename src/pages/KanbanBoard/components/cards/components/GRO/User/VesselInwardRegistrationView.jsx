@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo, forwardRef, useImperativeHandle } from "react";
 import PropTypes from "prop-types";
+import DOMPurify from "dompurify";
 import { FiPrinter } from "react-icons/fi";
 import VesselBoardingArabicPreview from "./VesselBoardingArabicPreview";
 import GroTranslationModeBar from "./GroTranslationModeBar";
@@ -11,6 +12,49 @@ import vesselService from "@/services/vesselService";
 import translateService from "@/services/translateService";
 
 const TRANSLATE_DEBOUNCE_MS = 500;
+
+const SAVED_HTML_SANITIZE_CONFIG = {
+  FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form"],
+  FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus"],
+  ALLOW_DATA_ATTR: false,
+};
+
+/**
+ * generated_document.html is the preview's own outerHTML from the last Print (wrapped in
+ * `.gro-vir-preview`). Unwrap it so it can be rendered back inside the same wrapper, sanitized.
+ */
+const unwrapSavedPreviewHtml = (html) => {
+  const raw = String(html ?? "").trim();
+  if (!raw) return "";
+  let inner = raw;
+  if (typeof DOMParser !== "undefined") {
+    const root = new DOMParser().parseFromString(raw, "text/html").body.firstElementChild;
+    if (root?.classList?.contains("gro-vir-preview") && root.parentElement?.children.length === 1) {
+      inner = root.innerHTML;
+    }
+  }
+  return DOMPurify.sanitize(inner, SAVED_HTML_SANITIZE_CONFIG);
+};
+
+/** generated_document.values → { english, arabic } ({ english, arabic } or { fieldValues, arabicValues }). */
+const parseSavedValues = (values) => {
+  let parsed = values;
+  if (typeof parsed === "string") {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      return null;
+    }
+  }
+  if (!parsed || typeof parsed !== "object") return null;
+  const english = parsed.english ?? parsed.fieldValues ?? null;
+  const arabic = parsed.arabic ?? parsed.arabicValues ?? null;
+  if (!english && !arabic) return null;
+  return {
+    english: english && typeof english === "object" ? english : {},
+    arabic: arabic && typeof arabic === "object" ? arabic : {},
+  };
+};
 
 /**
  * Template-driven form view — editable fields (from the port's pass template of `templateType`)
@@ -25,9 +69,20 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
     portId,
     callId,
     templateType = "Vessel Registration",
+    // generated_document.html / .values from get_call_detail_by_id — the last generated document.
+    savedHtml = null,
+    savedValues = null,
   },
   ref
 ) {
+  const savedPreviewHtml = useMemo(() => unwrapSavedPreviewHtml(savedHtml), [savedHtml]);
+  const restoredValues = useMemo(() => parseSavedValues(savedValues), [savedValues]);
+  // The saved document is shown until the user edits a field; then the live template preview takes over.
+  const [showSavedPreview, setShowSavedPreview] = useState(Boolean(savedPreviewHtml));
+  useEffect(() => {
+    setShowSavedPreview(Boolean(savedPreviewHtml));
+  }, [savedPreviewHtml]);
+  const isShowingSaved = showSavedPreview && Boolean(savedPreviewHtml);
   const [templateData, setTemplateData] = useState(null);
   const [templateLoading, setTemplateLoading] = useState(Boolean(portId));
   const [fieldValues, setFieldValues] = useState({});
@@ -83,6 +138,13 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
     pendingTranslationsRef.current = {};
     editSeqRef.current = {};
   }, [templateData]);
+
+  // Restore the values the last document was generated with (vessel prefill only fills blanks after).
+  useEffect(() => {
+    if (!restoredValues) return;
+    setFieldValues((prev) => ({ ...prev, ...restoredValues.english }));
+    setArabicValues((prev) => ({ ...prev, ...restoredValues.arabic }));
+  }, [templateData, restoredValues]);
 
   // Every edit bumps the field's sequence (dropping in-flight results); it is only translated
   // when the selected mode translates in that direction.
@@ -193,16 +255,20 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
     ref,
     () => ({
       getPreviewHtml: () => previewRef.current?.outerHTML,
+      // Sent with the generate request so the next load can restore the table (generated_document.values).
+      getFormValues: () => ({ english: fieldValuesRef.current, arabic: arabicValuesRef.current }),
     }),
     []
   );
 
   const handleFieldChange = (fieldKey, value) => {
+    setShowSavedPreview(false);
     setFieldValues((prev) => ({ ...prev, [fieldKey]: value }));
     queueTranslation(fieldKey, value, true);
   };
 
   const handleArabicChange = (fieldKey, value) => {
+    setShowSavedPreview(false);
     setArabicValues((prev) => ({ ...prev, [fieldKey]: value }));
     queueTranslation(fieldKey, value, false);
   };
@@ -281,7 +347,7 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
                 className="gro-crew-imm-print-btn"
                 title="Generate & download the Vessel Registration PDF"
                 onClick={onSave}
-                disabled={isSaving || !onSave || templateLoading}
+                disabled={isSaving || !onSave || (templateLoading && !isShowingSaved)}
                 aria-busy={isSaving}
               >
                 {isSaving ? (
@@ -296,7 +362,13 @@ const VesselInwardRegistrationView = forwardRef(function VesselInwardRegistratio
             </div>
           </div>
           ) : null}
-          {templateLoading ? (
+          {isShowingSaved ? (
+            <div
+              ref={previewRef}
+              className="gro-vir-scroll gro-vir-preview"
+              dangerouslySetInnerHTML={{ __html: savedPreviewHtml }}
+            />
+          ) : templateLoading ? (
             <div className="gro-vir-scroll gro-vir-preview" role="status" aria-live="polite">
               <span className="visually-hidden">Loading document preview…</span>
               <GroLetterPreviewSkeleton />
@@ -324,6 +396,8 @@ VesselInwardRegistrationView.propTypes = {
   portId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   callId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   templateType: PropTypes.string,
+  savedHtml: PropTypes.string,
+  savedValues: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
 };
 
 VesselInwardRegistrationView.displayName = "VesselInwardRegistrationView";
