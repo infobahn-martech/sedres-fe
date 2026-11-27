@@ -6028,3 +6028,91 @@ $gro-supervisor-control-border: #d0d5dd;
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Dynamic task.fields popover (e.g. Inward Clearance) — wide, fields four per row,
+   every control the same height so rows line up. */
+.gro-inward-popover:has(.gro-dynamic-popover-grid) {
+  width: min(1320px, calc(100vw - 40px));
+}
+
+.gro-dynamic-popover-grid {
+  --gro-dyn-control-h: 44px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px 20px;
+  align-items: start;
+}
+
+.gro-dynamic-popover-grid > .gro-inward-popover-field {
+  margin: 0;
+  min-width: 0;
+  gap: 8px;
+}
+
+/* Single-line labels so controls in a row start at the same height. */
+.gro-dynamic-popover-grid .gro-inward-popover-label {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 18px;
+}
+
+.gro-card-view .gro-dynamic-popover-grid .gro-inward-popover-select,
+.gro-card-view .gro-dynamic-popover-grid .gro-inward-popover-input,
+.gro-card-view .gro-dynamic-popover-grid .gro-inward-popover-textarea {
+  height: var(--gro-dyn-control-h);
+  min-height: var(--gro-dyn-control-h);
+}
+
+.gro-card-view .gro-dynamic-popover-grid .gro-inward-popover-textarea {
+  resize: vertical;
+  line-height: 22px;
+}
+
+.gro-dynamic-popover-grid .gro-premium-upload {
+  height: var(--gro-dyn-control-h);
+  padding: 0 6px;
+  flex-wrap: nowrap;
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+
+.gro-dynamic-popover-grid .gro-premium-upload-btn {
+  padding: 6px 14px;
+}
+
+.gro-inward-popover .gro-dynamic-popover-grid .cf-datetime-picker .cf-datetime-input-field .MuiPickersInputBase-root,
+.gro-inward-popover .gro-dynamic-popover-grid .cf-datetime-picker .cf-datetime-input-field .MuiOutlinedInput-root,
+.gro-inward-popover .gro-dynamic-popover-grid .cf-datetime-picker .cf-datetime-input-field .MuiInputBase-root {
+  height: var(--gro-dyn-control-h) !important;
+  min-height: var(--gro-dyn-control-h) !important;
+}
+
+/* CommonSelect adds Bootstrap `p-1`; drop it so the dropdown lines up with other controls. */
+.gro-dynamic-popover-grid .gro-dyn-select.react-select-container {
+  padding: 0 !important;
+}
+
+.gro-dynamic-popover-grid .gro-inward-time-capture-btn {
+  width: var(--gro-dyn-control-h);
+  height: var(--gro-dyn-control-h);
+}
+
+@media (max-width: 1200px) {
+  .gro-dynamic-popover-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .gro-dynamic-popover-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .gro-dynamic-popover-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

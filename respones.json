@@ -13,7 +13,7 @@
             "assigned_operator_id": "85",
             "assigned_operator": "Infobahn Operator",
             "created_by": "83",
-            "card_title": "Crew Immigration",
+            "card_title": "Inward Clearance",
             "card_color": "#00368c",
             "eta": "2026-11-27 23:00:00",
             "ata": null,
@@ -37,114 +37,211 @@
             "vessel_manager": null
         },
         "task": {
-            "card_id": "1046",
-            "task_id": "2",
-            "task_name": "Crew Immigration",
-            "stage_id": "7",
+            "card_id": "1050",
+            "task_id": "3",
+            "task_name": "Inward Clearance",
+            "stage_id": "8",
             "is_first_column": false,
-            "assigned_user_id": "5",
-            "assigned_user_name": "GRO user",
-            "assignees": [
-                {
-                    "user_id": "5",
-                    "name": "GRO user"
-                }
-            ],
+            "assigned_user_id": null,
+            "assigned_user_name": null,
+            "assignees": [],
             "assignable_users": [
                 {
                     "user_id": "5",
                     "name": "GRO user"
                 }
             ],
-            "generated_documents": {
-                "status": "generated",
-                "total_batches": 2,
-                "generated_count": 1,
-                "signed_count": 0,
-                "batches": [
-                    {
-                        "batch_name": "BATCH 1",
-                        "crew_count": 12,
-                        "status": "generated",
-                        "call_task_document_id": 476,
-                        "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Task Docs\/609_1046_Crew_Immigration_BATCH_1.pdf",
-                        "generated_at": "2026-11-27 09:05:19",
-                        "signed_by_name": null,
-                        "signed_at": null,
-                        "entry_html": "<style>\n.ql-align-center{text-align:center}.ql-align-left{text-align:left}\n.ql-align-right{text-align:right}.ql-align-justify{text-align:justify}\n.ql-direction-rtl{direction:rtl}table{width:100%}\n<\/style><div dir=\"rtl\" style=\"direction:rtl\"><p class=\"ql-align-center\">STM 1<\/p><p class=\"ql-align-center\"><strong>\u062f\u062e\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0648\u0644<\/strong><\/p><table class=\"ql-table-better\" style=\"width: 20%; margin-left: 0; margin-right: auto;\"><tbody><tr><td><p class=\"ql-align-left\">\u0627\u0644\u0641\u0631\u0636\u0629 : \u0627\u0644\u062d\u0643\u0648\u0645\u064a\u0629 (\u062e\u062a\u0645 \u062f\u062e\u0648\u0644)<\/p><\/td><\/tr><\/tbody><\/table><p class=\"ql-align-right ql-direction-rtl\">\u0627\u0644\u062a\u0627\u0631\u064a\u0640\u062e: 1448\/06\/17\u0647\u0640<\/p><p class=\"ql-align-right ql-direction-rtl\">\u0627\u0644\u0645\u0648\u0627\u0641\u0642: 2026\/11\/27\u0645\u0640<\/p><p><br><\/p><p class=\"ql-align-right ql-direction-rtl\"><strong>\u0633\u0639\u0627\u062f\u0629 \/ \u0645\u062f\u064a\u0631 \u062c\u0648\u0627\u0632\u0627\u062a \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0627\u0644\u0645\u0648\u0642\u0631<\/strong><\/p><p class=\"ql-align-right ql-direction-rtl\">\u062a\u062d\u064a\u0629 \u0637\u064a\u0628\u0629 \u0648\u0628\u0639\u0640\u0640\u062f<\/p><p class=\"ql-align-justify ql-direction-rtl\">\u0646\u062a\u0642\u062f\u0645 \u0625\u0644\u0649 \u0633\u0639\u0627\u062f\u062a\u0643\u0645 \u0628\u0637\u0644\u0628\u0646\u0627 \u0647\u0630\u0627 \u0648\u0641\u064a\u0647 \u0628\u0623\u0646 \u0627\u0644\u0628\u062d\u0627\u0631\u0629 \u0627\u0644\u0645\u0640\u0640\u0630\u0643\u0648\u0631\u064a\u0646 \u0623\u062f\u0646\u0627\u0647 \u0648\u0627\u0644\u0640\u0640\u0630\u064a\u0646 \u0648\u0635\u0640\u0640\u0644\u0648\u0627 \u0639\u0644\u0649 \u0627\u0644\u0648\u062d\u062f\u0629 \u0627\u0644\u0628\u062d\u0631\u064a\u0629 ( \u0628\u0631\u064a\u062a\u0648\u064a\u0644 \u062f\u064a\u063a\u0646\u064a\u062a\u064a ) \u0648\u0627\u0644\u062a\u064a \u0648\u0635\u0644\u062a \u0625\u0644\u0649 \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0628\u062a\u0627\u0631\u064a\u062e : {arrival_date_hijri}\u0647\u0640 \u0642\u0627\u062f\u0645\u0629 \u0645\u0646 ( {last_port_country} ) \u064a\u0631\u063a\u0628\u0648\u0646 \u0641\u064a \u0645\u0640\u0646\u062d\u0647\u0645 \u062e\u0640\u062a\u0640\u0645 (\u062f\u062e\u0640\u0648\u0644) \u0639\u0646 \u0637\u0631\u064a\u0642 \u062c\u0648\u0627\u0632\u0627\u062a \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0639\u0644\u0645\u0627 \u0627\u0646\u0647\u0645 \u064a\u062d\u0645\u0644\u0648\u0646 \u062a\u0623\u0634\u064a\u0631\u0627\u062a \u0639\u0645\u0644 . \u0648\u0627\u0646\u0646\u0627 \u0645\u0633\u0624\u0648\u0644\u064a\u0646 \u0645\u0633\u0624\u0648\u0644\u064a\u0629 \u062a\u0627\u0645\u0629 \u0639\u0640\u0640\u0646 \u0627\u0644\u0628\u062d\u0627\u0631\u0629 \u062d\u062a\u0649 \u0631\u062c\u0648\u0639\u0647\u0645 \u0639\u0644\u0649 \u0648\u062d\u062f\u062a\u0647\u0645 \u0627\u0644\u0645\u0630\u0643\u0648\u0631\u0629 \u0627\u0639\u0644\u0627\u0647.<\/p><p class=\"ql-align-center ql-direction-rtl\">\u060c\u060c \u0648\u0644\u0643\u0645 \u0645\u0646\u0627 \u062e\u0627\u0644\u0635 \u0627\u0644\u062a\u0642\u062f\u064a\u0631 \u060c\u060c<\/p><p class=\"ql-align-left ql-direction-rtl\">\u0639\u0646 \/ \u0634\u0631\u0643\u0629 \u0633\u064a\u062f\u0631\u0633 \u0644\u0644\u062a\u062c\u0627\u0631\u0629 \u0648\u0627\u0644\u062e\u062f\u0645\u0627\u062a \u0627\u0644\u0628\u062d\u0631\u064a\u0629<\/p><p class=\"ql-align-left ql-direction-rtl\">\u064a\u0648\u0633\u0641 \u0639\u0644\u064a \u0627\u0644\u0642\u0644\u0627\u0641<\/p><p class=\"ql-align-center\">..................................................................................................................................................<\/p><p class=\"ql-align-right ql-direction-rtl\"><strong>\u0633\u0639\u0627\u062f\u0629 \/ \u0642\u0627\u0626\u062f \u0648\u062d\u062f\u0629 \u0627\u0645\u0646 \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0627\u0644\u0645\u0648\u0642\u0631<\/strong><\/p><p class=\"ql-align-left ql-direction-rtl\">\u0645\u062f\u064a\u0631 \u062c\u0648\u0627\u0632\u0627\u062a \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629<\/p><p class=\"ql-align-left ql-direction-rtl\">\u0627\u0644\u0639\u0642\u064a\u062f \/ \u0633\u0644\u0645\u0627\u0646 \u0633\u0639\u064a\u062f \u0627\u0644\u063a\u0627\u0645\u062f\u064a<\/p><p class=\"ql-align-right ql-direction-rtl\">\u062a\u062d\u064a\u0629 \u0637\u064a\u0628\u0629 \u0648\u0628\u0639\u062f<\/p><p class=\"ql-align-right ql-direction-rtl\">\u0644\u0627 \u0645\u0627\u0646\u0639 \u0644\u062f\u064a\u0646\u0627 \u0645\u0646 \u062f\u062e\u0648\u0644 \u0627\u0644\u0628\u062d\u0627\u0631\u0629 \u0627\u0644\u0645\u0630\u0643\u0648\u0631\u064a\u0646 \u0627\u0644\u064a \u0627\u0644\u0628\u0644\u0627\u062f \u062d\u0633\u0628 \u0627\u0644\u0645\u062a\u0628\u0639 \u0648\u062f\u0645\u062a\u0645 .<\/p><table class=\"ql-table-better\" style=\"width: 100%\"><tbody><tr><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0627\u0644\u0627\u0633\u0640\u0640\u0640\u0640\u0640\u0645<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0627\u0644\u062c\u0646\u0633\u064a\u0629<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645 \u0627\u0644\u062c\u0648\u0627\u0632<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645 \u0627\u0644\u062a\u0623\u0634\u064a\u0631\u0629<\/strong><\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">1<\/p><\/td><td><p class=\"ql-align-center\">\u0623\u0644\u064a\u0646 \u062c\u0648\u0646 \u0648\u0648\u0646\u063a<\/p><\/td><td><p class=\"ql-align-center\">\u0641\u0644\u0628\u064a\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">A0090818<\/p><\/td><td><p class=\"ql-align-center\">6162293916<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">2<\/p><\/td><td><p class=\"ql-align-center\">\u0623\u0645\u064a\u0644\u0627 \u0625\u064a\u0634\u0627\u0646\u062a\u0627 \u063a\u0627\u0644\u0627\u0631\u0627\u0648\u0627 \u0623\u0631\u0627\u062a\u0634\u064a\u0644\u0627\u063a\u064a<\/p><\/td><td><p class=\"ql-align-center\">\u0633\u0631\u064a\u0644\u0627\u0646\u0643\u064a<\/p><\/td><td><p class=\"ql-align-center\">N8637618<\/p><\/td><td><p class=\"ql-align-center\">6161144347<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">3<\/p><\/td><td><p class=\"ql-align-center\">\u062f\u0627\u0646\u064a\u0627\u0644 \u0643\u0627\u062f\u064a\u0646\u0627 \u062f\u064a\u0644 \u0623\u0646\u062e\u064a\u0644<\/p><\/td><td><p class=\"ql-align-center\">\u0627\u0644\u0645\u0643\u0633\u064a\u0643\u064a<\/p><\/td><td><p class=\"ql-align-center\">G40189962<\/p><\/td><td><p class=\"ql-align-center\">6165694419<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">4<\/p><\/td><td><p class=\"ql-align-center\">\u0625\u062f\u0645\u0648\u0646\u062f \u0628\u064a\u062f\u0631\u0648 \u0623\u0646\u062f\u0627\u064a\u0627 \u0628\u0627\u0645\u0628\u0644\u0648\u0646\u0627<\/p><\/td><td><p class=\"ql-align-center\">\u0641\u0644\u0628\u064a\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">P5629566B<\/p><\/td><td><p class=\"ql-align-center\">6162491406<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">5<\/p><\/td><td><p class=\"ql-align-center\">\u0625\u064a\u0641\u062c\u064a\u0646\u064a \u0643\u0627\u0628\u0627\u0646\u0648\u0641<\/p><\/td><td><p class=\"ql-align-center\">\u0631\u0648\u0633\u064a\u0627<\/p><\/td><td><p class=\"ql-align-center\">77812871<\/p><\/td><td><p class=\"ql-align-center\">6165723644<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">6<\/p><\/td><td><p class=\"ql-align-center\">\u062c\u064a\u0644 \u062c\u0648\u0646\u064a\u0648\u0631 \u062c\u0631\u0648\u0633\u0628\u064a \u0641\u0627\u0644\u064a\u0631\u064a\u0648<\/p><\/td><td><p class=\"ql-align-center\">\u0641\u0644\u0628\u064a\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">P4608850B<\/p><\/td><td><p class=\"ql-align-center\">6162387637<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">7<\/p><\/td><td><p class=\"ql-align-center\">\u062c\u0627\u0646 \u0643\u0631\u064a\u0633\u062a\u064a\u0627\u0646 \u0644\u0648\u0628\u064a\u0632<\/p><\/td><td><p class=\"ql-align-center\">\u0641\u0644\u0628\u064a\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">P4276802B<\/p><\/td><td><p class=\"ql-align-center\">6160932687<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">8<\/p><\/td><td><p class=\"ql-align-center\">\u0645\u0627\u0631\u0643 \u062c\u064a\u0633\u062a\u0631 \u0644\u0627\u0628\u064a\u062a\u0648\u0631\u064a\u0627<\/p><\/td><td><p class=\"ql-align-center\">\u0641\u0644\u0628\u064a\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">P5933247B<\/p><\/td><td><p class=\"ql-align-center\">6144999082<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">9<\/p><\/td><td><p class=\"ql-align-center\">\u0623\u0648\u0644\u064a\u0643\u0633\u0627\u0646\u062f\u0631 \u0643\u0648\u0644\u0627\u0643\u064a\u0641\u064a\u062a\u0634<\/p><\/td><td><p class=\"ql-align-center\">\u0623\u0648\u0643\u0631\u0627\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">PU758983<\/p><\/td><td><p class=\"ql-align-center\">6165694893<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">10<\/p><\/td><td><p class=\"ql-align-center\">\u0631\u0627\u064a\u0645\u0648\u0646\u062f\u0648 \u0628\u0627\u0648\u062a\u064a\u0633\u062a\u0627 \u063a\u0627\u0631\u0632\u0648\u0646<\/p><\/td><td><p class=\"ql-align-center\">\u0641\u0644\u0628\u064a\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">P6868457B<\/p><\/td><td><p class=\"ql-align-center\">6150678923<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">11<\/p><\/td><td><p class=\"ql-align-center\">\u0633\u0627\u0644\u0627\u0646\u0627\u0641\u0648\u0646 \u0631\u064a\u0646\u0647\u0648\u0631\u062a<\/p><\/td><td><p class=\"ql-align-center\">\u0641\u0644\u0628\u064a\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">P7441275B<\/p><\/td><td><p class=\"ql-align-center\">6165694322<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">12<\/p><\/td><td><p class=\"ql-align-center\">\u0633\u064a\u0631\u0647\u064a \u0628\u064a\u0631\u064a\u0632\u0648\u0641\u0633\u0643\u064a<\/p><\/td><td><p class=\"ql-align-center\">\u0623\u0648\u0643\u0631\u0627\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">FJ368735<\/p><\/td><td><p class=\"ql-align-center\">6163005775<\/p><\/td><\/tr><\/tbody><\/table><p class=\"ql-align-right ql-direction-rtl\"><strong>\u0627\u0644\u062c\u0645\u064a\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0639 (12) \u0641\u0642\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0637 \u0644\u0627 \u063a\u064a\u0631<\/strong><\/p><\/div>",
-                        "return_html": "<style>\n.ql-align-center{text-align:center}.ql-align-left{text-align:left}\n.ql-align-right{text-align:right}.ql-align-justify{text-align:justify}\n.ql-direction-rtl{direction:rtl}table{width:100%}\n<\/style><div dir=\"rtl\" style=\"direction:rtl\"><p class=\"ql-align-center\">STM 1<\/p><p class=\"ql-align-center\"><strong>\u0631\u062c\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0648\u0639<\/strong><\/p><table class=\"ql-table-better\" style=\"width: 20%; margin-left: 0; margin-right: auto;\"><tbody><tr><td><p class=\"ql-align-center\">\u0627\u0644\u0641\u0631\u0636\u0629 : \u0627\u0644\u062d\u0643\u0648\u0645\u064a\u0629 (\u062e\u062a\u0645 \u062f\u062e\u0648\u0644)<\/p><\/td><\/tr><\/tbody><\/table><p class=\"ql-align-right ql-direction-rtl\">\u0627\u0644\u062a\u0627\u0631\u064a\u0640\u062e: 1448\/06\/17\u0647\u0640<\/p><p class=\"ql-align-right ql-direction-rtl\">\u0627\u0644\u0645\u0648\u0627\u0641\u0642: 2026\/11\/27\u0645\u0640<\/p><p><br><\/p><p class=\"ql-align-right ql-direction-rtl\"><strong>\u0633\u0639\u0627\u062f\u0629 \/ \u0642\u0627\u0626\u062f \u0648\u062d\u062f\u0629 \u0627\u0645\u0646 \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0627\u0644\u0645\u0648\u0642\u0631<\/strong><\/p><p class=\"ql-align-right ql-direction-rtl\">\u062a\u062d\u064a\u0629 \u0637\u064a\u0628\u0629 \u0648\u0628\u0639\u0640\u0640\u062f<\/p><p class=\"ql-align-justify ql-direction-rtl\">\u0646\u062a\u0642\u062f\u0645 \u0625\u0644\u0649 \u0633\u0639\u0627\u062f\u062a\u0643\u0645 \u0628\u0637\u0644\u0628\u0646\u0627 \u0647\u0630\u0627 \u0648\u0641\u064a\u0647 \u0628\u0623\u0646 \u0627\u0644\u0628\u062d\u0627\u0631\u0629 \u0627\u0644\u0645\u0630\u0643\u0648\u0631\u064a\u0646 \u0623\u062f\u0646\u0627\u0647 \u0648\u0627\u0644\u0630\u064a\u0646 \u0648\u0635\u0644\u0648\u0627 \u0639\u0644\u0649 \u0622\u0644\u062a\u0643 ( \u0628\u0631\u064a\u062a\u0648\u064a\u0644 \u062f\u064a\u063a\u0646\u064a\u062a\u064a ) \u0648\u0627\u0644\u062a\u064a \u0648\u0635\u0644\u062a \u0625\u0644\u0649 \u0645\u064a\u0646\u0627\u0621 \u0631\u0627\u0633 \u062a\u0646\u0648\u0631\u0629 \u0628\u062a\u0627\u0631\u064a\u062e: {arrival_date_hijri}\u0647\u0640 \u0642\u0627\u062f\u0645\u0629 \u0645\u0646 ( {last_port_country} ) \u0642\u0640\u0640\u062f \u0627\u0646\u0647\u0648\u0627 \u0627\u062c\u0640\u0640\u0631\u0627\u0621\u0627\u062a \u062f\u062e\u0640\u0640\u0648\u0644\u0640\u0647\u0645 \u0645\u0646 \u0627\u0644\u062c\u0648\u0627\u0632\u0627\u062a \u0646\u0627\u0645\u0644 \u0627\u0646\u0647\u0627\u0621 \u0627\u062c\u0631\u0627\u0621\u0627\u062a \u0631\u062c\u0648\u0639\u0647\u0645 \u0627\u0644\u064a \u0627\u0644\u0648\u062d\u062f\u0629 \u0627\u0644\u0645\u0630\u0643\u0648\u0631\u0629 \u0623\u0639\u0644\u0627\u0647 \u0639\u0640\u0644\u0640\u0645\u0627 \u0623\u0646\u0646\u0627 \u0645\u0633\u0624\u0648\u0644\u0640\u064a\u0640\u0646 \u0645\u0633\u0640\u0624\u0648\u0644\u0640\u064a\u0640\u0629 \u062a\u0640\u0627\u0645\u0640\u0629 \u0639\u0640\u0646 \u0627\u0644\u0628\u0640\u062d\u0627\u0631\u0629 \u062d\u062a\u0649 \u0631\u062c\u0648\u0639\u0647\u0645.<\/p><p class=\"ql-align-center ql-direction-rtl\">\u0647\u0630\u0627 \u0648\u0644\u0643\u0645 \u062c\u0632\u064a\u0644 \u0627\u0644\u0634\u0643\u0631 \u0648\u0627\u0644\u0627\u0645\u062a\u0646\u0627\u0646 \u060c\u060c\u060c<\/p><p><br><\/p><p class=\"ql-align-left ql-direction-rtl\">\u0639\u0646 \/ \u0634\u0631\u0643\u0629 \u0633\u064a\u062f\u0631\u0633 \u0644\u0644\u062a\u062c\u0627\u0631\u0629 \u0648\u0627\u0644\u062e\u062f\u0645\u0627\u062a \u0627\u0644\u0628\u062d\u0631\u064a\u0629<\/p><p class=\"ql-align-left ql-direction-rtl\">\u064a\u0648\u0633\u0641 \u0639\u0644\u064a \u0627\u0644\u0642\u0644\u0627\u0641<\/p><p class=\"ql-align-center\">.............................................................................................................................<\/p><table class=\"ql-table-better\" style=\"width: 100%\"><tbody><tr><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0627\u0644\u0627\u0633\u0640\u0640\u0640\u0640\u0640\u0645<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0627\u0644\u062c\u0646\u0633\u064a\u0629<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645 \u0627\u0644\u062c\u0648\u0627\u0632<\/strong><\/p><\/td><td><p class=\"ql-align-center\"><strong>\u0631\u0642\u0645 \u0627\u0644\u062a\u0623\u0634\u064a\u0631\u0629<\/strong><\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">1<\/p><\/td><td><p class=\"ql-align-center\">\u0623\u0644\u064a\u0646 \u062c\u0648\u0646 \u0648\u0648\u0646\u063a<\/p><\/td><td><p class=\"ql-align-center\">\u0641\u0644\u0628\u064a\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">A0090818<\/p><\/td><td><p class=\"ql-align-center\">6162293916<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">2<\/p><\/td><td><p class=\"ql-align-center\">\u0623\u0645\u064a\u0644\u0627 \u0625\u064a\u0634\u0627\u0646\u062a\u0627 \u063a\u0627\u0644\u0627\u0631\u0627\u0648\u0627 \u0623\u0631\u0627\u062a\u0634\u064a\u0644\u0627\u063a\u064a<\/p><\/td><td><p class=\"ql-align-center\">\u0633\u0631\u064a\u0644\u0627\u0646\u0643\u064a<\/p><\/td><td><p class=\"ql-align-center\">N8637618<\/p><\/td><td><p class=\"ql-align-center\">6161144347<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">3<\/p><\/td><td><p class=\"ql-align-center\">\u062f\u0627\u0646\u064a\u0627\u0644 \u0643\u0627\u062f\u064a\u0646\u0627 \u062f\u064a\u0644 \u0623\u0646\u062e\u064a\u0644<\/p><\/td><td><p class=\"ql-align-center\">\u0627\u0644\u0645\u0643\u0633\u064a\u0643\u064a<\/p><\/td><td><p class=\"ql-align-center\">G40189962<\/p><\/td><td><p class=\"ql-align-center\">6165694419<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">4<\/p><\/td><td><p class=\"ql-align-center\">\u0625\u062f\u0645\u0648\u0646\u062f \u0628\u064a\u062f\u0631\u0648 \u0623\u0646\u062f\u0627\u064a\u0627 \u0628\u0627\u0645\u0628\u0644\u0648\u0646\u0627<\/p><\/td><td><p class=\"ql-align-center\">\u0641\u0644\u0628\u064a\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">P5629566B<\/p><\/td><td><p class=\"ql-align-center\">6162491406<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">5<\/p><\/td><td><p class=\"ql-align-center\">\u0625\u064a\u0641\u062c\u064a\u0646\u064a \u0643\u0627\u0628\u0627\u0646\u0648\u0641<\/p><\/td><td><p class=\"ql-align-center\">\u0631\u0648\u0633\u064a\u0627<\/p><\/td><td><p class=\"ql-align-center\">77812871<\/p><\/td><td><p class=\"ql-align-center\">6165723644<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">6<\/p><\/td><td><p class=\"ql-align-center\">\u062c\u064a\u0644 \u062c\u0648\u0646\u064a\u0648\u0631 \u062c\u0631\u0648\u0633\u0628\u064a \u0641\u0627\u0644\u064a\u0631\u064a\u0648<\/p><\/td><td><p class=\"ql-align-center\">\u0641\u0644\u0628\u064a\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">P4608850B<\/p><\/td><td><p class=\"ql-align-center\">6162387637<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">7<\/p><\/td><td><p class=\"ql-align-center\">\u062c\u0627\u0646 \u0643\u0631\u064a\u0633\u062a\u064a\u0627\u0646 \u0644\u0648\u0628\u064a\u0632<\/p><\/td><td><p class=\"ql-align-center\">\u0641\u0644\u0628\u064a\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">P4276802B<\/p><\/td><td><p class=\"ql-align-center\">6160932687<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">8<\/p><\/td><td><p class=\"ql-align-center\">\u0645\u0627\u0631\u0643 \u062c\u064a\u0633\u062a\u0631 \u0644\u0627\u0628\u064a\u062a\u0648\u0631\u064a\u0627<\/p><\/td><td><p class=\"ql-align-center\">\u0641\u0644\u0628\u064a\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">P5933247B<\/p><\/td><td><p class=\"ql-align-center\">6144999082<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">9<\/p><\/td><td><p class=\"ql-align-center\">\u0623\u0648\u0644\u064a\u0643\u0633\u0627\u0646\u062f\u0631 \u0643\u0648\u0644\u0627\u0643\u064a\u0641\u064a\u062a\u0634<\/p><\/td><td><p class=\"ql-align-center\">\u0623\u0648\u0643\u0631\u0627\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">PU758983<\/p><\/td><td><p class=\"ql-align-center\">6165694893<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">10<\/p><\/td><td><p class=\"ql-align-center\">\u0631\u0627\u064a\u0645\u0648\u0646\u062f\u0648 \u0628\u0627\u0648\u062a\u064a\u0633\u062a\u0627 \u063a\u0627\u0631\u0632\u0648\u0646<\/p><\/td><td><p class=\"ql-align-center\">\u0641\u0644\u0628\u064a\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">P6868457B<\/p><\/td><td><p class=\"ql-align-center\">6150678923<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">11<\/p><\/td><td><p class=\"ql-align-center\">\u0633\u0627\u0644\u0627\u0646\u0627\u0641\u0648\u0646 \u0631\u064a\u0646\u0647\u0648\u0631\u062a<\/p><\/td><td><p class=\"ql-align-center\">\u0641\u0644\u0628\u064a\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">P7441275B<\/p><\/td><td><p class=\"ql-align-center\">6165694322<\/p><\/td><\/tr><tr><td><p class=\"ql-align-center\">12<\/p><\/td><td><p class=\"ql-align-center\">\u0633\u064a\u0631\u0647\u064a \u0628\u064a\u0631\u064a\u0632\u0648\u0641\u0633\u0643\u064a<\/p><\/td><td><p class=\"ql-align-center\">\u0623\u0648\u0643\u0631\u0627\u0646\u064a<\/p><\/td><td><p class=\"ql-align-center\">FJ368735<\/p><\/td><td><p class=\"ql-align-center\">6163005775<\/p><\/td><\/tr><\/tbody><\/table><p class=\"ql-align-right ql-direction-rtl\"><strong>\u0627\u0644\u062c\u0645\u064a\u0640\u0640\u0640\u0640\u0639 (12) \u0641\u0642\u0640\u0640\u0640\u0640\u0640\u0640\u0640\u0637 \u0644\u0627 \u063a\u064a\u0631<\/strong><\/p><\/div>",
-                        "values": null,
-                        "html_saved_at": "2026-11-27 09:05:19"
-                    },
-                    {
-                        "batch_name": "BATCH 2",
-                        "crew_count": 16,
-                        "status": "not_generated",
-                        "call_task_document_id": null,
-                        "file_url": null,
-                        "generated_at": null,
-                        "signed_by_name": null,
-                        "signed_at": null,
-                        "entry_html": null,
-                        "return_html": null,
-                        "values": null,
-                        "html_saved_at": null
-                    }
-                ]
-            },
-            "fields": [],
+            "fields": [
+                {
+                    "source": "task_field",
+                    "field_key": "customs_status",
+                    "label": "Custom Inspection Status",
+                    "field_type": "status",
+                    "value": "pending",
+                    "options": [
+                        {
+                            "label": "Pending",
+                            "value": "pending"
+                        },
+                        {
+                            "label": "Passed",
+                            "value": "passed"
+                        },
+                        {
+                            "label": "Failed",
+                            "value": "failed"
+                        }
+                    ],
+                    "is_required": 0
+                },
+                {
+                    "source": "task_field",
+                    "field_key": "customs_remarks",
+                    "label": "Custom Remarks",
+                    "field_type": "textarea",
+                    "value": null,
+                    "is_required": 0
+                },
+                {
+                    "source": "task_field",
+                    "field_key": "inward_clearance_issued",
+                    "label": "Inward Clearance Issued",
+                    "field_type": "datetime",
+                    "value": null,
+                    "is_required": 0
+                },
+                {
+                    "source": "task_field",
+                    "field_key": "inward_clearance_doc",
+                    "label": "Inward Clearance Document",
+                    "field_type": "document",
+                    "value": null,
+                    "file_url": null,
+                    "is_required": 0
+                },
+                {
+                    "source": "task_field",
+                    "field_key": "immigration_status",
+                    "label": "Crew Immigration Status",
+                    "field_type": "status",
+                    "value": "Pending",
+                    "options": [
+                        {
+                            "label": "Pending",
+                            "value": "Pending"
+                        },
+                        {
+                            "label": "Completed",
+                            "value": "Completed"
+                        }
+                    ],
+                    "is_required": 0
+                },
+                {
+                    "source": "task_field",
+                    "field_key": "immigration_remarks",
+                    "label": "Crew Immigration Remarks",
+                    "field_type": "textarea",
+                    "value": null,
+                    "is_required": 0
+                },
+                {
+                    "source": "task_field",
+                    "field_key": "immigration_doc",
+                    "label": "Crew Immigration Document",
+                    "field_type": "document",
+                    "value": null,
+                    "file_url": null,
+                    "is_required": 0
+                },
+                {
+                    "source": "time_object",
+                    "field_key": "CIC",
+                    "label": "Custom Inspection Commenced",
+                    "field_type": "datetime",
+                    "value": null,
+                    "is_required": 0,
+                    "time_object_id": 9,
+                    "stage_id": 8,
+                    "sort_order": 1
+                },
+                {
+                    "source": "time_object",
+                    "field_key": "CIC_1",
+                    "label": "Custom Inspection Completed",
+                    "field_type": "datetime",
+                    "value": null,
+                    "is_required": 0,
+                    "time_object_id": 10,
+                    "stage_id": 8,
+                    "sort_order": 2
+                },
+                {
+                    "source": "time_object",
+                    "field_key": "CCT",
+                    "label": "Custom Clearance Time",
+                    "field_type": "datetime",
+                    "value": null,
+                    "is_required": 0,
+                    "time_object_id": 47,
+                    "stage_id": 8,
+                    "sort_order": 3
+                },
+                {
+                    "source": "time_object",
+                    "field_key": "CIC_2",
+                    "label": "Crew Immigration Commenced - BATCH 1",
+                    "field_type": "datetime",
+                    "value": null,
+                    "is_required": 1,
+                    "time_object_id": 12,
+                    "stage_id": 7,
+                    "sort_order": 1,
+                    "batch": "BATCH 1"
+                },
+                {
+                    "source": "time_object",
+                    "field_key": "CIC_3",
+                    "label": "Crew Immigration Completed - BATCH 1",
+                    "field_type": "datetime",
+                    "value": null,
+                    "is_required": 1,
+                    "time_object_id": 20,
+                    "stage_id": 7,
+                    "sort_order": 2,
+                    "batch": "BATCH 1"
+                },
+                {
+                    "source": "time_object",
+                    "field_key": "CIC_2",
+                    "label": "Crew Immigration Commenced - BATCH 2",
+                    "field_type": "datetime",
+                    "value": null,
+                    "is_required": 1,
+                    "time_object_id": 12,
+                    "stage_id": 7,
+                    "sort_order": 1,
+                    "batch": "BATCH 2"
+                },
+                {
+                    "source": "time_object",
+                    "field_key": "CIC_3",
+                    "label": "Crew Immigration Completed - BATCH 2",
+                    "field_type": "datetime",
+                    "value": null,
+                    "is_required": 1,
+                    "time_object_id": 20,
+                    "stage_id": 7,
+                    "sort_order": 2,
+                    "batch": "BATCH 2"
+                }
+            ],
             "documents": [
                 {
                     "document_required": 1,
-                    "document_id": null,
-                    "call_task_document_id": "476",
-                    "document_name": "Crew Immigration Letter - BATCH 1",
-                    "file_name": "609_1046_Crew_Immigration_BATCH_1.pdf",
-                    "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Task Docs\/609_1046_Crew_Immigration_BATCH_1.pdf",
-                    "status": "2",
-                    "remarks": null,
-                    "uploaded_by": "13",
-                    "uploaded_by_user": "GRO Supervisor",
-                    "uploaded_at": "2026-11-27 09:05:19"
-                },
-                {
-                    "document_required": 1,
-                    "document_id": "4902",
-                    "call_task_document_id": "466",
-                    "document_name": "Crew list ",
-                    "file_name": "crew-template7.docx",
-                    "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/crew-template7.docx",
+                    "document_id": "4895",
+                    "call_task_document_id": "472",
+                    "document_name": "Last port Clearance for Tug , Barge , Crew boat",
+                    "file_name": "08f3a856-d112-4cb6-b97f-7cab3afbb2051.png",
+                    "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/08f3a856-d112-4cb6-b97f-7cab3afbb2051.png",
                     "status": "2",
                     "remarks": "",
                     "uploaded_by": "83",
                     "uploaded_by_user": "Infobahn Test",
-                    "uploaded_at": "2026-11-27 08:44:07"
+                    "uploaded_at": "2026-11-27 09:54:29"
                 },
                 {
                     "document_required": 1,
-                    "document_id": "4903",
-                    "call_task_document_id": "467",
-                    "document_name": "Crew passports and Saudi Visa copies",
-                    "file_name": "pdf-sample_0_(1)13.pdf",
-                    "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/pdf-sample_0_(1)13.pdf",
+                    "document_id": "4896",
+                    "call_task_document_id": "473",
+                    "document_name": "Stamped crew List from last port",
+                    "file_name": "8027c8af-1267-47bf-ab77-6ec22455f9501.png",
+                    "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/8027c8af-1267-47bf-ab77-6ec22455f9501.png",
                     "status": "2",
                     "remarks": "",
                     "uploaded_by": "83",
                     "uploaded_by_user": "Infobahn Test",
-                    "uploaded_at": "2026-11-27 08:44:35"
-                },
-                {
-                    "document_required": 1,
-                    "document_id": "4904",
-                    "call_task_document_id": "468",
-                    "document_name": "Crew List split into two - for Immigration visit",
-                    "file_name": "8027c8af-1267-47bf-ab77-6ec22455f950.png",
-                    "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/8027c8af-1267-47bf-ab77-6ec22455f950.png",
-                    "status": "2",
-                    "remarks": "",
-                    "uploaded_by": "83",
-                    "uploaded_by_user": "Infobahn Test",
-                    "uploaded_at": "2026-11-27 08:44:54"
+                    "uploaded_at": "2026-11-27 09:54:41"
                 }
             ]
         }

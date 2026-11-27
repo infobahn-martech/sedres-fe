@@ -4,10 +4,67 @@ import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/compone
 import { PopoverFileUploadField } from "./GroPopoverStageExtraFields";
 import { GRO_FIELD_SOURCE, isGroDateTimeFieldType, isGroFileFieldType } from "./groDynamicTaskFields";
 import { resolveGroTimeObjectValueKey } from "./groCardUtils";
+import CustomSelect from "@/components/CommonSelect";
+
+/** react-select styles for popover dropdowns — matches the 44px popover controls. */
+const groDynSelectStyles = (hasError) => ({
+  container: (base) => ({ ...base, padding: 0 }),
+  control: (base, state) => ({
+    ...base,
+    minHeight: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: "var(--surface-primary)",
+    borderColor: hasError ? "#fca5a5" : state.isFocused ? "#2563eb" : "var(--border-primary)",
+    boxShadow: state.isFocused ? "0 0 0 2px rgba(37, 99, 235, 0.12)" : "none",
+    cursor: "pointer",
+    "&:hover": { borderColor: state.isFocused ? "#2563eb" : "#9ca3af" },
+  }),
+  valueContainer: (base) => ({ ...base, padding: "0 12px" }),
+  singleValue: (base) => ({ ...base, color: "var(--text-primary)", fontSize: 13 }),
+  placeholder: (base) => ({ ...base, color: "var(--input-placeholder)", fontSize: 13 }),
+  input: (base) => ({ ...base, color: "var(--text-primary)", margin: 0 }),
+  indicatorSeparator: () => ({ display: "none" }),
+  dropdownIndicator: (base, state) => ({
+    ...base,
+    padding: "0 10px",
+    color: "var(--text-secondary)",
+    transition: "transform 0.15s ease",
+    transform: state.selectProps.menuIsOpen ? "rotate(180deg)" : "none",
+  }),
+  clearIndicator: (base) => ({ ...base, padding: "0 4px", color: "var(--text-secondary)" }),
+  menuPortal: (base) => ({ ...base, zIndex: 16000 }),
+  menu: (base) => ({
+    ...base,
+    marginTop: 6,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "var(--surface-primary)",
+    border: "1px solid var(--border-primary)",
+    boxShadow: "0 12px 32px rgba(15, 23, 42, 0.14), 0 2px 6px rgba(15, 23, 42, 0.06)",
+  }),
+  menuList: (base) => ({ ...base, padding: 6, backgroundColor: "var(--surface-primary)" }),
+  option: (base, state) => ({
+    ...base,
+    padding: "9px 12px",
+    marginBottom: 2,
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: state.isSelected ? 600 : 500,
+    cursor: "pointer",
+    color: state.isSelected ? "#1d4ed8" : "var(--text-primary)",
+    backgroundColor: state.isSelected
+      ? "rgba(37, 99, 235, 0.1)"
+      : state.isFocused
+        ? "var(--hover-bg)"
+        : "transparent",
+    "&:active": { backgroundColor: "rgba(37, 99, 235, 0.16)" },
+  }),
+});
 
 const FieldShell = ({ label, required, error, className = "", children }) => (
   <div className={`gro-inward-popover-field${className ? ` ${className}` : ""}${error ? " gro-inward-popover-field--error" : ""}`}>
-    <span className="gro-inward-popover-label">
+    <span className="gro-inward-popover-label" title={label}>
       {label}
       {required ? <span className="text-danger"> *</span> : null}
     </span>
@@ -122,19 +179,18 @@ function GroTaskFieldInput({ field, value, error, existingFile, disabled, fileIn
   if (type === "select" || type === "dropdown" || type === "radio" || field.options.length > 0) {
     return (
       <FieldShell label={field.label} required={field.is_required} error={error}>
-        <select
-          className="gro-inward-popover-select"
+        <CustomSelect
+          showIndicator
+          className="gro-dyn-select"
+          classNamePrefix="gro-dyn-select"
+          options={field.options}
           value={value ?? ""}
-          disabled={disabled}
-          onChange={(e) => onChange(key, e.target.value)}
-        >
-          <option value="">{`Select ${field.label.toLowerCase()}`}</option>
-          {field.options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+          placeholder={`Select ${field.label.toLowerCase()}`}
+          isDisabled={disabled}
+          isSearchable={false}
+          styles={groDynSelectStyles(Boolean(error))}
+          onChange={(opt) => onChange(key, opt?.value ?? "")}
+        />
       </FieldShell>
     );
   }
@@ -202,8 +258,9 @@ function GroDynamicPopoverFields({
     );
   }
 
+  // Two fields per row; the parent popover widens via `:has(.gro-dynamic-popover-grid)`.
   return (
-    <>
+    <div className="gro-dynamic-popover-grid">
       {(Array.isArray(order) ? order : []).map(({ source, item }) => {
         if (source === GRO_FIELD_SOURCE.TIME_OBJECT) {
           const valueKey = resolveGroTimeObjectValueKey(item);
@@ -226,7 +283,7 @@ function GroDynamicPopoverFields({
           />
         );
       })}
-    </>
+    </div>
   );
 }
 

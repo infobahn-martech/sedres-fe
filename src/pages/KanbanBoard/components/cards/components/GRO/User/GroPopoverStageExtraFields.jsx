@@ -18,7 +18,7 @@ export function PopoverFileUploadField({
 }) {
   return (
     <div className={`gro-inward-popover-field${error ? " gro-inward-popover-field--error" : ""}`}>
-      <span className="gro-inward-popover-label">
+      <span className="gro-inward-popover-label" title={label}>
         {label}
         {required ? <span className="text-danger"> *</span> : null}
       </span>
