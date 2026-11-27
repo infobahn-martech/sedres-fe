@@ -16,6 +16,7 @@ import {
   renderCrewImmigrationTemplate,
   humanizePlaceholder,
   needsArabicTranslation,
+  extractCrewImmigrationValues,
 } from "./crewImmigrationTemplate";
 
 const TRANSLATE_DEBOUNCE_MS = 500;
@@ -176,12 +177,35 @@ function CrewImmigrationTemplateSection({
   // Field key -> the column the user typed in last ("en" | "ar"); that column drives the other.
   const [lastEdited, setLastEdited] = useState({});
 
-  // A new batch is a new letter — drop manual edits made for the previous one.
+  // A new batch is a new letter — drop manual edits made for the previous one. A generated batch
+  // instead starts from the values its saved letter was printed with (read back from the HTML).
   useEffect(() => {
-    setEnglishOverrides({});
-    setArabicOverrides({});
-    setCrewOverrides({});
-    setLastEdited({});
+    const english = {};
+    const arabic = {};
+    const edits = {};
+    const crewEdits = {};
+    if (savedHtml) {
+      const saved = extractCrewImmigrationValues(html, savedHtml);
+      Object.entries(saved.fields).forEach(([key, value]) => {
+        if (hasArabicLetters(value)) {
+          arabic[key] = value;
+          edits[key] = "ar";
+        } else {
+          english[key] = value;
+          arabic[key] = value;
+          edits[key] = "en";
+        }
+      });
+      saved.crewRows.forEach((row, index) => {
+        Object.entries(row).forEach(([key, value]) => {
+          if (key !== "sl_no") crewEdits[`${index}:${key}`] = value;
+        });
+      });
+    }
+    setEnglishOverrides(english);
+    setArabicOverrides(arabic);
+    setCrewOverrides(crewEdits);
+    setLastEdited(edits);
     setEdited(false);
   }, [crew, html, savedHtml]);
 

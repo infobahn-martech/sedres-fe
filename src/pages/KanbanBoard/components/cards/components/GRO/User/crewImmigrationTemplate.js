@@ -55,6 +55,81 @@ export const extractCrewImmigrationPlaceholders = (html) => {
   };
 };
 
+const normalizeText = (text) => String(text ?? "").replace(/\s+/g, " ").trim();
+const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const isUnfilledToken = (value) => /^\{[a-zA-Z0-9_]+\}$/.test(value);
+
+/**
+ * Matches template text (with `{token}`s) against the text it was rendered to and returns
+ * { token: value }. A token left unfilled in the rendered text, or that cannot be matched, is skipped.
+ */
+const matchTokens = (templateText, renderedText) => {
+  const tpl = normalizeText(templateText);
+  const actual = normalizeText(renderedText);
+  const keys = [];
+  const pattern = tpl
+    .split(/(\{[a-zA-Z0-9_]+\})/)
+    .map((part) => {
+      const token = part.match(/^\{([a-zA-Z0-9_]+)\}$/);
+      if (token) {
+        keys.push(token[1]);
+        return "(.*?)";
+      }
+      return escapeRegExp(part).replace(/ /g, "\\s*");
+    })
+    .join("");
+  if (keys.length === 0) return {};
+  const match = new RegExp(`^${pattern}$`).exec(actual);
+  if (!match) return {};
+  const values = {};
+  keys.forEach((key, i) => {
+    const value = String(match[i + 1] ?? "").trim();
+    if (value && !isUnfilledToken(value) && values[key] == null) values[key] = value;
+  });
+  return values;
+};
+
+/**
+ * Reverse of renderCrewImmigrationTemplate: reads the values a saved letter was rendered with
+ * (generated_documents.batches[].entry_html / return_html) back out of it, by lining it up
+ * with the template. Returns { fields: { token: value }, crewRows: [{ token: value }] }.
+ * Anything that no longer lines up (e.g. the template changed since printing) is left out.
+ */
+export const extractCrewImmigrationValues = (templateHtml, renderedHtml) => {
+  const empty = { fields: {}, crewRows: [] };
+  if (!templateHtml || !renderedHtml || typeof DOMParser === "undefined") return empty;
+  const parser = new DOMParser();
+  const tplDoc = parser.parseFromString(templateHtml, "text/html");
+  const outDoc = parser.parseFromString(renderedHtml, "text/html");
+  const tplTables = Array.from(tplDoc.querySelectorAll("table"));
+  const outTables = Array.from(outDoc.querySelectorAll("table"));
+  const crewRows = [];
+
+  if (tplTables.length === outTables.length) {
+    tplTables.forEach((tplTable, t) => {
+      const tplRows = Array.from(tplTable.querySelectorAll("tr"));
+      const crewIndex = tplRows.findIndex((tr) => tokensIn(tr.innerHTML).length > 0);
+      if (crewIndex < 0) return;
+      const trailing = tplRows.length - crewIndex - 1;
+      const outRows = Array.from(outTables[t].querySelectorAll("tr"));
+      const renderedCrewRows = outRows.slice(crewIndex, outRows.length - trailing);
+      const tplCells = Array.from(tplRows[crewIndex].children);
+      renderedCrewRows.forEach((tr) => {
+        const cells = Array.from(tr.children);
+        const row = {};
+        tplCells.forEach((cell, c) => {
+          Object.assign(row, matchTokens(cell.textContent, cells[c]?.textContent));
+        });
+        crewRows.push(row);
+        tr.remove();
+      });
+      tplRows[crewIndex].remove();
+    });
+  }
+
+  return { fields: matchTokens(tplDoc.body.textContent, outDoc.body.textContent), crewRows };
+};
+
 /** True when the value has Latin letters, i.e. is worth sending to the Arabic translator. */
 export const needsArabicTranslation = (value) => /[A-Za-z]/.test(String(value ?? ""));
 
