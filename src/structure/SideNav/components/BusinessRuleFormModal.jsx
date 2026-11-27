@@ -1712,7 +1712,7 @@ function RefineUpdateCriteriaModal({ show, onClose, onSelect, existingFieldLabel
       show={show}
       onHide={onClose}
       className="card-property-match-modal"
-      dialogClassName="card-property-match-modal-dialog"
+      dialogClassName="card-property-match-modal-dialog card-property-match-modal-dialog--full"
       backdropClassName="card-property-match-modal-backdrop"
       centered
       scrollable
@@ -1806,7 +1806,7 @@ function RefineUpdateCriteriaModal({ show, onClose, onSelect, existingFieldLabel
                     </div>
                   </div>
                   <FormTemplateFilter show={show} value={selectedTemplateId} onChange={setSelectedTemplateId} />
-                  <label className="business-rule-form-toggle br-property-disabled-toggle mb-2 flex-shrink-0">
+                  <label className="business-rule-form-toggle br-property-disabled-toggle br-property-board-filter-row--toggle flex-shrink-0">
                     <input
                       type="checkbox"
                       checked={showDisabled}
