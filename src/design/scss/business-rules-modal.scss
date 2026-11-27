@@ -3176,6 +3176,11 @@ body .modal.card-property-match-modal.show {
   gap: 10px;
 }
 
+// Matches the 40px board trigger so the toggle sits level with the neighbouring filters.
+.br-property-board-filter-row--toggle {
+  height: 40px;
+}
+
 .br-property-board-picker-wrap {
   flex: 1;
 }
