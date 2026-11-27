@@ -1673,14 +1673,9 @@ const GROCardView = forwardRef(function GROCardView(
     [isGeneratingCrewImmigrationPdf, callId, cardId, taskId, userRoleId, refreshGroDocuments]
   );
 
-  // The upload button is offered on the Vessel Inward Registration card,
-  // once the task's document has been generated (task.generated_document.status === "generated").
-  const hasGeneratedDocument = useMemo(
-    () => String(taskDetails?.generated_document?.status ?? "").trim().toLowerCase() === "generated",
-    [taskDetails]
-  );
-
-  const showDynamicUploadIcon = isVesselInwardRegistrationStage && hasGeneratedDocument;
+  // The upload button is always offered on the Vessel Inward Registration card,
+  // whether or not the registration PDF has been generated yet.
+  const showDynamicUploadIcon = isVesselInwardRegistrationStage;
 
   const dynamicUploadButtonLabel = "Upload Signed Document";
   const dynamicUploadTitle = "Upload Signed Document";
