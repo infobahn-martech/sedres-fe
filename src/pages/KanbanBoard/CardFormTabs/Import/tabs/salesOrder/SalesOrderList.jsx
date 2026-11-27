@@ -30,7 +30,7 @@ import SoApprovalEmailModal from "./SoApprovalEmailModal";
 import DocumentListModal from "./DocumentListModal";
 import UploadInvoiceModal from "@/components/UploadInvoiceModal";
 import { compressPdfFiles } from "@/shared/utils/compressPdf";
-import { isApprovalRequestedColumnTitle, isApprovalReceivedColumnTitle, isSentToDaColumnTitle, isLntSwimlane, isSubseaSwimlane, isBgpSwimlane } from "@/pages/KanbanBoard/utils/columnTitles";
+import { isApprovalRequestedColumnTitle, isApprovalReceivedColumnTitle, isSentToDaColumnTitle, isLntSwimlane, isSubseaSwimlane, isBgpSwimlane, isLamprellSaudiSwimlane } from "@/pages/KanbanBoard/utils/columnTitles";
 import { SO_TYPE_OPTIONS, VERIFIED_ITEM_STATUS, areAllSoItemsVerifiedForCall } from "@/pages/KanbanBoard/utils/soItemsVerification";
 import SeApprovalUploadModal from "@/pages/KanbanBoard/components/board/SeApprovalUploadModal";
 import CustomModal from "@/components/CustomModal";
@@ -796,23 +796,26 @@ const SalesOrderList = ({
   // The Operator board is not a DA board (isDaContext is false there), so the Subsea 7 Approval Requested and
   // Approval Received flows open the header button and its modals on their own, for any user, like their Action column.
   const isOperatorSrtFlow = isOperatorSrtApprovalFlow || isOperatorSrtReceivedFlow;
-  // Operator board: a BGP swimlane card on "Approval Requested" uses the standard SO approval flow (Send For SO
+  // BGP and Lamprell Saudi swimlanes share the same SO approval and approved SO upload.
+  const isOperatorSoSwimlane =
+    isBgpSwimlane({ title: card?.swimlaneTitle }) || isLamprellSaudiSwimlane({ title: card?.swimlaneTitle });
+  // Operator board: a BGP or Lamprell Saudi swimlane card on "Approval Requested" uses the standard SO approval flow (Send For SO
   // approval email, then Approved / Rejected). It stays on the column with the Awaiting approval sticker after
   // the send and the backend moves it on once the approval is recorded.
-  const isOperatorBgpApprovalFlow =
-    isBgpSwimlane({ title: card?.swimlaneTitle }) &&
+  const isOperatorSoApprovalFlow =
+    isOperatorSoSwimlane &&
     Array.isArray(stepLabels) &&
     currentStep != null &&
     isApprovalRequestedColumnTitle(stepLabels[currentStep - 1]);
-  const isOperatorApprovalFlow = isOperatorSrtFlow || isOperatorBgpApprovalFlow;
+  const isOperatorApprovalFlow = isOperatorSrtFlow || isOperatorSoApprovalFlow;
   const isAtSentToDaColumn =
     Array.isArray(stepLabels) && currentStep != null && isSentToDaColumnTitle(stepLabels[currentStep - 1]);
   const isSrtApprovalContext = isDaVerifyContext || isOperatorApprovalFlow;
-  // Operator board: a BGP swimlane card on "Approval Received" takes the signed SO the client sent and,
+  // Operator board: a BGP or Lamprell Saudi swimlane card on "Approval Received" takes the signed SO the client sent and,
   // optionally, the client's approval email (da/da_upload_so_approval_proof); the backend then moves the
   // card on to "Sent to DA".
-  const isOperatorBgpReceivedFlow =
-    isBgpSwimlane({ title: card?.swimlaneTitle }) &&
+  const isOperatorSoReceivedFlow =
+    isOperatorSoSwimlane &&
     Array.isArray(stepLabels) &&
     currentStep != null &&
     isApprovalReceivedColumnTitle(stepLabels[currentStep - 1]);
@@ -833,7 +836,7 @@ const SalesOrderList = ({
     isAtAwaitingSoPrColumn ||
     isOperatorSrtApprovalFlow ||
     isOperatorSrtReceivedFlow ||
-    isOperatorBgpApprovalFlow ||
+    isOperatorSoApprovalFlow ||
     (isSrtFlow && (isAtColumnAfterOpsCompleted || isAtAwaitingSrtColumn || isAtSrtReceivedColumn)) ||
     (Array.isArray(stepLabels) && currentStep != null && SO_SENT_FOR_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
     (Array.isArray(stepLabels) && currentStep != null && SEND_FOR_SO_APPROVAL_COLUMN_PATTERN.test(stepLabels[currentStep - 1] || "")) ||
@@ -1446,7 +1449,7 @@ const SalesOrderList = ({
       // that used to skip over "SO/PO Approval Received" entirely, jumping the card 2 steps
       // ahead in one Approve click.
       // Operator Subsea 7: the backend moves the card itself; closing refetches the board to show it.
-      if (isOperatorSrtApprovalFlow || isOperatorBgpApprovalFlow) {
+      if (isOperatorSrtApprovalFlow || isOperatorSoApprovalFlow) {
         onCloseCard?.();
         return;
       }
@@ -3095,7 +3098,7 @@ const SalesOrderList = ({
             </button>
           )}
 
-          {isOperatorBgpReceivedFlow && (
+          {isOperatorSoReceivedFlow && (
             <button
               type="button"
               className="sales-order-da-status-button"
@@ -4098,7 +4101,7 @@ const SalesOrderList = ({
 
       {/* Upload Approved SO — shown once the SO is approved (POSH, SAIPEM, "Send for SO Approval" workflows): the approved SO and the
           SO email, via da/da_upload_so_approval_proof. */}
-      {(isSrtApprovalContext || isOperatorBgpReceivedFlow) && (
+      {(isSrtApprovalContext || isOperatorSoReceivedFlow) && (
         <SeApprovalUploadModal
           show={showApprovedSoUploadModal}
           onClose={handleCloseApprovedSoUploadModal}

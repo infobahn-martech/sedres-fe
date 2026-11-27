@@ -138,14 +138,14 @@ export const isLntReadyToSubmit = (workflowTitle, columnTitle) =>
   (LNT_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) || isDaSupervisorWorkflow(workflowTitle)) &&
   READY_TO_SUBMIT_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
 
-const BGP_WORKFLOW_PATTERN = /bgp/i;
+const EMAIL_PROOF_WORKFLOW_PATTERN = /bgp|lamprell\s*saudi/i;
 const AWAITING_PROOF_STICKER_PATTERN = /^awaiting\s+proof$/i;
 
-/* The BGP DA "Ready to Submit" column (a BGP workflow, or the BGP swimlane of the DA Supervisor workflow): a batch's "Submit" sends the invoice submission email, the sent cards stay
+/* The BGP and Lamprell Saudi DA "Ready to Submit" column (their own workflow, or their swimlane of the DA Supervisor workflow): a batch's "Submit" sends the invoice submission email, the sent cards stay
    here with the "Awaiting proof" sticker, and "Upload Dispatch Proof" then takes the proofs for those cards. */
 export const isBgpReadyToSubmit = (workflowTitle, columnTitle, laneTitle) =>
-  (BGP_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) ||
-    (isDaSupervisorWorkflow(workflowTitle) && BGP_WORKFLOW_PATTERN.test(String(laneTitle ?? "")))) &&
+  (EMAIL_PROOF_WORKFLOW_PATTERN.test(String(workflowTitle ?? "")) ||
+    (isDaSupervisorWorkflow(workflowTitle) && EMAIL_PROOF_WORKFLOW_PATTERN.test(String(laneTitle ?? "")))) &&
   READY_TO_SUBMIT_COLUMN_PATTERN.test(String(columnTitle ?? "").trim());
 
 /* A card whose invoice submission email is sent and whose dispatch proof is still to come. */
@@ -207,6 +207,11 @@ const BGP_SWIMLANE_PATTERN = /bgp/i;
 /* Operator board: BGP is a swimlane of the shared Operator workflow. Its cards on "Approval Requested" send the
    SO approval email and record the client's Approved / Rejected from the card (the backend moves approved cards on). */
 export const isBgpSwimlane = (lane) => BGP_SWIMLANE_PATTERN.test(String(lane?.title ?? ""));
+
+const LAMPRELL_SAUDI_SWIMLANE_PATTERN = /lamprell\s*saudi/i;
+
+/* Operator board: Lamprell Saudi is a swimlane too, and its "Approval Requested" runs the same SO approval flow as BGP. */
+export const isLamprellSaudiSwimlane = (lane) => LAMPRELL_SAUDI_SWIMLANE_PATTERN.test(String(lane?.title ?? ""));
 
 const DEFAULT_DA_ONE_CARD_COLUMN_PATTERN = /^(ar\s+invoices?\s+issued|ready\s+for\s+submission|submit\s+invoice)$/i;
 
