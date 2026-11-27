@@ -57,6 +57,8 @@ import useSubsea7ArInvoiceStore from "../../../store/subsea7ArInvoiceStore";
 import subsea7ArInvoiceService from "../../../services/subsea7ArInvoiceService";
 import useBgpArInvoiceStore from "../../../store/bgpArInvoiceStore";
 import bgpArInvoiceService from "../../../services/bgpArInvoiceService";
+import useLamprellSaudiArInvoiceStore from "../../../store/lamprellSaudiArInvoiceStore";
+import lamprellSaudiArInvoiceService from "../../../services/lamprellSaudiArInvoiceService";
 import useZamilMarinePoRequestStore from "../../../store/zamilMarinePoRequestStore";
 import useZamilMarinePoUploadStore from "../../../store/zamilMarinePoUploadStore";
 import useLamprellAlgihazSoApprovalStore from "../../../store/lamprellAlgihazSoApprovalStore";
@@ -1070,7 +1072,7 @@ export default function KanbanBoardPage() {
      (loose cards have no batch header to carry the button). McDermott's "Issue AR Invoice" uses it
      too, with its workflowId: its invoice review is read per workflow. */
   const handleColumnUploadInvoice = useCallback(
-    (cards, { workflowId = null, isZamilCrew = false, isZamilMarine = false, isLnt = false, isSubsea7 = false, isBgp = false, swimlaneId = null } = {}) => {
+    (cards, { workflowId = null, isZamilCrew = false, isZamilMarine = false, isLnt = false, isSubsea7 = false, isBgp = false, isLamprellSaudi = false, swimlaneId = null } = {}) => {
       if (!cards?.length) return;
       const batchNumbers = [...new Set(cards.map((card) => batchByCardId[card.id]).filter(Boolean))];
       handleBatchUploadInvoice({
@@ -1083,6 +1085,7 @@ export default function KanbanBoardPage() {
         isLnt,
         isSubsea7,
         isBgp,
+        isLamprellSaudi,
         swimlaneId,
       });
     },
@@ -1096,6 +1099,7 @@ export default function KanbanBoardPage() {
   const openLntArInvoiceReviewModal = useLntArInvoiceStore((state) => state.openArInvoiceReviewModal);
   const openSubsea7ArInvoiceReviewModal = useSubsea7ArInvoiceStore((state) => state.openArInvoiceReviewModal);
   const openBgpArInvoiceReviewModal = useBgpArInvoiceStore((state) => state.openArInvoiceReviewModal);
+  const openLamprellSaudiArInvoiceReviewModal = useLamprellSaudiArInvoiceStore((state) => state.openArInvoiceReviewModal);
 
   /* Bulk AR invoice upload for the ticked cards: the backend matches each PDF to a card's sales
      order. Files go in chunks of AR_INVOICE_FILES_PER_REQUEST; each response carries the latest
@@ -1111,7 +1115,10 @@ export default function KanbanBoardPage() {
       const isLnt = Boolean(selectedInvoiceBatch?.isLnt);
       const isSubsea7 = Boolean(selectedInvoiceBatch?.isSubsea7);
       const isBgp = Boolean(selectedInvoiceBatch?.isBgp);
-      const uploadService = isBgp
+      const isLamprellSaudi = Boolean(selectedInvoiceBatch?.isLamprellSaudi);
+      const uploadService = isLamprellSaudi
+        ? lamprellSaudiArInvoiceService
+        : isBgp
         ? bgpArInvoiceService
         : isSubsea7
         ? subsea7ArInvoiceService
@@ -1122,7 +1129,9 @@ export default function KanbanBoardPage() {
           : isZamilCrew
             ? zamilCrewService
             : daService;
-      const openReviewModal = isBgp
+      const openReviewModal = isLamprellSaudi
+        ? openLamprellSaudiArInvoiceReviewModal
+        : isBgp
         ? openBgpArInvoiceReviewModal
         : isSubsea7
         ? openSubsea7ArInvoiceReviewModal
@@ -1218,7 +1227,7 @@ export default function KanbanBoardPage() {
         } else {
           openReviewModal(
             cards.map((card) => reviewCardById[String(card.id)]).filter(Boolean),
-            isBgp
+            isBgp || isLamprellSaudi
               ? { swimlaneId: selectedInvoiceBatch?.swimlaneId ?? null, files: invoices }
               : { workflowId: selectedInvoiceBatch?.workflowId ?? null, files: invoices }
           );
@@ -1240,6 +1249,7 @@ export default function KanbanBoardPage() {
       openLntArInvoiceReviewModal,
       openSubsea7ArInvoiceReviewModal,
       openBgpArInvoiceReviewModal,
+      openLamprellSaudiArInvoiceReviewModal,
       refetchBoard,
     ]
   );
@@ -2000,7 +2010,7 @@ export default function KanbanBoardPage() {
       cards.some((card) => {
         const boardCard = cardsById[card.id];
         const workflow = workflows.find((wf) => String(wf.id) === String(boardCard?.workflow_id));
-        return isBgpReadyToSubmit(workflow?.title, workflow?.columns?.[boardCard?.columnId]?.title);
+        return isBgpReadyToSubmit(workflow?.title, workflow?.columns?.[boardCard?.columnId]?.title, boardCard?.swimlaneTitle);
       }),
     [workflows, cardsById]
   );
@@ -2939,6 +2949,7 @@ export default function KanbanBoardPage() {
       <LntArInvoiceReviewModal onConfirmed={refetchBoard} />
       <LntArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useSubsea7ArInvoiceStore} autoSelectOnSingleInvoice />
       <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useBgpArInvoiceStore} />
+      <ArInvoiceReviewModal onConfirmed={refetchBoard} useReviewStore={useLamprellSaudiArInvoiceStore} />
       <SignatureCheckModal
         onConfirmed={(result) => {
           [...(result?.moved_to_da ?? []), ...(result?.returned_to_scc_received ?? [])].forEach((card) => removeCardSelectionId(String(card.card_id)));
