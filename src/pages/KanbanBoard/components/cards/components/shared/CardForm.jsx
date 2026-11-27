@@ -3236,19 +3236,30 @@ function CardForm({
         return;
       }
 
-      if (isGROStyleView) {
-        return;
-      }
+      // GRO / custom clearance task cards: header color is bound from get_call_detail_by_id
+      // (call.card_color) — keep that in step so a re-bind doesn't revert the saved color.
+      const previousColor = isGROStyleView
+        ? resolveGroHeaderHex(groHeaderMeta?.color, card?.color)
+        : card?.color || DEFAULT_ACCENT_COLOR;
 
       const cardIdRaw = card?.id ?? card?.card_id;
       if (cardIdRaw == null || String(cardIdRaw).trim() === "") {
         notify("Cannot save card color: missing card id.", "error");
-        setTopbarColor(card?.color || DEFAULT_ACCENT_COLOR);
+        setTopbarColor(previousColor);
         return;
       }
 
       const id = String(cardIdRaw).trim();
-      const applyLocal = () => patchCardColor?.(id, normalized);
+      const applyLocal = () => {
+        patchCardColor?.(id, normalized);
+        if (isGROStyleView) {
+          setGroHeaderMeta((prev) =>
+            prev?.cardKey === groHeaderCardKey
+              ? { ...prev, color: normalized }
+              : { cardKey: groHeaderCardKey, title: null, color: normalized }
+          );
+        }
+      };
 
       if (!onBoardRefresh) {
         applyLocal();
@@ -3272,7 +3283,7 @@ function CardForm({
           applyLocal();
         })
         .catch((err) => {
-          setTopbarColor(card?.color || DEFAULT_ACCENT_COLOR);
+          setTopbarColor(previousColor);
           const msg =
             err?.response?.data?.message ||
             err?.response?.data?.error ||
@@ -3284,6 +3295,8 @@ function CardForm({
     [
       isAddMode,
       isGROStyleView,
+      groHeaderMeta?.color,
+      groHeaderCardKey,
       card?.id,
       card?.card_id,
       card?.color,
