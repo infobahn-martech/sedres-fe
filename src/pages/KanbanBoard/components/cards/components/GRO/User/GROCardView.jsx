@@ -2038,7 +2038,13 @@ const GROCardView = forwardRef(function GROCardView(
     </div>
   );
 
-  const inwardClearanceControl = (
+  // The task action (Inward Clearance, Bayan…) is hidden — not just disabled — until it can be used:
+  // card data loaded, call/task ids known and every document verified. While a save is in flight
+  // it stays mounted (disabled) so the open popover doesn't vanish mid-submit.
+  const isInwardClearanceAvailable =
+    !isGroLoading && callId != null && callId !== "" && Boolean(taskId) && isAllGroDocumentsVerified;
+
+  const inwardClearanceControl = !isInwardClearanceAvailable ? null : (
     <InwardClearanceToolbar
       inwardAnchorRef={inwardAnchorRef}
       showMainFileUpload={false}
@@ -2052,14 +2058,7 @@ const GROCardView = forwardRef(function GROCardView(
       onInwardCancel={handleInwardCancel}
       onInwardSubmit={handleInwardSubmit}
       isSavingInward={isSavingArrivalDocument}
-      isGroLoadingDisabled={
-        isGroLoading ||
-        isSavingArrivalDocument ||
-        callId == null ||
-        callId === "" ||
-        !taskId ||
-        !isAllGroDocumentsVerified
-      }
+      isGroLoadingDisabled={isSavingArrivalDocument}
     />
   );
 
