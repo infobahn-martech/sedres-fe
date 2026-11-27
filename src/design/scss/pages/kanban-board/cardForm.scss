@@ -4358,6 +4358,19 @@
   cursor: not-allowed;
 }
 
+/* Capturing: full-strength button with a spinner instead of the faded disabled look. */
+.gro-inward-time-capture-btn[aria-busy="true"] {
+  opacity: 1;
+  cursor: progress;
+}
+
+.gro-inward-time-capture-spinner {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+  color: #1d4ed8;
+}
+
 .gro-premium-upload-filename--uploaded {
   color: #1d4ed8;
   text-decoration: none;

@@ -149,6 +149,9 @@ const GROCardView = forwardRef(function GROCardView(
   const [stage11TimeObjectValues, setStage11TimeObjectValues] = useState({});
   const [stage11TimeObjectErrors, setStage11TimeObjectErrors] = useState({});
   const [capturingTimeObjectKey, setCapturingTimeObjectKey] = useState(null);
+  // save_arrival_document backs both the popover Save and the per-field clock capture, and the
+  // reducer's flag can't tell them apart — Save shows "Saving…" only for its own request.
+  const isSavingInwardForm = isSavingArrivalDocument && capturingTimeObjectKey == null;
   const [extraStageFields, setExtraStageFields] = useState(() => createEmptyExtraStageFields());
   const [extraStageFieldErrors, setExtraStageFieldErrors] = useState({});
   const [taskDetails, setTaskDetails] = useState(null);
@@ -455,6 +458,8 @@ const GROCardView = forwardRef(function GROCardView(
   /** Clock icon next to a time-object field: stamps "now" and saves just that one field via arrival/save_arrival_document. */
   const captureTimeObjectNow = useCallback(
     async (item, fieldKey, applyLocalChange) => {
+      // Popover Save in flight — don't race it with a single-field save.
+      if (isSavingArrivalDocument) return;
       if (callId == null || callId === "" || !taskId) {
         notify("Call id or task id is missing.", "error");
         return;
@@ -481,7 +486,7 @@ const GROCardView = forwardRef(function GROCardView(
         setCapturingTimeObjectKey(null);
       }
     },
-    [callId, taskId, saveArrivalDocument, refreshTaskDetails]
+    [callId, taskId, saveArrivalDocument, refreshTaskDetails, isSavingArrivalDocument]
   );
 
   const buildInwardTimeObjectField = useCallback(
@@ -633,9 +638,14 @@ const GROCardView = forwardRef(function GROCardView(
               title={`Set ${field.label} to now`}
               aria-label={`Set ${field.label} to now`}
               disabled={isDisabled || field.capturing}
+              aria-busy={field.capturing || undefined}
               onClick={field.onCaptureNow}
             >
-              <FiClock size={16} />
+              {field.capturing ? (
+                <span className="spinner-border spinner-border-sm gro-inward-time-capture-spinner" aria-hidden="true" />
+              ) : (
+                <FiClock size={16} />
+              )}
             </button>
           ) : null}
         </div>
@@ -1379,6 +1389,8 @@ const GROCardView = forwardRef(function GROCardView(
   };
 
   const handleInwardSubmit = async () => {
+    // A clock capture is still saving — let it finish so Save doesn't overwrite it.
+    if (capturingTimeObjectKey != null) return;
     if (callId == null || callId === "") {
       notify("Call id is missing.", "error");
       return;
@@ -2070,8 +2082,9 @@ const GROCardView = forwardRef(function GROCardView(
       extraStageFieldsContent={hasDynamicFields ? dynamicFieldsContent : extraStageFieldsContent}
       onInwardCancel={handleInwardCancel}
       onInwardSubmit={handleInwardSubmit}
-      isSavingInward={isSavingArrivalDocument}
-      isGroLoadingDisabled={isSavingArrivalDocument}
+      isSavingInward={isSavingInwardForm}
+      // Only the popover's Save button shows the busy state; the toolbar button stays enabled.
+      isGroLoadingDisabled={false}
     />
   );
 

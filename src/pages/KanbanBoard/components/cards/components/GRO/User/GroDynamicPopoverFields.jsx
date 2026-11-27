@@ -107,9 +107,14 @@ export function GroPopoverTimeObjectField({ field, disabled = false }) {
             title={`Set ${field.label} to now`}
             aria-label={`Set ${field.label} to now`}
             disabled={disabled || field.capturing}
+            aria-busy={field.capturing || undefined}
             onClick={field.onCaptureNow}
           >
-            <FiClock size={16} />
+            {field.capturing ? (
+              <span className="spinner-border spinner-border-sm gro-inward-time-capture-spinner" aria-hidden="true" />
+            ) : (
+              <FiClock size={16} />
+            )}
           </button>
         ) : null}
       </div>
