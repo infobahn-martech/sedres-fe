@@ -185,14 +185,10 @@ export const TAB_ICON_PATHS = {
 export const CREW_ENTRY_COLUMNS = [
   { key: "crew_name", header: "Crew Name", placeholder: "Full name", required: true },
   { key: "rank", header: "Rank", placeholder: "e.g. Master" },
-  {
-    key: "movement_type",
-    header: "Movement Type",
-    type: "select",
-    options: ["Sign On", "Sign Off"],
-    defaultValue: "Sign On",
-  },
+  { key: "nationality", header: "Nationality", placeholder: "e.g. India" },
   { key: "passport_no", header: "Passport No", placeholder: "Passport number", required: true },
+  { key: "visa_no", header: "Visa No", placeholder: "Visa number" },
+  { key: "iqama_no", header: "Iqama No", placeholder: "Iqama number" },
 ];
 
 /** Maps typed/pasted text ("sign off", "OFF", "Sign-On"…) to a select column's option; unknown → default. */

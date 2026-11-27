@@ -6129,3 +6129,12 @@ $gro-supervisor-control-border: #d0d5dd;
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Two fields or fewer (e.g. Custom Bayan) — one under another in a compact popover. */
+.gro-inward-popover:has(.gro-dynamic-popover-grid--stacked) {
+  width: min(420px, calc(100vw - 40px));
+}
+
+.gro-dynamic-popover-grid.gro-dynamic-popover-grid--stacked {
+  grid-template-columns: minmax(0, 1fr);
+}

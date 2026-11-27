@@ -263,10 +263,14 @@ function GroDynamicPopoverFields({
     );
   }
 
-  // Two fields per row; the parent popover widens via `:has(.gro-dynamic-popover-grid)`.
+  // Multi-column grid; the parent popover widens via `:has(.gro-dynamic-popover-grid)`.
+  // With two fields or fewer, stack them one under another in a narrower popover.
+  const fieldOrder = Array.isArray(order) ? order : [];
+  const gridClassName =
+    fieldOrder.length <= 2 ? "gro-dynamic-popover-grid gro-dynamic-popover-grid--stacked" : "gro-dynamic-popover-grid";
   return (
-    <div className="gro-dynamic-popover-grid">
-      {(Array.isArray(order) ? order : []).map(({ source, item }) => {
+    <div className={gridClassName}>
+      {fieldOrder.map(({ source, item }) => {
         if (source === GRO_FIELD_SOURCE.TIME_OBJECT) {
           const valueKey = resolveGroTimeObjectValueKey(item);
           const field = timeObjectFieldsByKey?.[valueKey];

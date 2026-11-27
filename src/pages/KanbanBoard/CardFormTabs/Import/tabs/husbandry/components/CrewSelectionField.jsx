@@ -157,8 +157,8 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
             CREW_ENTRY_COLUMNS.forEach(({ key }) => {
               entry[key] = String(row[key] ?? "").trim();
             });
-            // Movement type comes from the grid; fall back to the upload default if it is ever blank.
-            entry.movement_type = entry.movement_type || UPLOAD_MOVEMENT_TYPE;
+            // The grid no longer collects movement type; tag manual crew with the upload default.
+            entry.movement_type = UPLOAD_MOVEMENT_TYPE;
             return entry;
           }),
         },

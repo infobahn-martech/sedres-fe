@@ -3998,7 +3998,7 @@
   // without sideways scrolling; it only scrolls on very narrow panels.
   &__table {
     width: 100%;
-    min-width: 440px;
+    min-width: 720px;
     table-layout: fixed;
     border-collapse: collapse;
     font-size: 12px;
@@ -4020,15 +4020,17 @@
 
     // Passport No takes whatever width is left.
     .husb-crew-grid__col--crew_name {
-      width: 30%;
+      width: 22%;
     }
 
     .husb-crew-grid__col--rank {
-      width: 19%;
+      width: 14%;
     }
 
-    .husb-crew-grid__col--movement_type {
-      width: 22%;
+    .husb-crew-grid__col--nationality,
+    .husb-crew-grid__col--visa_no,
+    .husb-crew-grid__col--iqama_no {
+      width: 15%;
     }
 
     select {
