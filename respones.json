@@ -52,49 +52,61 @@
                 }
             ],
             "generated_document": {
-                "status": "not_generated",
-                "call_task_document_id": null,
-                "file_url": null,
-                "generated_at": null,
+                "status": "generated",
+                "call_task_document_id": 471,
+                "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Task Docs\/609_1045_Vessel_Registration.pdf",
+                "generated_at": "2026-11-27 07:08:08",
                 "signed_by_name": null,
                 "signed_at": null
             },
-            "details": {
-                "vessel_registration_doc": null,
-                "fields": [
-                    {
-                        "field_key": "vessel_registration_doc",
-                        "label": "Vessel Registration Document",
-                        "field_type": "document",
-                        "value": null,
-                        "file_url": null
-                    }
-                ]
-            },
+            "fields": [
+                {
+                    "source": "task_field",
+                    "field_key": "vessel_registration_doc",
+                    "label": "Vessel Registration Document",
+                    "field_type": "document",
+                    "value": null,
+                    "file_url": null,
+                    "is_required": 0
+                },
+                {
+                    "source": "time_object",
+                    "field_key": "VIFC",
+                    "label": "Vessel Inward Formalities Completed",
+                    "field_type": "datetime",
+                    "value": null,
+                    "is_required": 1,
+                    "time_object_id": 13,
+                    "stage_id": 6,
+                    "sort_order": 1
+                }
+            ],
             "documents": [
+                {
+                    "document_required": 1,
+                    "document_id": null,
+                    "call_task_document_id": "471",
+                    "document_name": "Vessel Registration",
+                    "file_name": "609_1045_Vessel_Registration.pdf",
+                    "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Task Docs\/609_1045_Vessel_Registration.pdf",
+                    "status": "2",
+                    "remarks": null,
+                    "uploaded_by": "13",
+                    "uploaded_by_user": "GRO Supervisor",
+                    "uploaded_at": "2026-11-27 07:08:08"
+                },
                 {
                     "document_required": 1,
                     "document_id": "4911",
                     "call_task_document_id": "465",
                     "document_name": "Vessel Registry certificate",
-                    "file_name": "8027c8af-1267-47bf-ab77-6ec22455f950.png",
-                    "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/8027c8af-1267-47bf-ab77-6ec22455f950.png",
-                    "status": "3",
-                    "remarks": "What is this",
+                    "file_name": "pdf-sample_0_(1)12.pdf",
+                    "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/pdf-sample_0_(1)12.pdf",
+                    "status": "2",
+                    "remarks": "",
                     "uploaded_by": "83",
                     "uploaded_by_user": "Infobahn Test",
-                    "uploaded_at": "2026-11-26 14:47:47"
-                }
-            ],
-            "stage_time_objects": [
-                {
-                    "time_object_id": "13",
-                    "time_object": "Vessel Inward Formalities Completed",
-                    "field_key": "VIFC",
-                    "is_required": "1",
-                    "sort_order": "1",
-                    "stage_id": "6",
-                    "time_object_value": null
+                    "uploaded_at": "2026-11-26 15:50:41"
                 }
             ]
         }

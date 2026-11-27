@@ -1,5 +1,7 @@
 // GRO Board card view helpers (no JSX)
 
+import { parseGroTaskFields } from "./groDynamicTaskFields";
+
 export const GRO_MAIN_VIEWS = {
   inward: "inward",
   cg: "cg",
@@ -150,8 +152,14 @@ export const parseGroCallDetailByIdPayload = (res) => {
 
   const sortByOrder = (rows) =>
     [...rows].sort((a, b) => Number(a?.sort_order ?? 0) - Number(b?.sort_order ?? 0));
-  const stageTimeObjects = sortByOrder(asArray(task.stage_time_objects));
-  const stage11TimeObjects = sortByOrder(asArray(task.stage_11_time_objects));
+  // `task.fields` is the dynamic popover definition (task fields + time objects). When present it
+  // drives the popover; the legacy `stage_time_objects` / `stage_11_time_objects` are the fallback.
+  const dynamicFields = parseGroTaskFields(task.fields);
+  const hasDynamicFields = dynamicFields.order.length > 0;
+  const stageTimeObjects = hasDynamicFields
+    ? dynamicFields.timeObjects
+    : sortByOrder(asArray(task.stage_time_objects));
+  const stage11TimeObjects = hasDynamicFields ? [] : sortByOrder(asArray(task.stage_11_time_objects));
   const documents = asArray(task.documents);
 
   const taskDetails = {
@@ -161,6 +169,7 @@ export const parseGroCallDetailByIdPayload = (res) => {
     generated_document: task.generated_document ?? task.generated_documents ?? null,
     // Stage time objects carry their saved `time_object_value` inline.
     time_objects: [...asArray(call.time_objects), ...stageTimeObjects, ...stage11TimeObjects],
+    task_fields: dynamicFields.taskFields,
   };
 
   return {
@@ -172,6 +181,9 @@ export const parseGroCallDetailByIdPayload = (res) => {
     taskDetails,
     stageTimeObjects,
     stage11TimeObjects,
+    hasDynamicFields,
+    taskFields: dynamicFields.taskFields,
+    taskFieldOrder: dynamicFields.order,
     assignableUsers: parseGroUsersByRoleResponse({ data: asArray(task.assignable_users) }),
   };
 };

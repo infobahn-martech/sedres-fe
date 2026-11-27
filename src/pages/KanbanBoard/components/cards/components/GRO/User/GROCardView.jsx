@@ -31,6 +31,13 @@ import InwardClearanceView, { DocumentActionConfirmModal, InwardClearanceToolbar
 import PassRequestsView from "./PassRequestsView";
 import GroPassUploadPopoverForm from "./GroPassUploadPopoverForm";
 import GroPopoverStageExtraFields from "./GroPopoverStageExtraFields";
+import GroDynamicPopoverFields from "./GroDynamicPopoverFields";
+import {
+  buildGroTaskFieldValues,
+  buildGroTaskFieldExistingFiles,
+  validateGroTaskFields,
+  appendGroTaskFieldsToFormData,
+} from "./groDynamicTaskFields";
 import CrewImmigrationPanel from "./CrewImmigrationPanel";
 import GroTaskDocumentsPanel from "./GroTaskDocumentsPanel";
 import CrewChangePassPanel from "./CrewChangePassPanel";
@@ -145,6 +152,13 @@ const GROCardView = forwardRef(function GROCardView(
   const [extraStageFields, setExtraStageFields] = useState(() => createEmptyExtraStageFields());
   const [extraStageFieldErrors, setExtraStageFieldErrors] = useState({});
   const [taskDetails, setTaskDetails] = useState(null);
+  // get_call_detail_by_id `task.fields`: when present, every popover renders from it.
+  const [hasDynamicFields, setHasDynamicFields] = useState(false);
+  const [taskFields, setTaskFields] = useState([]);
+  const [taskFieldOrder, setTaskFieldOrder] = useState([]);
+  const [taskFieldValues, setTaskFieldValues] = useState({});
+  const [taskFieldErrors, setTaskFieldErrors] = useState({});
+  const [taskFieldExistingFiles, setTaskFieldExistingFiles] = useState({});
   const [existingStageFiles, setExistingStageFiles] = useState({});
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
@@ -232,6 +246,9 @@ const GROCardView = forwardRef(function GROCardView(
       setTaskDetails(parsed.hasTask ? parsed.taskDetails : null);
       setTimeObjects(parsed.stageTimeObjects);
       setStage11TimeObjects(parsed.stage11TimeObjects);
+      setHasDynamicFields(parsed.hasDynamicFields);
+      setTaskFields(parsed.taskFields);
+      setTaskFieldOrder(parsed.taskFieldOrder);
       setAssignableUsersFromApi(parsed.assignableUsers);
       const apiCall = res?.data?.data?.call;
       const headerTitle = String(apiCall?.card_title ?? "").trim();
@@ -250,6 +267,9 @@ const GROCardView = forwardRef(function GROCardView(
     setTaskDetails(null);
     setTimeObjects([]);
     setStage11TimeObjects([]);
+    setHasDynamicFields(false);
+    setTaskFields([]);
+    setTaskFieldOrder([]);
   }, []);
 
   const selectedTask = useMemo(
@@ -350,7 +370,10 @@ const GROCardView = forwardRef(function GROCardView(
         details && groStageId != null
           ? extractGroSavedExtraStageFields(groStageId, details)
           : { scalarValues: {}, fileInfo: {} };
+      const savedTaskFields = Array.isArray(details?.task_fields) ? details.task_fields : [];
       return {
+        taskFieldValues: buildGroTaskFieldValues(savedTaskFields),
+        taskFieldExistingFiles: buildGroTaskFieldExistingFiles(savedTaskFields),
         timeObjectValues: savedTimeObjectValues,
         stage11TimeObjectValues: savedStage11TimeObjectValues,
         extraStageFields: { ...createEmptyExtraStageFields(), ...scalarValues },
@@ -369,6 +392,9 @@ const GROCardView = forwardRef(function GROCardView(
     setExtraStageFields(saved.extraStageFields);
     setExtraStageFieldErrors({});
     setExistingStageFiles(saved.fileInfo);
+    setTaskFieldValues(saved.taskFieldValues);
+    setTaskFieldErrors({});
+    setTaskFieldExistingFiles(saved.taskFieldExistingFiles);
     resetExtraStageFileInputs();
   };
 
@@ -659,6 +685,60 @@ const GROCardView = forwardRef(function GROCardView(
     existingStageFiles,
   ]);
 
+  const handleTaskFieldChange = useCallback((fieldKey, value) => {
+    setTaskFieldValues((prev) => ({ ...prev, [fieldKey]: value }));
+    setTaskFieldErrors((prev) => {
+      if (!prev?.[fieldKey]) return prev;
+      const next = { ...prev };
+      delete next[fieldKey];
+      return next;
+    });
+  }, []);
+
+  const inwardTimeObjectFieldsByKey = useMemo(
+    () => Object.fromEntries(inwardTimeObjectFields.map((field) => [field.fieldKey, field])),
+    [inwardTimeObjectFields]
+  );
+
+  // Every task-card popover, built from `task.fields` (task fields + time objects, in API order).
+  const dynamicFieldsContent = hasDynamicFields ? (
+    <GroDynamicPopoverFields
+      order={taskFieldOrder}
+      timeObjectFieldsByKey={inwardTimeObjectFieldsByKey}
+      timeObjectsLoading={timeObjectsLoading}
+      values={taskFieldValues}
+      errors={taskFieldErrors}
+      existingFiles={taskFieldExistingFiles}
+      onChange={handleTaskFieldChange}
+      fileInputRefs={extraStageFileInputRefs}
+    />
+  ) : null;
+
+  /**
+   * Validates and builds the save_arrival_document FormData for the dynamic `task.fields` popover:
+   * time objects go in the `time_objects` JSON, every task field under its own field_key.
+   * Returns null (after showing errors) when a required field is missing.
+   */
+  const buildDynamicFieldsFormData = useCallback(() => {
+    const timeErrors = validateGroRequiredTimeObjects(timeObjects, timeObjectValues);
+    const fieldErrors = validateGroTaskFields(taskFields, taskFieldValues, taskFieldExistingFiles);
+    setTimeObjectErrors(timeErrors);
+    setTaskFieldErrors(fieldErrors);
+    if (Object.keys(timeErrors).length > 0 || Object.keys(fieldErrors).length > 0) {
+      notify("Please fill in all required fields.", "warn");
+      return null;
+    }
+    const formData = new FormData();
+    formData.append("call_id", String(callId));
+    formData.append("task_id", String(taskId));
+    formData.append(
+      "time_objects",
+      JSON.stringify(buildGroArrivalTimeObjectsPayload(timeObjects, timeObjectValues))
+    );
+    appendGroTaskFieldsToFormData(formData, taskFields, taskFieldValues);
+    return formData;
+  }, [callId, taskId, timeObjects, timeObjectValues, taskFields, taskFieldValues, taskFieldExistingFiles]);
+
   // Switching to another card clears the popover's editable values. The time-object fields
   // (task.stage_time_objects) and saved values (taskDetails) both come from get_call_detail_by_id,
   // bound in applyCallDetailResponse; the effect below copies saved values into the editable state.
@@ -670,8 +750,31 @@ const GROCardView = forwardRef(function GROCardView(
     setExtraStageFields(createEmptyExtraStageFields());
     setExtraStageFieldErrors({});
     setExistingStageFiles({});
+    setTaskFieldValues({});
+    setTaskFieldErrors({});
+    setTaskFieldExistingFiles({});
     resetExtraStageFileInputs();
   }, [callId, cardId, taskId, resetExtraStageFileInputs]);
+
+  // Copies the saved task-field values into the editable state (without overwriting edits in progress).
+  useEffect(() => {
+    const savedFields = Array.isArray(taskDetails?.task_fields) ? taskDetails.task_fields : [];
+    if (savedFields.length === 0) return;
+    const saved = buildGroTaskFieldValues(savedFields);
+    setTaskFieldValues((prev) => {
+      const next = { ...prev };
+      Object.entries(saved).forEach(([key, value]) => {
+        const current = next[key];
+        const isBlank =
+          current == null ||
+          current === "" ||
+          (typeof current === "object" && !(current instanceof File) && !current.date);
+        if (isBlank) next[key] = value;
+      });
+      return next;
+    });
+    setTaskFieldExistingFiles(buildGroTaskFieldExistingFiles(savedFields));
+  }, [taskDetails]);
 
   useEffect(() => {
     if (!taskDetails || groStageId == null) return;
@@ -1290,6 +1393,21 @@ const GROCardView = forwardRef(function GROCardView(
       await submitCrewImmigrationStatus();
       return;
     }
+    if (hasDynamicFields) {
+      const dynamicFormData = buildDynamicFieldsFormData();
+      if (!dynamicFormData) return;
+      try {
+        const saveRes = await saveArrivalDocument({ formData: dynamicFormData });
+        notify(saveRes?.message || "Saved successfully.", "success");
+        const freshTaskDetails = await refreshTaskDetails();
+        setShowInwardClearance(false);
+        resetInwardClearanceFields(freshTaskDetails);
+      } catch (err) {
+        notify(groApiErrorMessage(err, "Failed to save."), "error");
+      }
+      return;
+    }
+
     const stageTimeObjects = timeObjects;
 
     const timeValidationErrors = validateGroRequiredTimeObjects(stageTimeObjects, timeObjectValues);
@@ -1608,19 +1726,24 @@ const GROCardView = forwardRef(function GROCardView(
         return;
       }
 
-      setTimeObjectErrors({});
-
-      const formData = new FormData();
-      formData.append("call_id", String(callId));
-      formData.append("task_id", String(taskId));
-      if (dynamicUploadFile) {
-        formData.append("vessel_registration_doc", dynamicUploadFile);
-      }
-      if (dynamicUploadShowsTimeFields) {
-        formData.append(
-          "time_objects",
-          JSON.stringify(buildGroArrivalTimeObjectsPayload(timeObjects, timeObjectValues))
-        );
+      let formData;
+      if (hasDynamicFields) {
+        formData = buildDynamicFieldsFormData();
+        if (!formData) return;
+      } else {
+        setTimeObjectErrors({});
+        formData = new FormData();
+        formData.append("call_id", String(callId));
+        formData.append("task_id", String(taskId));
+        if (dynamicUploadFile) {
+          formData.append("vessel_registration_doc", dynamicUploadFile);
+        }
+        if (dynamicUploadShowsTimeFields) {
+          formData.append(
+            "time_objects",
+            JSON.stringify(buildGroArrivalTimeObjectsPayload(timeObjects, timeObjectValues))
+          );
+        }
       }
 
       setIsDynamicUploadSubmitting(true);
@@ -1650,6 +1773,8 @@ const GROCardView = forwardRef(function GROCardView(
       refreshTaskDetails,
       resetInwardClearanceFields,
       dynamicUploadShowsTimeFields,
+      hasDynamicFields,
+      buildDynamicFieldsFormData,
     ]
   );
 
@@ -1816,6 +1941,10 @@ const GROCardView = forwardRef(function GROCardView(
           <div className="gro-inward-popover-header">{dynamicUploadTitle}</div>
           <form onSubmit={handleDynamicUploadSubmit}>
             <div className="gro-inward-popover-body">
+              {hasDynamicFields ? (
+                dynamicFieldsContent
+              ) : (
+              <>
               {!dynamicUploadShowsTimeFields ? null : timeObjectsLoading ? (
                 <div className="gro-inward-popover-field">
                   <span className="gro-inward-popover-label gro-inward-popover-loading">
@@ -1888,6 +2017,8 @@ const GROCardView = forwardRef(function GROCardView(
                   )}
                 </div>
               </div>
+              </>
+              )}
             </div>
             <div className="gro-inward-popover-footer">
               <button
@@ -1920,9 +2051,9 @@ const GROCardView = forwardRef(function GROCardView(
       onToggleInwardPopover={() => setShowInwardClearance(!showInwardClearance)}
       inwardActionLabel={inwardPanelLabel}
       inwardPopoverTitle={taskPanelTitle}
-      timeObjectFields={groStageId === 10 ? [] : inwardTimeObjectFields}
-      timeObjectsLoading={groStageId === 10 ? false : timeObjectsLoading}
-      extraStageFieldsContent={extraStageFieldsContent}
+      timeObjectFields={hasDynamicFields || groStageId === 10 ? [] : inwardTimeObjectFields}
+      timeObjectsLoading={hasDynamicFields || groStageId === 10 ? false : timeObjectsLoading}
+      extraStageFieldsContent={hasDynamicFields ? dynamicFieldsContent : extraStageFieldsContent}
       onInwardCancel={handleInwardCancel}
       onInwardSubmit={handleInwardSubmit}
       isSavingInward={isSavingArrivalDocument}

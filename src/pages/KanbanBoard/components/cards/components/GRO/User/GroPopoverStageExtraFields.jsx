@@ -5,7 +5,7 @@ import {
   groStageHasExtraFields,
 } from "./groStageExtraFields";
 
-function PopoverFileUploadField({
+export function PopoverFileUploadField({
   label,
   fieldKey,
   file,
