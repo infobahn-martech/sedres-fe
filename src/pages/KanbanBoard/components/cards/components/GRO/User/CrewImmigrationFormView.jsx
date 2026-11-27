@@ -118,6 +118,40 @@ const buildPrintHtml = (bodyHtml) =>
 </style><div dir="rtl" style="direction:rtl">${bodyHtml}</div>`
     : "";
 
+/**
+ * Reverse of buildPrintHtml: a saved letter (generated_documents.batches[].entry_html / return_html)
+ * is `<style>…</style><div dir="rtl">BODY</div>`; returns BODY, sanitized, so it renders in the
+ * preview and re-wraps to the same HTML on Print.
+ */
+const unwrapSavedLetterHtml = (html) => {
+  const raw = String(html ?? "").trim();
+  if (!raw) return "";
+  let body = raw;
+  if (typeof DOMParser !== "undefined") {
+    const doc = new DOMParser().parseFromString(raw, "text/html");
+    const roots = Array.from(doc.body.children).filter((el) => el.tagName !== "STYLE");
+    if (roots.length === 1 && roots[0].tagName === "DIV" && roots[0].getAttribute("dir") === "rtl") {
+      body = roots[0].innerHTML;
+    } else {
+      doc.body.querySelectorAll("style").forEach((el) => el.remove());
+      body = doc.body.innerHTML;
+    }
+  }
+  return DOMPurify.sanitize(body, SANITIZE_CONFIG);
+};
+
+const compactBatchName = (name) => String(name ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/** The generated_documents batch matching `batchName`, only when its status is "generated". */
+const findGeneratedBatch = (generatedBatches, batchName) => {
+  const target = compactBatchName(batchName);
+  if (!target) return null;
+  const match = (Array.isArray(generatedBatches) ? generatedBatches : []).find(
+    (b) => compactBatchName(b?.batch_name ?? b?.batch) === target
+  );
+  return String(match?.status ?? "").trim().toLowerCase() === "generated" ? match : null;
+};
+
 /** One template (Entry / Return): its fields, crew table and live preview. */
 function CrewImmigrationTemplateSection({
   templateKey,
@@ -128,8 +162,11 @@ function CrewImmigrationTemplateSection({
   headerAction = null,
   translationMode = TRANSLATION_MODES.EN_TO_AR,
   translationBar = null,
+  // Saved letter body of this batch's generated document; shown until the user edits a field.
+  savedHtml = "",
 }) {
   const html = template?.more_description ?? "";
+  const [edited, setEdited] = useState(false);
   const { fieldKeys, crewKeys } = useMemo(() => extractCrewImmigrationPlaceholders(html), [html]);
   const { enToAr, arToEn } = translationDirections(translationMode);
 
@@ -145,14 +182,17 @@ function CrewImmigrationTemplateSection({
     setArabicOverrides({});
     setCrewOverrides({});
     setLastEdited({});
-  }, [crew, html]);
+    setEdited(false);
+  }, [crew, html, savedHtml]);
 
   const handleEnglishChange = (key, value) => {
+    setEdited(true);
     setEnglishOverrides((prev) => ({ ...prev, [key]: value }));
     setLastEdited((prev) => (prev[key] === "en" ? prev : { ...prev, [key]: "en" }));
   };
 
   const handleArabicChange = (key, value) => {
+    setEdited(true);
     setArabicOverrides((prev) => ({ ...prev, [key]: value }));
     setLastEdited((prev) => (prev[key] === "ar" ? prev : { ...prev, [key]: "ar" }));
   };
@@ -254,10 +294,13 @@ function CrewImmigrationTemplateSection({
     return out;
   });
 
-  const previewHtml = DOMPurify.sanitize(
+  const isShowingSaved = Boolean(savedHtml) && !edited;
+  const templatePreviewHtml = DOMPurify.sanitize(
     renderCrewImmigrationTemplate(html, previewValues, previewCrewRows),
     SANITIZE_CONFIG
   );
+  // A generated batch shows (and prints) its saved letter; otherwise the live template.
+  const previewHtml = isShowingSaved ? savedHtml : templatePreviewHtml;
 
   // Report the rendered letter upward so the batch can be printed as it is shown.
   useEffect(() => {
@@ -364,12 +407,13 @@ function CrewImmigrationTemplateSection({
                                   lang={isArabic ? "ar" : undefined}
                                   className="gro-crew-immigration-bulk-input"
                                   value={row[key] ?? ""}
-                                  onChange={(e) =>
+                                  onChange={(e) => {
+                                    setEdited(true);
                                     setCrewOverrides((prev) => ({
                                       ...prev,
                                       [`${index}:${key}`]: e.target.value,
-                                    }))
-                                  }
+                                    }));
+                                  }}
                                   placeholder={crewSourceRows[index]?.[key] || humanizePlaceholder(key)}
                                 />
                               </td>
@@ -414,6 +458,7 @@ CrewImmigrationTemplateSection.propTypes = {
   }).isRequired,
   autoValues: PropTypes.object.isRequired,
   crew: PropTypes.arrayOf(PropTypes.object).isRequired,
+  savedHtml: PropTypes.string,
 };
 
 /**
@@ -426,6 +471,8 @@ export default function CrewImmigrationFormView({
   activeBatch: controlledBatch,
   onPrint,
   isPrinting = false,
+  // task.generated_documents.batches from get_call_detail_by_id.
+  generatedBatches = null,
 }) {
   const [templates, setTemplates] = useState([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
@@ -493,6 +540,19 @@ export default function CrewImmigrationFormView({
   const crew = useMemo(
     () => batches.find((b) => b.batch === activeBatch)?.crew ?? [],
     [batches, activeBatch]
+  );
+
+  // The active batch's saved letters, when its document has been generated.
+  const generatedBatch = useMemo(
+    () => findGeneratedBatch(generatedBatches, activeBatch),
+    [generatedBatches, activeBatch]
+  );
+  const savedLetterHtml = useMemo(
+    () => ({
+      entry: unwrapSavedLetterHtml(generatedBatch?.entry_html),
+      return: unwrapSavedLetterHtml(generatedBatch?.return_html),
+    }),
+    [generatedBatch]
   );
 
   // Rendered letter HTML per template key, as shown in each preview.
@@ -635,6 +695,7 @@ export default function CrewImmigrationFormView({
             template={template}
             autoValues={autoValues}
             crew={crew}
+            savedHtml={savedLetterHtml[letterKindOf(key, template, index)] ?? ""}
             translationMode={translationMode}
             translationBar={
               <GroTranslationModeBar mode={translationMode} onChange={setTranslationMode} />
@@ -653,4 +714,5 @@ CrewImmigrationFormView.propTypes = {
   /** ({ batchName, entryHtml, returnHtml }) => void — shows the Print button when given. */
   onPrint: PropTypes.func,
   isPrinting: PropTypes.bool,
+  generatedBatches: PropTypes.arrayOf(PropTypes.object),
 };

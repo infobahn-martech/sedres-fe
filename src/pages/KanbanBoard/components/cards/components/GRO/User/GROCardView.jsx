@@ -1678,6 +1678,12 @@ const GROCardView = forwardRef(function GROCardView(
   // whether or not the registration PDF has been generated yet.
   const showDynamicUploadIcon = isVesselInwardRegistrationStage;
 
+  // task.generated_documents.batches (Crew Immigration): each "generated" batch shows its saved letters.
+  const crewImmigrationGeneratedBatches = useMemo(() => {
+    const batches = taskDetails?.generated_document?.batches;
+    return Array.isArray(batches) ? batches : null;
+  }, [taskDetails]);
+
   // task.generated_document (Vessel Inward Registration): its saved `html` / `values` drive the preview.
   const vesselRegGeneratedDocument = useMemo(() => {
     const doc = taskDetails?.generated_document;
@@ -2211,6 +2217,7 @@ const GROCardView = forwardRef(function GROCardView(
                 activeBatch={crewImmigrationBatchFilter}
                 onPrint={handlePrintCrewImmigrationBatch}
                 isPrinting={isGeneratingCrewImmigrationPdf}
+                generatedBatches={crewImmigrationGeneratedBatches}
               />
             }
           />
