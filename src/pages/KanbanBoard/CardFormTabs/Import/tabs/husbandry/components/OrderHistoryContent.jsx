@@ -1,7 +1,6 @@
 import { useState, useEffect, Fragment } from "react";
 import PropTypes from "prop-types";
-import { FiPackage, FiAnchor, FiTruck, FiCheck } from "react-icons/fi";
-import CardTabListLoading from "@/components/CardTabListLoading";
+import { FiPackage, FiAnchor, FiTruck, FiCheck, FiChevronDown, FiAlertCircle } from "react-icons/fi";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import GroupSettingsIcon from "@/assets/images/cv.png";
@@ -9,19 +8,43 @@ import { FormSection, PremiumCardHeader } from "./Husbandry.components";
 import { MAIN_TABS, SERVICE_ACCENT } from "./Husbandry.constants";
 import inboundOrderService from "@/services/inboundOrderService";
 import orderHistoryService from "@/services/orderHistoryService";
+import { splitApiDateTimeParts } from "@/shared/helpers/dateTimeFieldUtils";
 import "@/design/scss/order-history.scss";
 
 const MATERIAL_ACCENT = SERVICE_ACCENT[MAIN_TABS.MATERIAL_MANAGEMENT];
+const CHAIN_ERROR = "__error__";
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return "—";
-  const date = new Date(dateStr);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+/** "28 Nov 2026" + weekday, or null when the API value isn't a real date. */
+const dateParts = (raw) => {
+  const { date } = splitApiDateTimeParts(raw || "", "");
+  if (!date) return null;
+  const [y, m, d] = date.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  if (Number.isNaN(dt.getTime())) return null;
+  return {
+    date: dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+    weekday: dt.toLocaleDateString("en-GB", { weekday: "long" }),
+  };
+};
+
+const formatShortDate = (raw) => dateParts(raw)?.date || "—";
+
+// Tone is cosmetic only — unknown statuses fall back to neutral.
+const statusTone = (status) => {
+  const raw = String(status ?? "").trim().toLowerCase();
+  if (!raw) return "neutral";
+  if (["completed", "dispatched", "done", "closed", "delivered"].includes(raw)) return "success";
+  if (["landed", "received", "in progress", "in_progress"].includes(raw)) return "info";
+  if (["pending", "draft"].includes(raw)) return "warning";
+  if (["cancelled", "canceled", "rejected"].includes(raw)) return "danger";
+  if (raw === "submitted") return "primary";
+  return "neutral";
+};
+
+const splitOrderNo = (orderNo) => {
+  const value = String(orderNo || "");
+  const at = value.lastIndexOf("-");
+  return at > 0 ? { prefix: value.slice(0, at + 1), tail: value.slice(at + 1) } : { prefix: "", tail: value };
 };
 
 const OrderHistoryContent = ({ formValues, cardColor }) => {
@@ -46,12 +69,13 @@ const OrderHistoryContent = ({ formValues, cardColor }) => {
   }, [callId]);
 
   const fetchChain = async (inboundId) => {
+    if (chainLoadingIds.has(inboundId)) return;
     setChainLoadingIds((prev) => new Set(prev).add(inboundId));
     try {
       const res = await orderHistoryService.getOrderHistory("inbound", inboundId);
       setChainCache((prev) => ({ ...prev, [inboundId]: res?.data?.data ?? null }));
     } catch {
-      setChainCache((prev) => ({ ...prev, [inboundId]: null }));
+      setChainCache((prev) => ({ ...prev, [inboundId]: CHAIN_ERROR }));
     } finally {
       setChainLoadingIds((prev) => {
         const next = new Set(prev);
@@ -77,124 +101,115 @@ const OrderHistoryContent = ({ formValues, cardColor }) => {
     }
   };
 
-  const renderChainSections = (order) => {
+  const renderStage = (stage, idx, stages) => {
+    const StageIcon = stage.icon;
+    const fields = [
+      { label: "Document no.", value: stage.documentNo },
+      { label: "Date", value: stage.date },
+      ...(stage.partyLabel ? [{ label: stage.partyLabel, value: stage.party }] : []),
+      ...(stage.showQuantity ? [{ label: "Quantity", value: stage.quantity }] : []),
+    ];
+    return (
+      <Fragment key={stage.key}>
+        <li className={`oh-stage${stage.done ? " is-done" : " is-pending"}`}>
+          <div className="oh-stage__head">
+            <span className="oh-stage__icon" aria-hidden="true">
+              {stage.done ? <FiCheck size={14} /> : <StageIcon size={14} />}
+            </span>
+            <span className="oh-stage__label">{stage.label}</span>
+            <span className={`oh-stage__state${stage.done ? " is-done" : ""}`}>
+              {stage.done ? "Created" : "Pending"}
+            </span>
+          </div>
+          {stage.done ? (
+            <dl className="oh-stage__fields">
+              {fields.map(({ label, value }) => (
+                <div className="oh-stage__field" key={label}>
+                  <dt>{label}</dt>
+                  <dd title={value != null && value !== "" ? String(value) : undefined}>
+                    {value != null && value !== "" ? value : <span className="oh-muted">—</span>}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : (
+            <p className="oh-stage__empty">Not created yet</p>
+          )}
+        </li>
+        {idx < stages.length - 1 && (
+          <li
+            className={`oh-stage-connector${stages[idx + 1].done ? " is-done" : ""}`}
+            aria-hidden="true"
+          />
+        )}
+      </Fragment>
+    );
+  };
+
+  const renderChain = (order) => {
     const id = order.inbound_id;
-    if (chainLoadingIds.has(id)) {
-      return <CardTabListLoading message="Loading details..." cardColor={cardColor} />;
+    const chain = chainCache[id];
+
+    if (chainLoadingIds.has(id) || chain === undefined) {
+      return (
+        <div className="oh-chain oh-chain--loading" aria-busy="true">
+          <Skeleton height={112} borderRadius={10} count={1} />
+          <Skeleton height={112} borderRadius={10} count={1} />
+          <Skeleton height={112} borderRadius={10} count={1} />
+        </div>
+      );
     }
 
-    const chain = chainCache[id];
+    if (chain === CHAIN_ERROR) {
+      return (
+        <div className="oh-chain-error" role="alert">
+          <FiAlertCircle size={16} aria-hidden="true" />
+          <span>Couldn&apos;t load the order chain.</span>
+          <button type="button" onClick={() => fetchChain(id)}>
+            Retry
+          </button>
+        </div>
+      );
+    }
+
     const landingNote = chain?.landing_note;
     const dispatchNote = chain?.dispatch_note;
-    const entries = [
-      {
-        key: "landing",
-        type: "Landing Note",
-        documentNo: landingNote?.document_no,
-        date: formatDate(landingNote?.landing_date || landingNote?.date),
-        party: landingNote?.received_from,
-        quantity: landingNote?.quantity,
-        created: !!landingNote,
-      },
-      {
-        key: "dispatch",
-        type: "Dispatch Note",
-        documentNo: dispatchNote?.document_no,
-        date: formatDate(dispatchNote?.dispatch_date || dispatchNote?.date),
-        party: dispatchNote?.delivered_to,
-        quantity: dispatchNote?.quantity,
-        created: !!dispatchNote,
-      },
-    ];
-
-    const steps = [
+    const stages = [
       {
         key: "inbound",
-        label: "Inbound Order",
+        label: "Inbound order",
         icon: FiPackage,
         done: true,
         documentNo: order.inbound_no,
-        date: formatDate(order.inbound_date),
+        date: formatShortDate(order.inbound_date),
       },
       {
         key: "landing",
-        label: "Landing Note",
+        label: "Landing note",
         icon: FiAnchor,
         done: !!landingNote,
         documentNo: landingNote?.document_no,
-        date: formatDate(landingNote?.landing_date || landingNote?.date),
+        date: formatShortDate(landingNote?.landing_date || landingNote?.date),
+        partyLabel: "Received from",
         party: landingNote?.received_from,
+        showQuantity: true,
+        quantity: landingNote?.quantity,
       },
       {
         key: "dispatch",
-        label: "Dispatch Note",
+        label: "Dispatch note",
         icon: FiTruck,
         done: !!dispatchNote,
         documentNo: dispatchNote?.document_no,
-        date: formatDate(dispatchNote?.dispatch_date || dispatchNote?.date),
+        date: formatShortDate(dispatchNote?.dispatch_date || dispatchNote?.date),
+        partyLabel: "Delivered to",
         party: dispatchNote?.delivered_to,
+        showQuantity: true,
+        quantity: dispatchNote?.quantity,
       },
     ];
 
-    return (
-      <div className="order-history-panel">
-        <div className="order-history-panel-title">Order chain</div>
-        <div className="table-responsive order-history-table-wrap">
-          <table className="table table-sm table-bordered order-history-chain-table mb-0">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Document No</th>
-                <th>Date</th>
-                <th>Party</th>
-                <th>Quantity</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((entry) => (
-                <tr key={entry.key}>
-                  <td>{entry.type}</td>
-                  <td>{entry.created ? entry.documentNo ?? "—" : "Not created yet"}</td>
-                  <td>{entry.created ? entry.date : "—"}</td>
-                  <td>{entry.created ? entry.party ?? "—" : "—"}</td>
-                  <td>{entry.created ? entry.quantity ?? "—" : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="order-history-timeline order-history-timeline--sm">
-          {steps.map((step, idx) => {
-            const StepIcon = step.icon;
-            return (
-              <Fragment key={step.key}>
-                <div className={`order-history-step${step.done ? " is-done" : " is-pending"}`}>
-                  <div className="order-history-step-icon">
-                    {step.done ? <FiCheck /> : <StepIcon />}
-                  </div>
-                  <div className="order-history-step-body">
-                    <div className="order-history-step-label">{step.label}</div>
-                    {step.done ? (
-                      <>
-                        <div className="order-history-step-doc">{step.documentNo ?? "—"}</div>
-                        <div className="order-history-step-date">{step.date}</div>
-                        {step.party ? <div className="order-history-step-party">{step.party}</div> : null}
-                      </>
-                    ) : (
-                      <div className="order-history-step-empty">Not created yet</div>
-                    )}
-                  </div>
-                </div>
-                {idx < steps.length - 1 ? (
-                  <div className={`order-history-step-connector${steps[idx + 1].done ? " is-done" : ""}`} />
-                ) : null}
-              </Fragment>
-            );
-          })}
-        </div>
-      </div>
-    );
+    return <ol className="oh-chain">{stages.map(renderStage)}</ol>;
   };
 
   return (
@@ -203,7 +218,11 @@ const OrderHistoryContent = ({ formValues, cardColor }) => {
         <div className="pre-arrival-form material-notes-form">
           <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid material-notes-grid--list-only">
             <div className="general-info-right crew-pass-requests-sidebar">
-              <div className={`crew-pass-requests-table-card husb-accent-${MATERIAL_ACCENT}`} role="region" aria-label="Order history">
+              <div
+                className={`crew-pass-requests-table-card husb-accent-${MATERIAL_ACCENT} order-history-card`}
+                role="region"
+                aria-label="Order history"
+              >
                 <PremiumCardHeader
                   icon="list"
                   title="Order history"
@@ -213,67 +232,99 @@ const OrderHistoryContent = ({ formValues, cardColor }) => {
                   titleClassName="crew-pass-requests-table-card__title"
                 />
                 <div className="crew-pass-requests-table-card__body">
-                    {isLoading ? (
-                      <div className="crew-pass-requests-table-card__skeleton" aria-busy="true">
-                        <Skeleton height={14} borderRadius={6} count={1} style={{ marginBottom: 12 }} />
-                        <Skeleton height={36} borderRadius={6} count={6} />
-                      </div>
-                    ) : orders.length === 0 ? (
-                      <div className="crew-pass-requests-table-card__empty">No order history available</div>
-                    ) : (
-                    <div className="crew-pass-requests-table-scroll crew-pass-thin-scrollbar material-table-container">
-                      <table className="crew-pass-requests-table material-notes-table order-history-table">
+                  {isLoading ? (
+                    <div className="crew-pass-requests-table-card__skeleton" aria-busy="true">
+                      <Skeleton height={14} borderRadius={6} count={1} style={{ marginBottom: 12 }} />
+                      <Skeleton height={48} borderRadius={6} count={5} />
+                    </div>
+                  ) : orders.length === 0 ? (
+                    <div className="crew-pass-requests-table-card__empty">No order history available</div>
+                  ) : (
+                    <div className="crew-pass-requests-table-scroll crew-pass-thin-scrollbar">
+                      <table className="oh-table">
+                        <colgroup>
+                          <col />
+                          <col className="oh-table__col-date" />
+                          <col className="oh-table__col-status" />
+                          <col className="oh-table__col-toggle" />
+                        </colgroup>
                         <thead>
                           <tr>
-                            <th width="44" className="custom-table-expand-header" aria-label="Expand row" />
-                            <th>Inbound Order No</th>
+                            <th>Inbound order no.</th>
                             <th>Date</th>
                             <th>Status</th>
+                            <th aria-label="Details" />
                           </tr>
                         </thead>
                         <tbody>
                           {orders.map((order) => {
-                              const isExpanded = expandedIds.has(order.inbound_id);
-                              return (
-                                <Fragment key={order.inbound_id}>
-                                  <tr className="order-history-row">
-                                    <td className="custom-table-expand-cell">
-                                      <button
-                                        type="button"
-                                        className="order-history-expand-toggle"
-                                        aria-expanded={isExpanded}
-                                        aria-label={isExpanded ? "Collapse row" : "Expand row"}
-                                        onClick={() => toggleExpand(order)}
-                                      >
-                                        <span className={`custom-table-expand-chevron${isExpanded ? " is-open" : ""}`} />
-                                      </button>
-                                    </td>
-                                    <td>
-                                      <div className="material-table-cell">{order.inbound_no || "—"}</div>
-                                    </td>
-                                    <td>
-                                      <div className="material-table-cell">{formatDate(order.inbound_date)}</div>
-                                    </td>
-                                    <td>
-                                      <div className="material-table-cell">{order.status || "—"}</div>
-                                    </td>
+                            const isExpanded = expandedIds.has(order.inbound_id);
+                            const { prefix, tail } = splitOrderNo(order.inbound_no);
+                            const when = dateParts(order.inbound_date);
+                            const detailsId = `oh-chain-${order.inbound_id}`;
+                            return (
+                              <Fragment key={order.inbound_id}>
+                                <tr
+                                  className={`oh-row${isExpanded ? " is-open" : ""}`}
+                                  onClick={() => toggleExpand(order)}
+                                >
+                                  <td>
+                                    {order.inbound_no ? (
+                                      <span className="oh-order-no" title={order.inbound_no}>
+                                        {prefix && <span className="oh-order-no__prefix">{prefix}</span>}
+                                        <span className="oh-order-no__tail">{tail}</span>
+                                      </span>
+                                    ) : (
+                                      <span className="oh-muted">—</span>
+                                    )}
+                                  </td>
+                                  <td>
+                                    {when ? (
+                                      <div className="oh-stack">
+                                        <span className="oh-stack__primary">{when.date}</span>
+                                        <span className="oh-stack__secondary">{when.weekday}</span>
+                                      </div>
+                                    ) : (
+                                      <span className="oh-muted">—</span>
+                                    )}
+                                  </td>
+                                  <td>
+                                    {order.status ? (
+                                      <span className={`oh-status oh-status--${statusTone(order.status)}`}>
+                                        {order.status}
+                                      </span>
+                                    ) : (
+                                      <span className="oh-muted">—</span>
+                                    )}
+                                  </td>
+                                  <td className="oh-table__toggle-cell">
+                                    <button
+                                      type="button"
+                                      className="oh-toggle"
+                                      aria-expanded={isExpanded}
+                                      aria-controls={detailsId}
+                                      aria-label={isExpanded ? "Hide order chain" : "Show order chain"}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleExpand(order);
+                                      }}
+                                    >
+                                      <FiChevronDown size={16} />
+                                    </button>
+                                  </td>
+                                </tr>
+                                {isExpanded && (
+                                  <tr className="oh-details-row" id={detailsId}>
+                                    <td colSpan={4}>{renderChain(order)}</td>
                                   </tr>
-                                  {isExpanded && (
-                                    <tr className="custom-table-expanded-row">
-                                      <td colSpan={4} className="p-0">
-                                        <div className="custom-table-expanded-inner">
-                                          {renderChainSections(order)}
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  )}
-                                </Fragment>
-                              );
-                            })}
+                                )}
+                              </Fragment>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
-                    )}
+                  )}
                 </div>
               </div>
             </div>

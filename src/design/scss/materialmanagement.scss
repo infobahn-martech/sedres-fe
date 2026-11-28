@@ -3384,3 +3384,343 @@ body .material-management-modal .upload-main-text {
     }
   }
 }
+
+// ---- Husbandry > Material Management > Order history ----
+// Same table language as the Inbound orders list; expanded rows show the
+// inbound -> landing -> dispatch chain as a stepper of stage cards.
+.order-history-card {
+  .oh-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 13px;
+    color: var(--text-primary);
+
+    .oh-table__col-date { width: 22%; }
+    .oh-table__col-status { width: 18%; }
+    .oh-table__col-toggle { width: 64px; }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 11px 12px;
+      text-align: left;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-primary);
+      white-space: nowrap;
+
+      &:first-child {
+        padding-left: 20px;
+      }
+    }
+
+    tbody td {
+      padding: 14px 12px;
+      vertical-align: middle;
+      border-bottom: 1px solid var(--border-primary);
+      background: var(--surface-primary);
+      transition: background-color 0.15s ease;
+
+      &:first-child {
+        padding-left: 20px;
+      }
+    }
+  }
+
+  .oh-row {
+    cursor: pointer;
+
+    &:hover td {
+      background: color-mix(in srgb, var(--bg-secondary) 60%, var(--surface-primary));
+    }
+
+    &.is-open td {
+      background: color-mix(in srgb, var(--accent, #0d9488) 5%, var(--surface-primary));
+      border-bottom-color: transparent;
+
+      &:first-child {
+        box-shadow: inset 3px 0 0 var(--accent, #0d9488);
+      }
+    }
+  }
+
+  .oh-order-no {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13.5px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .oh-order-no__prefix {
+    color: var(--text-secondary);
+  }
+
+  .oh-order-no__tail {
+    font-weight: 700;
+    color: #00368c;
+  }
+
+  .oh-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .oh-stack__primary {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .oh-stack__secondary {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .oh-muted {
+    color: var(--text-muted);
+  }
+
+  // Status pill with a leading dot.
+  .oh-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+    white-space: nowrap;
+
+    &::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    &--primary { color: #1d4ed8; background: rgba(37, 99, 235, 0.1); }
+    &--info { color: #0e7490; background: rgba(8, 145, 178, 0.1); }
+    &--success { color: #047857; background: rgba(16, 185, 129, 0.12); }
+    &--warning { color: #b45309; background: rgba(245, 158, 11, 0.14); }
+    &--danger { color: #b91c1c; background: rgba(239, 68, 68, 0.1); }
+    &--neutral { color: var(--text-secondary); background: var(--bg-secondary); }
+  }
+
+  .oh-table__toggle-cell {
+    text-align: right;
+    padding-right: 16px !important;
+  }
+
+  // Named without "btn" so the husbandry-wide button override doesn't apply.
+  .oh-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    svg {
+      transition: transform 0.2s ease;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--accent, #0d9488);
+      outline-offset: 1px;
+    }
+
+    &[aria-expanded="true"] svg {
+      transform: rotate(180deg);
+    }
+  }
+
+  // ---- Expanded chain ----
+  .oh-details-row > td {
+    padding: 4px 20px 20px !important;
+    background: color-mix(in srgb, var(--accent, #0d9488) 5%, var(--surface-primary)) !important;
+    box-shadow: inset 3px 0 0 var(--accent, #0d9488);
+  }
+
+  .oh-chain {
+    display: flex;
+    align-items: stretch;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    &--loading {
+      gap: 24px;
+
+      > span {
+        flex: 1;
+      }
+    }
+  }
+
+  .oh-stage {
+    flex: 1;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--border-primary);
+    border-radius: 10px;
+    background: var(--surface-primary);
+
+    &.is-done {
+      border-color: color-mix(in srgb, var(--accent, #0d9488) 35%, var(--border-primary));
+    }
+
+    &.is-pending {
+      border-style: dashed;
+      background: transparent;
+    }
+  }
+
+  .oh-stage__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .oh-stage__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    color: var(--text-muted);
+    background: var(--bg-secondary);
+
+    .is-done & {
+      color: #fff;
+      background: var(--accent, #0d9488);
+    }
+  }
+
+  .oh-stage__label {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .oh-stage__state {
+    flex-shrink: 0;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--bg-secondary);
+
+    &.is-done {
+      color: var(--accent, #0d9488);
+      background: color-mix(in srgb, var(--accent, #0d9488) 12%, transparent);
+    }
+  }
+
+  .oh-stage__fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 12px;
+    margin: 0;
+  }
+
+  .oh-stage__field {
+    min-width: 0;
+
+    dt {
+      margin: 0 0 2px;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    dd {
+      margin: 0;
+      font-size: 12.5px;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .oh-stage__empty {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+
+  .oh-stage-connector {
+    flex: 0 0 24px;
+    align-self: center;
+    height: 2px;
+    background: var(--border-primary);
+
+    &.is-done {
+      background: var(--accent, #0d9488);
+    }
+  }
+
+  .oh-chain-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #b91c1c;
+    background: rgba(239, 68, 68, 0.08);
+
+    button {
+      margin-left: auto;
+      padding: 4px 12px;
+      border: 1px solid rgba(185, 28, 28, 0.35);
+      border-radius: 6px;
+      background: var(--surface-primary);
+      font-size: 12px;
+      font-weight: 600;
+      color: #b91c1c;
+      cursor: pointer;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .oh-chain {
+      flex-direction: column;
+    }
+
+    .oh-stage-connector {
+      flex-basis: 16px;
+      width: 2px;
+      height: auto;
+      margin-left: 26px;
+    }
+  }
+}
