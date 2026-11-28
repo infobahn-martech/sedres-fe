@@ -1,5 +1,5 @@
 import { ACTION_GROUP_TYPE_TO_SECTION_ID, DEADLINE_MODE_OPTIONS, LIST_UPDATE_MODE_OPTIONS } from './businessRulesData';
-import { normalizeConnector } from './businessRuleFieldUtils';
+import { normalizeConnector, operatorTakesValue } from './businessRuleFieldUtils';
 
 export const EMPTY_BOARD_POSITION = { boardId: '', workflowId: '', columnId: '', swimlaneId: '' };
 
@@ -120,14 +120,25 @@ const buildFilterConditions = (rows = []) => rows
     return entry;
   });
 
-const parseFilterConditions = (conditions = []) => conditions.map((c, index) => ({
+// Rows of a subquery: same keys as filter rows, no connector, and no input_value when there is none.
+export const buildSubqueryConditions = (rows) => buildFilterConditions(rows).map((entry) => {
+  const condition = { ...entry };
+  delete condition.connector;
+  if (condition.input_value === '' || !operatorTakesValue({ operator_key: condition.operator })) delete condition.input_value;
+  return condition;
+});
+
+export const parseFilterConditions = (conditions = []) => conditions.map((c, index) => ({
   id: `relative-filter-saved-${index}`,
   fieldType: c.custom_field_id != null ? 'custom' : 'regular',
   fieldId: c.custom_field_id ?? c.regular_field_id,
   fieldLabel: c.field_label ?? '',
   operatorKey: c.operator_key ?? c.operator ?? '',
   connector: normalizeConnector(c.connector),
-  value: String(c.input_value ?? ''),
+  // A subquery value stays an object.
+  value: typeof c.input_value === 'object' && c.input_value !== null ? c.input_value : String(c.input_value ?? ''),
+  savedValue: c.input_value,
+  savedLabel: c.input_value_label ?? '',
   timeUnitId: c.time_unit_id != null ? String(c.time_unit_id) : '',
   positionColumns: String(c.position_value ?? '').split(',').map((id) => id.trim()).filter(Boolean).map((id) => ({ id, name: '' })),
 }));

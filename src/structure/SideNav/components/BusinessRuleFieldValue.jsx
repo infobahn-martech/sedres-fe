@@ -10,7 +10,7 @@ import OptionColorBadge from './OptionColorBadge';
 import ColorValueDropdown from './ColorValueDropdown';
 import TagsValueDropdown from './TagsValueDropdown';
 import '../../../design/scss/business-rule-generic-action.scss';
-import {
+import { isSubqueryField,
   BETWEEN_SEPARATOR,
   NOT_SET_LABEL,
   fieldTakesValue,
@@ -23,6 +23,7 @@ import {
   operatorTakesValue,
   splitMultiValue,
 } from './businessRuleFieldUtils';
+import SubqueryValue from './SubqueryValue';
 
 const EMPTY_OPTIONS = [];
 const SELECT_DATE_LABEL = 'Select date';
@@ -239,7 +240,7 @@ ValueControl.propTypes = {
  * unit for in next / in last / was more than.
  */
 function BusinessRuleFieldValue({
-  details, operator, value, savedLabel, timeUnitId, timeUnits = EMPTY_OPTIONS, onChange, onTimeUnitChange = noop, label = 'Value', defaultBoardId, allowLaneOnlyPosition = false,
+  details, operator, value, savedLabel, timeUnitId, timeUnits = EMPTY_OPTIONS, onChange, onTimeUnitChange = noop, label = 'Value', defaultBoardId, allowLaneOnlyPosition = false, renderPropertyPicker,
 }) {
   const { masterOptionsByKey, getMasterOptions } = useBusinessRuleReducer();
 
@@ -256,6 +257,13 @@ function BusinessRuleFieldValue({
   }, [needsUnit, timeUnitId, firstUnitId]);
 
   if (!fieldTakesValue(details) || !operatorTakesValue(operator)) return null;
+
+  if (isSubqueryField(details)) {
+    // No picker is handed in where a subquery cannot be edited, so no text box is drawn there either.
+    return renderPropertyPicker ? (
+      <SubqueryValue value={value} savedLabel={savedLabel} defaultBoardId={defaultBoardId} renderPropertyPicker={renderPropertyPicker} onChange={onChange} />
+    ) : null;
+  }
 
   const options = getOptions(details, masterOptionsByKey);
 
@@ -324,6 +332,7 @@ BusinessRuleFieldValue.propTypes = {
   label: PropTypes.string,
   defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   allowLaneOnlyPosition: PropTypes.bool,
+  renderPropertyPicker: PropTypes.func,
 };
 
 export default BusinessRuleFieldValue;
