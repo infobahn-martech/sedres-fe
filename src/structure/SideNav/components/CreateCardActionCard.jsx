@@ -39,7 +39,6 @@ function CreateCardActionCard({ action, catalog, triggerTypeId, defaultBoardId, 
   const cardFields = catalog?.cardFields ?? EMPTY_LIST;
   const copyFields = catalog?.copyFields ?? EMPTY_LIST;
 
-  const withCustomProperties = templateSelectable && !action.templateId;
   const titleCopyKey = copyFields.find((f) => String(f.field_label).trim().toLowerCase() === 'title')?.field_key;
   const isTitleCopied = action.copyKeys.includes(titleCopyKey);
 
@@ -64,11 +63,11 @@ function CreateCardActionCard({ action, catalog, triggerTypeId, defaultBoardId, 
       </button>
 
       {templateSelectable ? (
-        <h5 className="business-rule-form-action-detail-title">
+        <h5 className="business-rule-form-action-detail-title d-flex flex-wrap align-items-center gap-1">
+          <span>{action.label}</span>
           <InlineTextDropdown
             value={action.templateId ?? ''}
             options={templateOptions}
-            triggerPrefix={`${action.label} `}
             triggerClassName="br-create-action-link br-create-action-link--btn"
             searchable
             onChange={(templateId) => set({ templateId })}
@@ -78,22 +77,37 @@ function CreateCardActionCard({ action, catalog, triggerTypeId, defaultBoardId, 
         <h5 className="business-rule-form-action-detail-title">{action.label}</h5>
       )}
 
-      {/* Custom-property cards always read "Configure details", which starts again at the board minimap. */}
-      <MoveTargetAction
-        embedded
-        cellOnly
-        emptyLabel="Configure details"
-        linkLabel={withCustomProperties ? 'Configure details' : ''}
-        position={action.position}
-        defaultBoardId={defaultBoardId}
-        onChange={(position) => {
-          beforeEdit.current = action;
-          set({ position });
-          if (!withCustomProperties) return;
-          if (copyable) setShowCopyDetails(true);
-          else setShowCardDetails(true);
-        }}
-      />
+      {/* A titled card reopens at Copy Card Details (its board is changed inside Card details);
+          otherwise "Configure details" starts at the board minimap. */}
+      {templateSelectable && action.title.trim() ? (
+        <button
+          type="button"
+          className="br-create-action-link br-create-action-link--btn"
+          onClick={() => {
+            beforeEdit.current = action;
+            if (copyable) setShowCopyDetails(true);
+            else setShowCardDetails(true);
+          }}
+        >
+          {action.title.trim()}
+        </button>
+      ) : (
+        <MoveTargetAction
+          embedded
+          cellOnly
+          emptyLabel="Configure details"
+          linkLabel={templateSelectable ? 'Configure details' : ''}
+          position={action.position}
+          defaultBoardId={defaultBoardId}
+          onChange={(position) => {
+            beforeEdit.current = action;
+            set({ position });
+            if (!templateSelectable) return;
+            if (copyable) setShowCopyDetails(true);
+            else setShowCardDetails(true);
+          }}
+        />
+      )}
 
       <CardDetailsModal
         show={showCardDetails}
