@@ -13,6 +13,7 @@ import {
   LIST_UPDATE_MODE_OPTIONS, DEADLINE_MODE_OPTIONS, WEEKDAY_OPTIONS, PRIORITY_OPTIONS, classifyCustomFieldUiKind,
   INVOKE_ACTION_OPTIONS, DUMMY_INVOKE_METHOD_OPTIONS, DUMMY_INVOKE_AUTH_OPTIONS, INVOKE_METHODS_WITH_BODY,
   TRIGGER_CODE_TO_ICON, UNSUPPORTED_ACTION_GROUP_TYPES, CHILD_CARD_MOVED_TRIGGER_PATTERN,
+  NOTIFICATION_DEFAULT_TEMPLATES, NOTIFICATION_DEFAULT_BODY_FIELDS,
 } from './businessRulesData';
 import { buildCreateBusinessRulePayload, buildUpdateBusinessRulePayload, getUnconfiguredActionLabels, isCreateSubtaskAction, RECURRENCE_REGULAR_FIELD_IDS, buildAdvancedScheduleFields } from './buildBusinessRulePayload';
 import ThenGroupRawSummary from './ThenGroupRawSummary';
@@ -393,6 +394,14 @@ NotificationPillBlot.tagName = 'span';
 NotificationPillBlot.className = 'notification-pill';
 Quill.register(NotificationPillBlot, true);
 const QuillDelta = Quill.import('delta');
+
+const buildDefaultNotificationBody = (heading) => NOTIFICATION_DEFAULT_BODY_FIELDS.reduce(
+  (delta, [label, field]) => delta.insert(`${label}: `).insert({ pill: field }).insert('\n', { list: 'bullet' }),
+  new QuillDelta()
+    .insert(heading, { bold: true }).insert({ pill: 'Author' }).insert('\n\n')
+    .insert({ pill: 'Card URL' }).insert('\n\n')
+    .insert('Card details', { bold: true }).insert('\n'),
+);
 
 const PROPERTY_DOT_COLORS = [...PRIMARY_PRESET_COLORS, ...SECONDARY_PRESET_COLORS];
 
@@ -2545,7 +2554,7 @@ CardFieldPickerModal.propTypes = {
 const NOTIFICATION_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function NotificationSettingsModal({
-  show, onClose, onSave, initialSettings, triggerTypeId,
+  show, onClose, onSave, initialSettings, triggerTypeId, triggerName,
   fetchedSettings, isLoadingSettings, users, getFieldDetails, fieldDetailsByKey,
   getRecipientCustomFields, recipientCustomFields,
 }) {
@@ -2648,6 +2657,11 @@ function NotificationSettingsModal({
 
   const resolveEmailTokens = (emails) => emails.map((email) => ({ label: email, id: null, type: 'email' }));
 
+  // Never for a saved action: its settings may still be loading, and Update would overwrite them.
+  const defaultTemplate = initialSettings?.notification_id
+    ? undefined
+    : NOTIFICATION_DEFAULT_TEMPLATES.find((t) => t.triggerPattern.test(triggerName ?? ''));
+
   useEffect(() => {
     if (!show) return;
     if (fetchedSettings) {
@@ -2655,7 +2669,8 @@ function NotificationSettingsModal({
       setBodyContent(fetchedSettings.body || new QuillDelta());
     } else {
       setFrom(initialSettings?.from ?? '');
-      setBodyContent(initialSettings?.bodyContent ?? new QuillDelta());
+      setBodyContent(initialSettings?.bodyContent
+        ?? (defaultTemplate ? buildDefaultNotificationBody(defaultTemplate.heading) : new QuillDelta()));
     }
     setToRecipientError(false);
     setCcRecipientError(false);
@@ -2811,8 +2826,9 @@ function NotificationSettingsModal({
     el.replaceChildren();
     const subjectParts = fetchedSettings
       ? parseSubjectString(fetchedSettings.subject ?? '')
-      : (initialSettings?.subjectParts ?? []);
-    subjectParts.forEach((part) => {
+      : (initialSettings?.subjectParts ?? parseSubjectString(defaultTemplate?.subject ?? ''));
+    // `generated` parts are the {} token markers; the box shows the pill alone.
+    subjectParts.filter((part) => !part.generated).forEach((part) => {
       if (part.type === 'pill') {
         el.appendChild(buildSubjectFieldPill(part.value));
       } else {
@@ -2920,14 +2936,10 @@ function NotificationSettingsModal({
 
   // Mirrors handleAddBodyField's cursor-based insert, but the subject box is a plain
   // contentEditable div (not Quill), so the caret is managed via the Selection API.
-  // Wrapped in literal "{"/"}" text nodes to match the placeholder-token look every
-  // other card field pill in the subject uses.
   const handleAddSubjectField = (field) => {
     const el = subjectBoxRef.current;
     if (!el) return;
-    const openBrace = document.createTextNode('{');
     const span = buildSubjectFieldPill(field);
-    const closeBrace = document.createTextNode('}');
 
     const selection = window.getSelection();
     const existingRange = selection?.rangeCount > 0 && el.contains(selection.getRangeAt(0).commonAncestorContainer)
@@ -2935,18 +2947,14 @@ function NotificationSettingsModal({
       : null;
     if (existingRange) {
       existingRange.deleteContents();
-      const fragment = document.createDocumentFragment();
-      fragment.append(openBrace, span, closeBrace);
-      existingRange.insertNode(fragment);
+      existingRange.insertNode(span);
     } else {
-      el.appendChild(openBrace);
       el.appendChild(span);
-      el.appendChild(closeBrace);
     }
 
     el.focus();
     const newRange = document.createRange();
-    newRange.setStartAfter(closeBrace);
+    newRange.setStartAfter(span);
     newRange.collapse(true);
     selection.removeAllRanges();
     selection.addRange(newRange);
@@ -2988,15 +2996,17 @@ function NotificationSettingsModal({
       if (node.nodeType === Node.TEXT_NODE) {
         if (node.textContent) acc.push({ type: 'text', value: node.textContent });
       } else if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('notification-pill')) {
-        acc.push({ type: 'pill', value: node.dataset.fieldValue ?? node.textContent });
+        acc.push(
+          { type: 'text', value: '{', generated: true },
+          { type: 'pill', value: node.dataset.fieldValue ?? node.textContent },
+          { type: 'text', value: '}', generated: true },
+        );
       }
       return acc;
     }, []);
   };
 
-  // Pill tokens are rendered inline as their label text — there's no template/placeholder
-  // syntax defined for the notification subject or body, so what's shown in the editor is
-  // exactly what gets sent.
+  // A subject pill is saved as {Field}, the same shape parseSubjectString reads back.
   const subjectPartsToText = (parts) => parts.map((part) => part.value).join('');
 
   // To/Cc aren't tracked in React state either (see the layout effect above) — read
@@ -10250,6 +10260,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       onSave={handleSaveNotificationSettings}
       initialSettings={activeNotifyAction}
       triggerTypeId={rule.id}
+      triggerName={rule.name}
       fetchedSettings={notificationSettings}
       isLoadingSettings={isLoadingNotificationSettings}
       users={users}
@@ -10370,6 +10381,7 @@ NotificationSettingsModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired,
   triggerTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  triggerName: PropTypes.string,
   fetchedSettings: PropTypes.shape({
     from_email: PropTypes.string,
     to_users: PropTypes.array,
