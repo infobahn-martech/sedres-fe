@@ -37,9 +37,9 @@ ColorFill.propTypes = { color: PropTypes.string };
 // columns only: a cell, a column header or a parent header all pick the entire column, and swimlane
 // labels are not selectable. With laneOnly only a swimlane (label or any of its cells) is selectable.
 // With workflowOnly only the workflow title bar is selectable. With allowStagePick a stage band
-// picks every column of that stage.
+// picks every column of that stage. With cellOnly just one cell (column + lane) can be picked.
 function BoardMinimapModal({
-  show, value, boardId, onBoardChange, onPick, onClose, columnOnly = false, laneOnly = false, workflowOnly = false, allowStagePick = false, allowLaneOnly = true,
+  show, value, boardId, onBoardChange, onPick, onClose, columnOnly = false, laneOnly = false, workflowOnly = false, allowStagePick = false, allowLaneOnly = true, cellOnly = false,
 }) {
   const {
     boardPickerWorkspaces: workspaces, getBoardPickerWorkspaces, boardWorkflowsByBoard, boardWorkflowsStatus, getBoardWorkflows,
@@ -133,6 +133,8 @@ function BoardMinimapModal({
     const hasColumn = Boolean(position.columnId);
     const hasLane = Boolean(position.swimlaneId);
     if (!hasColumn && !hasLane) return false;
+    // Single-cell mode always opens clean: the earlier pick is not marked.
+    if (cellOnly) return false;
     return (!hasColumn || isColumnPicked(workflow, column))
       && (!hasLane || String(position.swimlaneId) === String(lane.id));
   };
@@ -153,8 +155,8 @@ function BoardMinimapModal({
     swimlaneId: '',
   });
 
-  const columnPickable = !laneOnly && !workflowOnly;
-  const lanePickable = !columnOnly && !workflowOnly && allowLaneOnly;
+  const columnPickable = !laneOnly && !workflowOnly && !cellOnly;
+  const lanePickable = !columnOnly && !workflowOnly && !cellOnly && allowLaneOnly;
   const pickHeader = columnPickable ? (workflow, column) => pick(workflow, column, null) : undefined;
 
   const handlePickBoard = (board) => {
@@ -386,6 +388,7 @@ BoardMinimapModal.propTypes = {
   workflowOnly: PropTypes.bool,
   allowStagePick: PropTypes.bool,
   allowLaneOnly: PropTypes.bool,
+  cellOnly: PropTypes.bool,
 };
 
 export default BoardMinimapModal;
