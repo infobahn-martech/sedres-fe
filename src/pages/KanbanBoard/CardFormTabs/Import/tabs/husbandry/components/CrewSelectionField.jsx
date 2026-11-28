@@ -136,7 +136,6 @@ const CrewSelectionField = ({ callId, selected, onChange, accent = "purple", onG
         const formData = new FormData();
         formData.append("call_id", String(callId));
         formData.append("vessel_id", String(vesselId));
-        formData.append("movement_type", UPLOAD_MOVEMENT_TYPE);
         files.forEach((file) => formData.append("files[]", file));
         return (await importCrewFile({ formData })) ?? true;
       }, "Crew list uploaded", "upload"),

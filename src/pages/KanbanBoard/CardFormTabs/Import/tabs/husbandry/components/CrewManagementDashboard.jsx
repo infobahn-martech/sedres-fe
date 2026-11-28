@@ -499,8 +499,8 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
 
   // Accepts one or more crew list files for the currently-selected movement
   // type — all files are sent together in one crew/import_crew_ai call via
-  // repeated files[] fields, so multiple crew list files can be uploaded
-  // into the same movement type in a single request.
+  // repeated files[] fields. movement_type is not sent to the import API;
+  // targetType is only used to track upload state in the UI.
   const handleCrewListFiles = async (fileList, targetType = movementType) => {
     const files = Array.isArray(fileList) ? fileList : Array.from(fileList || []);
     if (files.length === 0) return;
@@ -531,7 +531,6 @@ const CrewManagementDashboard = ({ card, formValues, handleChange, cardColor, on
     const formData = new FormData();
     formData.append("call_id", String(resolvedCallId));
     formData.append("vessel_id", String(resolvedVesselId));
-    formData.append("movement_type", targetType);
     files.forEach((file) => formData.append("files[]", file));
 
     let successCount = 0;
