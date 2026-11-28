@@ -34,6 +34,13 @@ TabIcon.propTypes = {
   id: PropTypes.string.isRequired,
 };
 
+// Active-row chevron, same glyph as the Operation tab's left nav (OperationTabs.jsx).
+const NavChevron = () => (
+  <svg className="op-tab-chevron" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 // Premium redesign — small icon set for section headers/groups that aren't
 // already covered by TAB_ICON_PATHS (mail, calendar, folder, notebook, list).
 // Reuses TAB_ICON_PATHS for car/users/hotel/medical/cg-pass/zawil-pass so the
@@ -300,7 +307,7 @@ export const HusbandryTabs = ({ activeMainTab, activeSubTab, onMainTabChange, on
   const activeSubTabLabel = subTabs.find((tab) => tab.id === activeSubTab)?.label;
 
   return (
-    <div className={`operation-left ${isNavExpanded ? "husbandry-nav-expanded" : ""}`} style={{ "--card-color": cardColor }}>
+    <div className={`operation-left op-tab-nav--husbandry ${isNavExpanded ? "husbandry-nav-expanded" : ""}`} style={{ "--card-color": cardColor }}>
       {onBackToServiceSelection && (
         <button
           type="button"
@@ -338,7 +345,7 @@ export const HusbandryTabs = ({ activeMainTab, activeSubTab, onMainTabChange, on
           return (
             <div key={tab.id} className="op-tab-group">
               <NavTabButton
-                className="op-tab op-tab-main"
+                className={`op-tab op-tab-main${isActive && currentSubTabs.length > 0 ? " op-tab-main--has-submenu" : ""}`}
                 active={isActive}
                 onClick={() => {
                   onMainTabChange(tab.id);
@@ -348,6 +355,7 @@ export const HusbandryTabs = ({ activeMainTab, activeSubTab, onMainTabChange, on
                 <TabIcon id={tab.id} />
                 <span className="op-tab-label">{tab.label}</span>
                 {hasCrewCount && <span className="op-tab-count">{crewCount}</span>}
+                {!(isActive && currentSubTabs.length > 0) && <NavChevron />}
               </NavTabButton>
               {isActive && currentSubTabs.length > 0 && (
                 <div className="op-submenu">
@@ -379,6 +387,7 @@ export const HusbandryTabs = ({ activeMainTab, activeSubTab, onMainTabChange, on
                         ) : (
                           hasCrewCount && <span className="op-tab-count">{crewCount}</span>
                         )}
+                        <NavChevron />
                       </NavTabButton>
                     );
                   })}

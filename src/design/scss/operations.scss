@@ -11532,3 +11532,162 @@ a.operation-task-document-name--link {
     font-style: italic;
   }
 }
+
+/* ==========================================================
+   HUSBANDRY LEFT NAV — Operation-tab look (HusbandryTabs)
+   Mirrors .operation-left.op-tab-nav--main (OperationTabs.jsx): narrower
+   210px rail, 28px tinted icon tiles, white "card" active row with a
+   chevron. Desktop only — the ≤768px rules above keep the collapsible
+   mobile nav. Scoped to .op-tab-nav--husbandry, which only HusbandryTabs
+   renders, so the Operation nav and CallType builder preview are untouched.
+   ========================================================== */
+@media (min-width: 769px) {
+  .operation-wrapper.husbandry-wrapper .operation-left.op-tab-nav--husbandry {
+    --op-nav-accent: #{$colorPrimary};
+
+    background: linear-gradient(180deg, #f6f8fc 0%, #f1f4fa 100%);
+    border-right: 1px solid $border-color-default;
+    padding: 14px 10px;
+    gap: 4px;
+    width: 210px;
+    min-width: 210px;
+    max-width: 210px;
+
+    [data-theme="dark"] & {
+      --op-nav-accent: var(--color-primary-accent);
+      background: var(--bg-secondary);
+      border-right-color: var(--border-primary);
+    }
+
+    .husbandry-back-link-small {
+      margin-bottom: 6px;
+    }
+
+    .husbandry-nav-collapsible {
+      gap: 4px;
+    }
+
+    .op-tab-group {
+      margin-bottom: 0;
+    }
+
+    .op-tab,
+    .op-tab-sub {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      min-height: 40px;
+      padding: 6px 10px 6px 6px;
+      font-size: 12.5px;
+      font-weight: 500;
+      text-align: left;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: transparent;
+      color: $txtColor;
+      box-shadow: none;
+      transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+
+      [data-theme="dark"] & {
+        color: var(--text-secondary);
+      }
+    }
+
+    .op-tab-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .op-tab-chevron {
+      flex-shrink: 0;
+      color: var(--op-nav-accent);
+      opacity: 0;
+      transform: translateX(-3px);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+
+    .op-tab-count {
+      background: rgba(15, 23, 42, 0.06);
+    }
+
+    .op-tab:hover,
+    .op-tab-sub:hover {
+      background: rgba(255, 255, 255, 0.7);
+      border-color: $border-color-default;
+      color: var(--op-nav-accent);
+
+      [data-theme="dark"] & {
+        background: color-mix(in srgb, var(--color-primary-accent) 8%, transparent);
+        border-color: var(--border-primary);
+      }
+    }
+
+    .op-tab.active,
+    .op-tab-sub.active {
+      background: var(--surface-primary, #fff);
+      border-color: $border-color-default;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 12px -6px rgba(0, 54, 140, 0.18);
+      color: var(--op-nav-accent);
+      font-weight: 700;
+
+      [data-theme="dark"] & {
+        background: color-mix(in srgb, var(--color-primary-accent) 14%, var(--surface-primary));
+        border-color: color-mix(in srgb, var(--color-primary-accent) 35%, transparent);
+        box-shadow: none;
+      }
+
+      .op-tab-icon {
+        background: var(--tab-icon-color, var(--op-nav-accent));
+        color: #fff;
+      }
+
+      .op-tab-chevron {
+        opacity: 1;
+        transform: none;
+      }
+
+      .op-tab-count {
+        background: var(--bg-secondary);
+        color: var(--op-nav-accent);
+      }
+    }
+
+    // Parent of an open submenu: a plain heading row — the active child carries the card.
+    .op-tab.op-tab-main--has-submenu.active {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+
+      .op-tab-icon {
+        background: color-mix(in srgb, var(--tab-icon-color, var(--op-nav-accent)) 15%, var(--surface-primary));
+        color: var(--tab-icon-color, var(--op-nav-accent));
+      }
+    }
+
+    // Children sit flush under the parent (no indent rail) to keep the column narrow.
+    .op-submenu {
+      margin: 2px 0 6px;
+      padding: 0;
+      border-left: none;
+      gap: 4px;
+    }
+
+    .op-tab:focus-visible,
+    .op-tab-sub:focus-visible {
+      outline: none;
+      box-shadow: $shadow-focus;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .op-tab,
+      .op-tab-icon,
+      .op-tab-chevron {
+        transition: none;
+      }
+    }
+  }
+}
