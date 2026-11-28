@@ -4145,6 +4145,13 @@ body .modal.card-property-match-modal.show {
   color: $txtColor;
 }
 
+// Outlined field chips inside the notification subject and body editors
+.notification-subject-box .notification-pill,
+.notification-quill-wrap .notification-pill {
+  padding: 4px 16px;
+  border: 1px solid var(--text-muted);
+}
+
 .notification-user-pill {
   display: inline-flex;
   align-items: center;
@@ -4169,6 +4176,16 @@ body .modal.card-property-match-modal.show {
 .notification-quill-wrap {
   border: 1px solid var(--border-primary);
   border-radius: 8px;
+
+  // Quill 1 CSS loaded by other pages numbers every li on top of Quill 2's own .ql-ui marker
+  .ql-editor li[data-list]::before {
+    content: none;
+  }
+
+  // Quill positions the marker absolutely (top of the line); chips make lines taller than the text
+  .ql-editor li[data-list] > .ql-ui {
+    position: static;
+  }
 
   .ql-container {
     min-height: 220px;

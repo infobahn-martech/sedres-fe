@@ -36,6 +36,28 @@ export const TRIGGER_CODE_TO_ICON = {
 // known to map to the child-moved icon on every response).
 export const CHILD_CARD_MOVED_TRIGGER_PATTERN = /^\s*child\s+card\s+is\s+moved\s*$/i;
 
+// Pre-filled subject/body of a never-saved "Send notification" action, copied from the client's
+// UI. {Token} marks a card-field pill. Triggers not listed here start blank.
+export const NOTIFICATION_DEFAULT_TEMPLATES = [
+  {
+    triggerPattern: /^\s*card\s+is\s+created\s*$/i,
+    subject: '{Title} - {{Board Name}}{{Internal Card Id}} New card created',
+    heading: 'New card has been created by ',
+  },
+  {
+    triggerPattern: /^\s*card\s+is\s+updated\s*$/i,
+    subject: 'Card {{Internal Card Id}} was updated',
+    heading: 'The card has been updated by ',
+  },
+];
+// [line label, card field]
+export const NOTIFICATION_DEFAULT_BODY_FIELDS = [
+  ['Title', 'Title'], ['Description', 'Description'], ['Color', 'Color'], ['Owner', 'Owner'],
+  ['Priority', 'Priority'], ['Size', 'Size'], ['Deadline', 'Deadline'], ['Tags', 'Tags'],
+  ['Milestones', 'Milestones'], ['Board', 'Board Name'], ['Column', 'Column Name'],
+  ['Subtasks', 'Total Subtasks Count'],
+];
+
 // Maps a get_trigger_config `actions[].group_type` to the THEN section id the form
 // already knows how to render, so the THEN column can be built from the trigger
 // type's own action catalog instead of always showing every section.
