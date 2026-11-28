@@ -30,7 +30,7 @@ import SoApprovalEmailModal from "./SoApprovalEmailModal";
 import DocumentListModal from "./DocumentListModal";
 import UploadInvoiceModal from "@/components/UploadInvoiceModal";
 import { compressPdfFiles } from "@/shared/utils/compressPdf";
-import { isApprovalRequestedColumnTitle, isApprovalReceivedColumnTitle, isSentToDaColumnTitle, isLntSwimlane, isSubseaSwimlane, isBgpSwimlane, isLamprellSaudiSwimlane } from "@/pages/KanbanBoard/utils/columnTitles";
+import { isApprovalRequestedColumnTitle, isApprovalReceivedColumnTitle, isSentToDaColumnTitle, isLntSwimlane, isSubseaSwimlane, isBgpSwimlane, isLamprellSaudiSwimlane, isPoshSaudiSwimlane } from "@/pages/KanbanBoard/utils/columnTitles";
 import { SO_TYPE_OPTIONS, VERIFIED_ITEM_STATUS, areAllSoItemsVerifiedForCall } from "@/pages/KanbanBoard/utils/soItemsVerification";
 import SeApprovalUploadModal from "@/pages/KanbanBoard/components/board/SeApprovalUploadModal";
 import CustomModal from "@/components/CustomModal";
@@ -799,11 +799,11 @@ const SalesOrderList = ({
   // BGP and Lamprell Saudi swimlanes share the same SO approval and approved SO upload.
   const isOperatorSoSwimlane =
     isBgpSwimlane({ title: card?.swimlaneTitle }) || isLamprellSaudiSwimlane({ title: card?.swimlaneTitle });
-  // Operator board: a BGP or Lamprell Saudi swimlane card on "Approval Requested" uses the standard SO approval flow (Send For SO
-  // approval email, then Approved / Rejected). It stays on the column with the Awaiting approval sticker after
-  // the send and the backend moves it on once the approval is recorded.
+  // Operator board: a BGP, Lamprell Saudi or POSH Saudi swimlane card on "Approval Requested" uses the standard SO
+  // approval flow (Send For SO approval email, then Approved / Rejected). It stays on the column with the Awaiting
+  // approval sticker after the send and the backend moves it on once the approval is recorded.
   const isOperatorSoApprovalFlow =
-    isOperatorSoSwimlane &&
+    (isOperatorSoSwimlane || isPoshSaudiSwimlane({ title: card?.swimlaneTitle })) &&
     Array.isArray(stepLabels) &&
     currentStep != null &&
     isApprovalRequestedColumnTitle(stepLabels[currentStep - 1]);
