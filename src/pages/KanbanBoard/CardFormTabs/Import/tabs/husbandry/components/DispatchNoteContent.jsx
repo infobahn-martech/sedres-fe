@@ -15,9 +15,19 @@ import {
   ReactQuillEditor,
   FormSection,
   FormGroup,
+  FieldRow,
+  FieldError,
+  CheckboxField,
   PremiumCardHeader,
 } from "./Husbandry.components";
-import { validateDocumentFiles, MAIN_TABS, SERVICE_ACCENT } from "./Husbandry.constants";
+import {
+  validateDocumentFiles,
+  MAIN_TABS,
+  SERVICE_ACCENT,
+  MATERIAL_DOCUMENT_ACCEPT,
+  MATERIAL_DOCUMENT_HELPER,
+} from "./Husbandry.constants";
+import ServiceAttachmentsList from "../../appointment/AttachmentsList";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import LocationAutocomplete from "./LocationAutocomplete";
 import MaterialTablePagination from "./MaterialTablePagination";
@@ -95,73 +105,6 @@ const emptyEditItem = (id = 1) => ({
   driverName: "",
   transportRemarks: "",
 });
-
-const AttachmentsList = ({ attachments = [], onRemove, cardColor, isDragging, onDragEnter, onDragLeave, onDragOver, onDrop, fileInputRef, onFileInputChange }) => (
-  <div className="document-upload-wrapper">
-    <div
-      className={`document-upload-zone${isDragging ? " dragging" : ""}`}
-      onDragEnter={onDragEnter}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-      onClick={() => fileInputRef.current?.click()}
-      style={{ "--card-color": cardColor || "#00368c" }}
-    >
-      <input ref={fileInputRef} type="file" className="file-input-hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" multiple onChange={onFileInputChange} />
-      <div className="upload-zone-content">
-        <div className="upload-icon-wrapper"></div>
-        <div className="upload-text-content">
-          <p className="upload-main-text">
-            Drag and drop your files here, or <span className="upload-link">click to browse</span>
-          </p>
-          <p className="upload-sub-text">
-            Supports: PDF, DOC, DOCX, JPG, PNG (Max 10MB per file)
-          </p>
-        </div>
-      </div>
-    </div>
-    {attachments.length > 0 && (
-      <div className="document-file-preview-list">
-        {attachments.map((item, index) => (
-          <div key={index} className="document-file-preview-item">
-            <div className="document-file-preview-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <div className="document-file-preview-info">
-              <span className="document-file-preview-name">{item.name || item.file_name || item}</span>
-              {item.size != null && (
-                <span className="document-file-preview-size">
-                  {item.size < 1024 * 1024 ? `${(item.size / 1024).toFixed(1)} KB` : `${(item.size / 1024 / 1024).toFixed(2)} MB`}
-                </span>
-              )}
-            </div>
-            <button className="document-file-preview-remove" onClick={(e) => { e.stopPropagation(); onRemove(index); }} type="button" title="Remove file">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-);
-
-AttachmentsList.propTypes = {
-  attachments: PropTypes.array,
-  onRemove: PropTypes.func.isRequired,
-  cardColor: PropTypes.string,
-  isDragging: PropTypes.bool,
-  onDragEnter: PropTypes.func,
-  onDragLeave: PropTypes.func,
-  onDragOver: PropTypes.func,
-  onDrop: PropTypes.func,
-  fileInputRef: PropTypes.object.isRequired,
-  onFileInputChange: PropTypes.func.isRequired,
-};
 
 const DispatchNoteContent = ({ formValues, cardColor }) => {
   const { hasPermission } = usePermissions();
@@ -773,9 +716,9 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
         <form id="dispatchNoteForm" className="dispatch-note-edit-form material-note-card-form" onSubmit={handleSubmit}>
 
           <FormGroup icon="calendar" label="Basic Details" accent={MATERIAL_ACCENT}>
-            <div className="row g-2">
-              <div className="col-md-6 mb-2">
-                <FormField label="Dispatch Date *" className="dispatch-date-plain">
+            <FieldRow>
+              <FormField label="Dispatch Date *">
+                <div className="transport-date-time-field">
                   <DateTimePickerField
                     dateValue={formData.dispatch_date}
                     timeValue={formData.dispatch_time}
@@ -785,54 +728,54 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
                     }}
                     dateFieldName="dispatch_date"
                     timeFieldName="dispatch_time"
-                    placeholder="DD/MM/YYYY HH:mm"
+                    placeholder="Select date and time"
                     minDate={editMinDate}
                   />
-                  {editFormErrors.dispatch_date && <span className="dispatch-edit-error">{editFormErrors.dispatch_date}</span>}
-                </FormField>
-              </div>
-              <div className="col-md-6 mb-2">
-                <FormField label="Warehouse *">
-                  <FormSelect
-                    value={formData.warehouse_id}
-                    onChange={(e) => handleFormChange("warehouse_id", e.target.value)}
-                    options={mergeOptionForValue(warehouseOptions, formData.warehouse_id)}
-                    placeholder="Select warehouse..."
-                    className={editFormErrors.warehouse_id ? "is-invalid" : ""}
-                  />
-                  {editFormErrors.warehouse_id && <span className="dispatch-edit-error">{editFormErrors.warehouse_id}</span>}
-                </FormField>
-              </div>
-              <div className="col-md-4 mb-2">
-                <FormField label="Signature">
-                  <FormInput type="text" value={formData.signature} onChange={(e) => handleFormChange("signature", e.target.value)} placeholder="Enter signature..." />
-                </FormField>
-              </div>
-              <div className="col-md-4 mb-2">
-                <FormField label="Delivery Location *">
-                  <FormInput
-                    type="text"
-                    value={formData.delivery_location}
-                    onChange={(e) => handleFormChange("delivery_location", e.target.value)}
-                    placeholder="Enter delivery location..."
-                    className={editFormErrors.delivery_location ? "is-invalid" : ""}
-                  />
-                  {editFormErrors.delivery_location && <span className="dispatch-edit-error">{editFormErrors.delivery_location}</span>}
-                </FormField>
-              </div>
-              <div className="col-md-4 mb-2">
-                <FormField label="Delivered To *">
-                  <FormInput
-                    type="text"
-                    value={formData.delivered_to}
-                    onChange={(e) => handleFormChange("delivered_to", e.target.value)}
-                    placeholder="Enter person name..."
-                    className={editFormErrors.delivered_to ? "is-invalid" : ""}
-                  />
-                  {editFormErrors.delivered_to && <span className="dispatch-edit-error">{editFormErrors.delivered_to}</span>}
-                </FormField>
-              </div>
-            </div>
+                </div>
+                <FieldError message={editFormErrors.dispatch_date} />
+              </FormField>
+
+              <FormField label="Warehouse *">
+                <FormSelect
+                  value={formData.warehouse_id}
+                  onChange={(e) => handleFormChange("warehouse_id", e.target.value)}
+                  options={mergeOptionForValue(warehouseOptions, formData.warehouse_id)}
+                  placeholder="Select warehouse..."
+                />
+                <FieldError message={editFormErrors.warehouse_id} />
+              </FormField>
+            </FieldRow>
+
+            <FieldRow>
+              <FormField label="Delivery Location *">
+                <FormInput
+                  type="text"
+                  value={formData.delivery_location}
+                  onChange={(e) => handleFormChange("delivery_location", e.target.value)}
+                  placeholder="Enter delivery location..."
+                />
+                <FieldError message={editFormErrors.delivery_location} />
+              </FormField>
+
+              <FormField label="Delivered To *">
+                <FormInput
+                  type="text"
+                  value={formData.delivered_to}
+                  onChange={(e) => handleFormChange("delivered_to", e.target.value)}
+                  placeholder="Enter person name..."
+                />
+                <FieldError message={editFormErrors.delivered_to} />
+              </FormField>
+            </FieldRow>
+
+            <FormField label="Signature">
+              <FormInput
+                type="text"
+                value={formData.signature}
+                onChange={(e) => handleFormChange("signature", e.target.value)}
+                placeholder="Enter signature..."
+              />
+            </FormField>
           </FormGroup>
 
           {editLaunchHire && (
@@ -883,7 +826,7 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
               <CardTabListLoading message="Loading items..." cardColor={cardColor} />
             ) : (
               editItems.map((item, index) => (
-                <div key={item.id} className="dispatch-edit-item-card">
+                <div key={item.id} className="dispatch-edit-item-card material-item-card">
                   <div className="dispatch-edit-item-header" onClick={() => toggleEditItemExpand(item.id)}>
                     <span className="dispatch-edit-item-label">Item {index + 1}</span>
                     <svg
@@ -896,107 +839,153 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
 
                   {expandedEditItems[item.id] && (
                     <div className="dispatch-edit-item-body">
-                      <div className="row g-2 mb-2">
-                        <div className="col-md-4">
-                          <FormField label="Quantity *">
+                      <FieldRow>
+                        <FormField label="Quantity *">
+                          <FormInput
+                            type="text"
+                            inputMode="numeric"
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === "" || /^\d+$/.test(val)) {
+                                handleEditItemChange(item.id, "quantity", val);
+                                setEditFormErrors((p) => { const n = { ...p }; delete n[`item${index}_quantity`]; return n; });
+                              }
+                            }}
+                            placeholder="Enter quantity..."
+                          />
+                          {item.maxQty != null && (
+                            <div className="material-field-hint">Max: {item.maxQty}</div>
+                          )}
+                          <FieldError message={editFormErrors[`item${index}_quantity`]} />
+                        </FormField>
+
+                        <FormField label="Slot">
+                          <FormSelect
+                            value={item.slot}
+                            onChange={(e) => handleEditItemChange(item.id, "slot", e.target.value)}
+                            options={mergeOptionForValue(slotOptions, item.slot)}
+                            placeholder="Select slot..."
+                            disabled
+                          />
+                        </FormField>
+                      </FieldRow>
+
+                      <FormField label="Reason">
+                        <FormSelect
+                          value={item.reason}
+                          onChange={(e) => handleEditItemChange(item.id, "reason", e.target.value)}
+                          options={mergeOptionForValue(reasonOptions, item.reason)}
+                          placeholder="Select reason..."
+                          disabled
+                        />
+                      </FormField>
+
+                      <FormField>
+                        <CheckboxField
+                          label="Packing required"
+                          checked={item.packing_required}
+                          onChange={(e) => handleEditItemChange(item.id, "packing_required", e.target.checked)}
+                        />
+                      </FormField>
+
+                      {item.packing_required && (
+                        <div className="material-item-subfields">
+                          <FieldRow>
+                            <FormField label="Repacking Pallets">
+                              <FormInput
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                value={item.repacking_pallets}
+                                onChange={(e) => handleNonNegativeIntegerChange(item.id, "repacking_pallets", e.target.value)}
+                                placeholder="0"
+                              />
+                            </FormField>
+                            <FormField label="Repacking Rolls">
+                              <FormInput
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                value={item.repacking_rolls}
+                                onChange={(e) => handleNonNegativeIntegerChange(item.id, "repacking_rolls", e.target.value)}
+                                placeholder="0"
+                              />
+                            </FormField>
+                          </FieldRow>
+                        </div>
+                      )}
+
+                      <FormField>
+                        <CheckboxField
+                          label="Transportation required"
+                          checked={item.transportation_required}
+                          onChange={(e) => handleEditItemChange(item.id, "transportation_required", e.target.checked)}
+                        />
+                      </FormField>
+
+                      {item.transportation_required && (
+                        <div className="material-item-subfields">
+                          <FieldRow>
+                            <FormField label="Vehicle Type">
+                              <FormSelect
+                                value={item.typeOfVehicle}
+                                onChange={(e) => handleEditItemChange(item.id, "typeOfVehicle", e.target.value)}
+                                options={mergeOptionForValue(vehicleOptions, item.typeOfVehicle)}
+                                placeholder="Select vehicle..."
+                              />
+                            </FormField>
+                            <FormField label="Driver">
+                              <FormSelect
+                                value={item.driverName}
+                                onChange={(e) => handleEditItemChange(item.id, "driverName", e.target.value)}
+                                options={mergeOptionForValue(driverOptions, item.driverName)}
+                                placeholder="Select driver..."
+                              />
+                            </FormField>
+                          </FieldRow>
+
+                          <FieldRow>
+                            <FormField label="From Location">
+                              <FormSelect
+                                value={item.fromLocation}
+                                onChange={(e) => handleEditItemChange(item.id, "fromLocation", e.target.value)}
+                                options={mergeOptionForValue(locationOptions, item.fromLocation)}
+                                placeholder="Select from..."
+                              />
+                            </FormField>
+                            <FormField label="To Location">
+                              <FormSelect
+                                value={item.toLocation}
+                                onChange={(e) => handleEditItemChange(item.id, "toLocation", e.target.value)}
+                                options={mergeOptionForValue(locationOptions, item.toLocation)}
+                                placeholder="Select to..."
+                              />
+                            </FormField>
+                          </FieldRow>
+
+                          <FormField label="Pick-Up From *">
+                            <LocationAutocomplete
+                              value={item.pickUpFrom}
+                              onChange={(e) => {
+                                handleEditItemChange(item.id, "pickUpFrom", e.target.value);
+                                setEditFormErrors((p) => { const n = { ...p }; delete n[`item${index}_pickup`]; return n; });
+                              }}
+                              placeholder="Enter pick-up location..."
+                            />
+                            <FieldError message={editFormErrors[`item${index}_pickup`]} />
+                          </FormField>
+
+                          <FormField label="Transport Remarks">
                             <FormInput
                               type="text"
-                              inputMode="numeric"
-                              value={item.quantity}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val === "" || /^\d+$/.test(val)) {
-                                  handleEditItemChange(item.id, "quantity", val);
-                                  setEditFormErrors((p) => { const n = { ...p }; delete n[`item${index}_quantity`]; return n; });
-                                }
-                              }}
-                              placeholder="Quantity..."
-                              className={editFormErrors[`item${index}_quantity`] ? "is-invalid" : ""}
+                              value={item.transportRemarks}
+                              onChange={(e) => handleEditItemChange(item.id, "transportRemarks", e.target.value)}
+                              placeholder="Enter transport remarks..."
                             />
-                            {item.maxQty != null && (
-                              <div className="landing-convert-qty-max text-end">Max: {item.maxQty}</div>
-                            )}
-                            {editFormErrors[`item${index}_quantity`] && <span className="dispatch-edit-error">{editFormErrors[`item${index}_quantity`]}</span>}
                           </FormField>
                         </div>
-                        <div className="col-md-4">
-                          <FormField label="Slot">
-                            <FormSelect value={item.slot} onChange={(e) => handleEditItemChange(item.id, "slot", e.target.value)} options={mergeOptionForValue(slotOptions, item.slot)} placeholder="Select slot..." disabled />
-                          </FormField>
-                        </div>
-                        <div className="col-md-4">
-                          <FormField label="Reason">
-                            <FormSelect value={item.reason} onChange={(e) => handleEditItemChange(item.id, "reason", e.target.value)} options={mergeOptionForValue(reasonOptions, item.reason)} placeholder="Select reason..." disabled />
-                          </FormField>
-                        </div>
-                      </div>
-
-                      <div className="dispatch-edit-checkbox-group">
-                        <label className="dispatch-edit-checkbox-label">
-                          <input type="checkbox" className="dispatch-edit-checkbox" checked={item.packing_required || false} onChange={(e) => handleEditItemChange(item.id, "packing_required", e.target.checked)} />
-                          <span>Packing Required</span>
-                        </label>
-                        {item.packing_required && (
-                          <div className="row g-2 mt-1">
-                            <div className="col-md-4">
-                              <FormField label="Repacking Pallets">
-                                <FormInput type="text" inputMode="numeric" pattern="[0-9]*" value={item.repacking_pallets} onChange={(e) => handleNonNegativeIntegerChange(item.id, "repacking_pallets", e.target.value)} placeholder="0" />
-                              </FormField>
-                            </div>
-                            <div className="col-md-4">
-                              <FormField label="Repacking Rolls">
-                                <FormInput type="text" inputMode="numeric" pattern="[0-9]*" value={item.repacking_rolls} onChange={(e) => handleNonNegativeIntegerChange(item.id, "repacking_rolls", e.target.value)} placeholder="0" />
-                              </FormField>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="dispatch-edit-checkbox-group">
-                        <label className="dispatch-edit-checkbox-label">
-                          <input type="checkbox" className="dispatch-edit-checkbox" checked={item.transportation_required || false} onChange={(e) => handleEditItemChange(item.id, "transportation_required", e.target.checked)} />
-                          <span>Transportation Required</span>
-                        </label>
-                        {item.transportation_required && (
-                          <div className="row g-2 mt-1">
-                            <div className="col-md-4">
-                              <FormField label="Vehicle Type">
-                                <FormSelect value={item.typeOfVehicle} onChange={(e) => handleEditItemChange(item.id, "typeOfVehicle", e.target.value)} options={mergeOptionForValue(vehicleOptions, item.typeOfVehicle)} placeholder="Select vehicle..." />
-                              </FormField>
-                            </div>
-                            <div className="col-md-4">
-                              <FormField label="From Location">
-                                <FormSelect value={item.fromLocation} onChange={(e) => handleEditItemChange(item.id, "fromLocation", e.target.value)} options={mergeOptionForValue(locationOptions, item.fromLocation)} placeholder="From location..." />
-                              </FormField>
-                            </div>
-                            <div className="col-md-4">
-                              <FormField label="Pick-Up From *">
-                                <LocationAutocomplete
-                                  value={item.pickUpFrom}
-                                  onChange={(e) => { handleEditItemChange(item.id, "pickUpFrom", e.target.value); setEditFormErrors((p) => { const n = { ...p }; delete n[`item${index}_pickup`]; return n; }); }}
-                                  placeholder="Pick-up location..."
-                                />
-                              </FormField>
-                              {editFormErrors[`item${index}_pickup`] && <span className="dispatch-edit-error">{editFormErrors[`item${index}_pickup`]}</span>}
-                            </div>
-                            <div className="col-md-4">
-                              <FormField label="To Location">
-                                <FormSelect value={item.toLocation} onChange={(e) => handleEditItemChange(item.id, "toLocation", e.target.value)} options={mergeOptionForValue(locationOptions, item.toLocation)} placeholder="To location..." />
-                              </FormField>
-                            </div>
-                            <div className="col-md-4">
-                              <FormField label="Driver">
-                                <FormSelect value={item.driverName} onChange={(e) => handleEditItemChange(item.id, "driverName", e.target.value)} options={mergeOptionForValue(driverOptions, item.driverName)} placeholder="Select driver..." />
-                              </FormField>
-                            </div>
-                            <div className="col-md-4">
-                              <FormField label="Remarks">
-                                <FormInput type="text" value={item.transportRemarks} onChange={(e) => handleEditItemChange(item.id, "transportRemarks", e.target.value)} placeholder="Transport remarks..." />
-                              </FormField>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1004,11 +993,13 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
             )}
           </FormGroup>
 
-          <FormGroup icon="folder" label="Documents & Remarks" accent={MATERIAL_ACCENT}>
-            <div className="mb-2">
-              <FormField label="File">
-                <AttachmentsList
-                  attachments={formData.documents || []}
+          <FormGroup icon="folder" label="Documents" accent={MATERIAL_ACCENT}>
+            <FormField className="cf-field-full">
+              <div className="transport-upload-box">
+                <ServiceAttachmentsList
+                  // Existing documents come back from the API with `file_name`; the shared list reads `name`.
+                  attachments={(formData.documents || []).map((doc) => (doc?.name ? doc : { ...doc, name: doc?.file_name || "Document" }))}
+                  onAdd={() => {}}
                   onRemove={handleDocumentsRemove}
                   cardColor={cardColor}
                   isDragging={isDraggingDocuments}
@@ -1018,11 +1009,16 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
                   onDrop={handleDocumentsDrop}
                   fileInputRef={documentsFileInputRef}
                   onFileInputChange={handleDocumentsFileInputChange}
+                  accept={MATERIAL_DOCUMENT_ACCEPT}
+                  helperText={MATERIAL_DOCUMENT_HELPER}
                 />
-              </FormField>
-            </div>
-            <div className="mb-2">
-              <FormField label="Remarks">
+              </div>
+            </FormField>
+          </FormGroup>
+
+          <FormGroup icon="notebook" label="Remarks" accent={MATERIAL_ACCENT}>
+            <div className="cgpass-remarks">
+              <FormField>
                 <ReactQuillEditor
                   key={editorKey}
                   value={formData.remarks || ""}

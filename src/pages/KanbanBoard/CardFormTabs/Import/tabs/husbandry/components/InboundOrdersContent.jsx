@@ -15,9 +15,11 @@ import {
   FormField,
   FormInput,
   FormSelect,
-  FormTextarea,
   FormSection,
   FormGroup,
+  FieldRow,
+  FieldError,
+  CheckboxField,
   PremiumCardHeader,
 } from "./Husbandry.components";
 import { validateDocumentFiles, MAIN_TABS, SERVICE_ACCENT } from "./Husbandry.constants";
@@ -797,7 +799,8 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
       warehouse_id: Number(formData.warehouse) || 0,
       inbound_date: buildApiDateTime(formData.date, formData.time),
       inbound_time: (formData.time || "").slice(0, 5),
-      remarks: formData.remarks || "",
+      // Remarks use the shared rich-text editor; the API stores plain text.
+      remarks: (formData.remarks || "").replace(/<[^>]*>/g, "").trim(),
       launch_hire: formData.launchHire ? 1 : 0,
       ...(formData.launchHire ? {
         booking_datetime: buildApiDateTime(formData.launchHireDate, formData.launchHireTime),
@@ -1343,353 +1346,286 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
   // The form card replaces the old "+ Add" modal, so hide it when the user can neither add nor is editing.
   const showFormCard = canAddInbound || !!editingOrder;
 
+  const clearFormError = (key) => {
+    if (!formErrors[key]) return;
+    setFormErrors((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
   // Left-hand form card body (was the Add/Edit modal body).
+  // Field layout follows the shared husbandry service pattern:
+  // FormGroup → FormField / FieldRow, transport-date-time-field, CheckboxField, Quill remarks.
   const renderFormBody = () => (
-        <form id="inboundOrderForm" className="material-edit-form material-note-card-form" onSubmit={handleSubmit}>
-          {/* Basic Details */}
-          <FormGroup icon="calendar" label="Basic Details" accent={MATERIAL_ACCENT}>
-            <div className="row g-2">
-              <div className="col-12">
-                <FormField label="Date *">
-                  <DateTimePickerField
-                    dateValue={formData.date}
-                    timeValue={formData.time}
-                    onDateTimeChange={(nextValues) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        date: nextValues.date,
-                        time: nextValues.time,
-                      }));
-                      if (formErrors.date) setFormErrors((prev) => { const next = { ...prev }; delete next.date; return next; });
-                    }}
-                    dateFieldName="date"
-                    timeFieldName="time"
-                    placeholder="DD/MM/YYYY HH:mm"
-                    minDate={editingOrder ? editOrderMinDate : undefined}
-                  />
-                </FormField>
-                {formErrors.date && <span className="dispatch-edit-error">{formErrors.date}</span>}
-              </div>
+    <form id="inboundOrderForm" className="material-edit-form material-note-card-form" onSubmit={handleSubmit}>
+      <FormGroup icon="calendar" label="Basic Details" accent={MATERIAL_ACCENT}>
+        <FormField label="Date *">
+          <div className="transport-date-time-field">
+            <DateTimePickerField
+              dateValue={formData.date}
+              timeValue={formData.time}
+              onDateTimeChange={(nextValues) => {
+                setFormData((prev) => ({ ...prev, date: nextValues.date, time: nextValues.time }));
+                clearFormError("date");
+              }}
+              dateFieldName="date"
+              timeFieldName="time"
+              placeholder="Select date and time"
+              minDate={editingOrder ? editOrderMinDate : undefined}
+            />
+          </div>
+          <FieldError message={formErrors.date} />
+        </FormField>
 
-              <div className="col-12">
-                <FormField label="Warehouse *">
-                  <FormSelect
-                    value={formData.warehouse}
-                    onChange={(e) => {
-                      handleFormChange("warehouse", e.target.value);
-                      if (formErrors.warehouse) setFormErrors((prev) => { const e = { ...prev }; delete e.warehouse; return e; });
-                    }}
-                    options={mergeOptionForValue(warehouseLocationOptions, formData.warehouse)}
-                    placeholder="Select warehouse"
-                  />
-                </FormField>
-                {formErrors.warehouse && <span className="dispatch-edit-error">{formErrors.warehouse}</span>}
-              </div>
+        <FormField label="Warehouse *">
+          <FormSelect
+            value={formData.warehouse}
+            onChange={(e) => {
+              handleFormChange("warehouse", e.target.value);
+              clearFormError("warehouse");
+            }}
+            options={mergeOptionForValue(warehouseLocationOptions, formData.warehouse)}
+            placeholder="Select warehouse..."
+          />
+          <FieldError message={formErrors.warehouse} />
+        </FormField>
+      </FormGroup>
 
-            </div>
-          </FormGroup>
-
-          {/* Order Details */}
-          <FormGroup icon="list" label="Order Details" accent={MATERIAL_ACCENT}>
-            {formData.orders.map((order, index) => (
-              <div key={order.id} className="dispatch-edit-item-card">
-                <div className="dispatch-edit-item-header" onClick={() => toggleOrderExpand(order.id)}>
-                  <span className="dispatch-edit-item-label">Order {index + 1}</span>
-                  <div className="dispatch-item-actions">
-                    {index === formData.orders.length - 1 && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); handleAddNewOrder(); }}
-                        className="dispatch-order-icon-btn"
-                        title="Add order"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                          <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                        </svg>
-                      </button>
-                    )}
-                    {formData.orders.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); handleRemoveOrder(order.id); }}
-                        className="dispatch-order-icon-btn dispatch-order-icon-btn--delete"
-                        title="Remove order"
-                      >
-                        <img src={deleteIcon} alt="delete" />
-                      </button>
-                    )}
-                    <svg
-                      width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                      className={`dispatch-edit-chevron${expandedOrders[order.id] ? " expanded" : ""}`}
-                    >
-                      <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <FormGroup icon="list" label="Order Details" accent={MATERIAL_ACCENT}>
+        {formData.orders.map((order, index) => (
+          <div key={order.id} className="dispatch-edit-item-card material-item-card">
+            <div className="dispatch-edit-item-header" onClick={() => toggleOrderExpand(order.id)}>
+              <span className="dispatch-edit-item-label">Order {index + 1}</span>
+              <div className="dispatch-item-actions">
+                {index === formData.orders.length - 1 && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleAddNewOrder(); }}
+                    className="dispatch-order-icon-btn"
+                    title="Add order"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                     </svg>
-                  </div>
-                </div>
+                  </button>
+                )}
+                {formData.orders.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleRemoveOrder(order.id); }}
+                    className="dispatch-order-icon-btn dispatch-order-icon-btn--delete"
+                    title="Remove order"
+                  >
+                    <img src={deleteIcon} alt="delete" />
+                  </button>
+                )}
+                <svg
+                  width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                  className={`dispatch-edit-chevron${expandedOrders[order.id] ? " expanded" : ""}`}
+                >
+                  <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+            </div>
 
-                {expandedOrders[order.id] && (
-                  <div className="dispatch-edit-item-body">
-                    <div className="row g-2 mb-2">
-                      <div className="col-12">
-                        <FormField label="PO/DO">
-                          <FormInput
-                            type="text"
-                            value={order.poDo}
-                            onChange={(e) => {
-                              handleOrderChange(order.id, "poDo", e.target.value);
-                              if (formErrors[`o${index}_poDo`]) setFormErrors((prev) => { const e = { ...prev }; delete e[`o${index}_poDo`]; return e; });
-                            }}
-                            placeholder="Enter PO/DO number..."
-                          />
-                        </FormField>
-                        {formErrors[`o${index}_poDo`] && <span className="dispatch-edit-error">{formErrors[`o${index}_poDo`]}</span>}
-                      </div>
+            {expandedOrders[order.id] && (
+              <div className="dispatch-edit-item-body">
+                <FormField label="PO/DO">
+                  <FormInput
+                    type="text"
+                    value={order.poDo}
+                    onChange={(e) => {
+                      handleOrderChange(order.id, "poDo", e.target.value);
+                      clearFormError(`o${index}_poDo`);
+                    }}
+                    placeholder="Enter PO/DO number..."
+                  />
+                  <FieldError message={formErrors[`o${index}_poDo`]} />
+                </FormField>
 
-                      <div className="col-sm-6">
-                        <FormField label="Quantity *">
-                          <FormInput
-                            type="number"
-                            value={order.quantity}
-                            onChange={(e) => {
-                              handleOrderChange(order.id, "quantity", e.target.value);
-                              if (formErrors[`o${index}_quantity`]) setFormErrors((prev) => { const e = { ...prev }; delete e[`o${index}_quantity`]; return e; });
-                            }}
-                            placeholder="Enter quantity..."
-                          />
-                        </FormField>
-                        {formErrors[`o${index}_quantity`] && <span className="dispatch-edit-error">{formErrors[`o${index}_quantity`]}</span>}
-                      </div>
+                <FieldRow>
+                  <FormField label="Quantity *">
+                    <FormInput
+                      type="number"
+                      value={order.quantity}
+                      onChange={(e) => {
+                        handleOrderChange(order.id, "quantity", e.target.value);
+                        clearFormError(`o${index}_quantity`);
+                      }}
+                      placeholder="Enter quantity..."
+                    />
+                    <FieldError message={formErrors[`o${index}_quantity`]} />
+                  </FormField>
 
-                      <div className="col-sm-6">
-                        <FormField label="Package Type *">
-                          <FormSelect
-                            value={order.packageType}
-                            onChange={(e) => {
-                              handleOrderChange(order.id, "packageType", e.target.value);
-                              if (formErrors[`o${index}_packageType`]) setFormErrors((prev) => { const e = { ...prev }; delete e[`o${index}_packageType`]; return e; });
-                            }}
-                            options={mergeOptionForValue(packageTypeOptions, order.packageType)}
-                            placeholder="Select package type..."
-                          />
-                        </FormField>
-                        {formErrors[`o${index}_packageType`] && <span className="dispatch-edit-error">{formErrors[`o${index}_packageType`]}</span>}
-                      </div>
+                  <FormField label="Package Type *">
+                    <FormSelect
+                      value={order.packageType}
+                      onChange={(e) => {
+                        handleOrderChange(order.id, "packageType", e.target.value);
+                        clearFormError(`o${index}_packageType`);
+                      }}
+                      options={mergeOptionForValue(packageTypeOptions, order.packageType)}
+                      placeholder="Select package type..."
+                    />
+                    <FieldError message={formErrors[`o${index}_packageType`]} />
+                  </FormField>
+                </FieldRow>
 
-                      <div className="col-12">
-                        <FormField label="Description">
-                          <FormInput
-                            type="text"
-                            value={order.description}
-                            onChange={(e) => handleOrderChange(order.id, "description", e.target.value)}
-                            placeholder="Enter description..."
-                          />
-                        </FormField>
-                      </div>
-                    </div>
+                <FormField label="Description">
+                  <FormInput
+                    type="text"
+                    value={order.description}
+                    onChange={(e) => handleOrderChange(order.id, "description", e.target.value)}
+                    placeholder="Enter description..."
+                  />
+                </FormField>
 
-                    {/* Transportation Section */}
-                    <div className="dispatch-transport-section">
-                      <div className="dispatch-edit-checkbox-group">
-                        <label className="dispatch-edit-checkbox-label">
-                          <input
-                            type="checkbox"
-                            className="dispatch-edit-checkbox"
-                            checked={order.transportation || false}
-                            onChange={(e) => handleOrderChange(order.id, "transportation", e.target.checked)}
-                          />
-                          <span>Transportation</span>
-                        </label>
-                      </div>
+                <FormField>
+                  <CheckboxField
+                    label="Transportation required"
+                    checked={order.transportation}
+                    onChange={(e) => handleOrderChange(order.id, "transportation", e.target.checked)}
+                  />
+                </FormField>
 
-                      {order.transportation && (
-                        <div className="row g-2 mb-1">
-                          <div className="col-sm-6">
-                            <FormField label="Type of Vehicle *">
-                              <FormSelect
-                                value={order.typeOfVehicle}
-                                onChange={(e) => {
-                                  handleOrderChange(order.id, "typeOfVehicle", e.target.value);
-                                  if (formErrors[`o${index}_typeOfVehicle`]) setFormErrors((prev) => { const e = { ...prev }; delete e[`o${index}_typeOfVehicle`]; return e; });
-                                }}
-                                options={mergeOptionForValue(materialVehicleOptions, order.typeOfVehicle)}
-                                placeholder="Select type of vehicle..."
-                              />
-                            </FormField>
-                            {formErrors[`o${index}_typeOfVehicle`] && <span className="dispatch-edit-error">{formErrors[`o${index}_typeOfVehicle`]}</span>}
-                          </div>
+                {order.transportation && (
+                  <div className="material-item-subfields">
+                    <FieldRow>
+                      <FormField label="Type of Vehicle *">
+                        <FormSelect
+                          value={order.typeOfVehicle}
+                          onChange={(e) => {
+                            handleOrderChange(order.id, "typeOfVehicle", e.target.value);
+                            clearFormError(`o${index}_typeOfVehicle`);
+                          }}
+                          options={mergeOptionForValue(materialVehicleOptions, order.typeOfVehicle)}
+                          placeholder="Select vehicle..."
+                        />
+                        <FieldError message={formErrors[`o${index}_typeOfVehicle`]} />
+                      </FormField>
 
-                          <div className="col-sm-6">
-                            <FormField label="From Location *">
-                              <FormSelect
-                                value={order.fromLocation}
-                                onChange={(e) => {
-                                  handleOrderChange(order.id, "fromLocation", e.target.value);
-                                  if (formErrors[`o${index}_fromLocation`]) setFormErrors((prev) => { const e = { ...prev }; delete e[`o${index}_fromLocation`]; return e; });
-                                }}
-                                options={mergeOptionForValue(transportLocationOptions, order.fromLocation)}
-                                placeholder="Select from location..."
-                              />
-                            </FormField>
-                            {formErrors[`o${index}_fromLocation`] && <span className="dispatch-edit-error">{formErrors[`o${index}_fromLocation`]}</span>}
-                          </div>
+                      <FormField label="Driver Name *">
+                        <FormSelect
+                          value={order.driverName}
+                          onChange={(e) => {
+                            handleOrderChange(order.id, "driverName", e.target.value);
+                            clearFormError(`o${index}_driverName`);
+                          }}
+                          options={mergeOptionForValue(materialDriverOptions, order.driverName)}
+                          placeholder="Select driver..."
+                        />
+                        <FieldError message={formErrors[`o${index}_driverName`]} />
+                      </FormField>
+                    </FieldRow>
 
-                          <div className="col-sm-6">
-                            <FormField label="Pick-Up From *">
-                              <LocationAutocomplete
-                                value={order.pickUpFrom}
-                                onChange={(e) => {
-                                  handleOrderChange(order.id, "pickUpFrom", e.target.value);
-                                  if (formErrors[`o${index}_pickUpFrom`]) setFormErrors((prev) => { const e = { ...prev }; delete e[`o${index}_pickUpFrom`]; return e; });
-                                }}
-                                placeholder="Enter pick-up location..."
-                              />
-                            </FormField>
-                            {formErrors[`o${index}_pickUpFrom`] && <span className="dispatch-edit-error">{formErrors[`o${index}_pickUpFrom`]}</span>}
-                          </div>
+                    <FieldRow>
+                      <FormField label="From Location *">
+                        <FormSelect
+                          value={order.fromLocation}
+                          onChange={(e) => {
+                            handleOrderChange(order.id, "fromLocation", e.target.value);
+                            clearFormError(`o${index}_fromLocation`);
+                          }}
+                          options={mergeOptionForValue(transportLocationOptions, order.fromLocation)}
+                          placeholder="Select from..."
+                        />
+                        <FieldError message={formErrors[`o${index}_fromLocation`]} />
+                      </FormField>
 
-                          <div className="col-sm-6">
-                            <FormField label="To Location *">
-                              <FormSelect
-                                value={order.toLocation}
-                                onChange={(e) => {
-                                  handleOrderChange(order.id, "toLocation", e.target.value);
-                                  if (formErrors[`o${index}_toLocation`]) setFormErrors((prev) => { const e = { ...prev }; delete e[`o${index}_toLocation`]; return e; });
-                                }}
-                                options={mergeOptionForValue(transportLocationOptions, order.toLocation)}
-                                placeholder="Select to location..."
-                              />
-                            </FormField>
-                            {formErrors[`o${index}_toLocation`] && <span className="dispatch-edit-error">{formErrors[`o${index}_toLocation`]}</span>}
-                          </div>
+                      <FormField label="To Location *">
+                        <FormSelect
+                          value={order.toLocation}
+                          onChange={(e) => {
+                            handleOrderChange(order.id, "toLocation", e.target.value);
+                            clearFormError(`o${index}_toLocation`);
+                          }}
+                          options={mergeOptionForValue(transportLocationOptions, order.toLocation)}
+                          placeholder="Select to..."
+                        />
+                        <FieldError message={formErrors[`o${index}_toLocation`]} />
+                      </FormField>
+                    </FieldRow>
 
-                          <div className="col-sm-6">
-                            <FormField label="Driver Name *">
-                              <FormSelect
-                                value={order.driverName}
-                                onChange={(e) => {
-                                  handleOrderChange(order.id, "driverName", e.target.value);
-                                  if (formErrors[`o${index}_driverName`]) setFormErrors((prev) => { const e = { ...prev }; delete e[`o${index}_driverName`]; return e; });
-                                }}
-                                options={mergeOptionForValue(materialDriverOptions, order.driverName)}
-                                placeholder="Select driver name..."
-                              />
-                            </FormField>
-                            {formErrors[`o${index}_driverName`] && <span className="dispatch-edit-error">{formErrors[`o${index}_driverName`]}</span>}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
+                    <FormField label="Pick-Up From *">
+                      <LocationAutocomplete
+                        value={order.pickUpFrom}
+                        onChange={(e) => {
+                          handleOrderChange(order.id, "pickUpFrom", e.target.value);
+                          clearFormError(`o${index}_pickUpFrom`);
+                        }}
+                        placeholder="Enter pick-up location..."
+                      />
+                      <FieldError message={formErrors[`o${index}_pickUpFrom`]} />
+                    </FormField>
                   </div>
                 )}
               </div>
-            ))}
-          </FormGroup>
-
-          {/* Launch Hire */}
-          {showLaunchHire && (
-          <FormGroup icon="LAUNCH_HIRE" label="Launch Hire" accent={MATERIAL_ACCENT}>
-            <div className="dispatch-edit-checkbox-group">
-              <label className="dispatch-edit-checkbox-label">
-                <input
-                  type="checkbox"
-                  className="dispatch-edit-checkbox"
-                  checked={formData.launchHire || false}
-                  onChange={(e) => handleFormChange("launchHire", e.target.checked)}
-                  disabled={!!editingOrder}
-                />
-                <span>Book a launch hire with this order</span>
-              </label>
-            </div>
-
-            {formData.launchHire && (
-              <div className="dispatch-launch-hire-card">
-                <div className="dispatch-launch-hire-steps dispatch-launch-hire-steps--form">
-                  <div className="dispatch-launch-hire-step dispatch-launch-hire-step--form" style={{ "--stagger-index": 0 }}>
-                    <div className="dispatch-launch-hire-step-head">
-                      <span className="dispatch-launch-hire-step-icon-wrap">
-                        <span className="dispatch-launch-hire-step-icon">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-                            <path d="M12 7v5l3.5 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </span>
-                        <span className="dispatch-launch-hire-step-num">1</span>
-                      </span>
-                      <span className="dispatch-launch-hire-step-label">Booking Date &amp; Time <span className="text-danger">*</span></span>
-                    </div>
-                    <div className="dispatch-launch-hire-step-field">
-                      <DateTimePickerField
-                        dateValue={formData.launchHireDate}
-                        timeValue={formData.launchHireTime}
-                        onDateTimeChange={(nextValues) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            launchHireDate: nextValues.date,
-                            launchHireTime: nextValues.time,
-                          }));
-                          if (formErrors.launchHireDate) setFormErrors((prev) => { const e = { ...prev }; delete e.launchHireDate; return e; });
-                        }}
-                        dateFieldName="launchHireDate"
-                        timeFieldName="launchHireTime"
-                        placeholder="DD/MM/YYYY HH:mm"
-                      />
-                      {formErrors.launchHireDate && <span className="dispatch-edit-error">{formErrors.launchHireDate}</span>}
-                    </div>
-                  </div>
-
-                  <div className="dispatch-launch-hire-track" aria-hidden="true">
-                    <span className="dispatch-launch-hire-track-line" />
-                    <span className="dispatch-launch-hire-track-boat">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M3 15h18l-2 5H5l-2-5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M12 3v12M9 6l3-3 3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M2 15c2-2.5 4-3.5 10-3.5s8 1 10 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      </svg>
-                    </span>
-                  </div>
-
-                  <div className="dispatch-launch-hire-step dispatch-launch-hire-step--form" style={{ "--stagger-index": 1 }}>
-                    <div className="dispatch-launch-hire-step-head">
-                      <span className="dispatch-launch-hire-step-icon-wrap">
-                        <span className="dispatch-launch-hire-step-icon dispatch-launch-hire-step-icon--highlight">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 22s7-7.05 7-12a7 7 0 1 0-14 0c0 4.95 7 12 7 12Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-                            <circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="2" />
-                          </svg>
-                        </span>
-                        <span className="dispatch-launch-hire-step-num">2</span>
-                      </span>
-                      <span className="dispatch-launch-hire-step-label">Location</span>
-                    </div>
-                    <div className="dispatch-launch-hire-step-field">
-                      <FormSelect
-                        value={formData.launchHireLocation}
-                        onChange={(e) => handleFormChange("launchHireLocation", e.target.value)}
-                        options={mergeOptionForValue(launchHireLocationOptions, formData.launchHireLocation)}
-                        placeholder="Select location..."
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
             )}
-          </FormGroup>
-          )}
+          </div>
+        ))}
+      </FormGroup>
 
-          {/* Remarks */}
-          <FormGroup icon="notebook" label="Remarks" accent={MATERIAL_ACCENT}>
-            <FormField>
-              <FormTextarea
-                value={formData.remarks}
-                onChange={(e) => handleFormChange("remarks", e.target.value)}
-                placeholder="Enter remarks..."
-                rows={3}
-              />
-            </FormField>
-          </FormGroup>
-        </form>
+      {showLaunchHire && (
+        <FormGroup icon="LAUNCH_HIRE" label="Launch Hire" accent={MATERIAL_ACCENT}>
+          <FormField>
+            <CheckboxField
+              label="Launch hire required"
+              checked={formData.launchHire}
+              onChange={(e) => handleFormChange("launchHire", e.target.checked)}
+              disabled={!!editingOrder}
+            />
+          </FormField>
+          {formData.launchHire && (
+            <FieldRow>
+              <FormField label="Location">
+                <FormSelect
+                  value={formData.launchHireLocation}
+                  onChange={(e) => handleFormChange("launchHireLocation", e.target.value)}
+                  options={mergeOptionForValue(launchHireLocationOptions, formData.launchHireLocation)}
+                  placeholder="Select location..."
+                />
+              </FormField>
+              <FormField label="Booking Date Time *">
+                <div className="transport-date-time-field">
+                  <DateTimePickerField
+                    dateValue={formData.launchHireDate}
+                    timeValue={formData.launchHireTime}
+                    onDateTimeChange={(nextValues) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        launchHireDate: nextValues.date,
+                        launchHireTime: nextValues.time,
+                      }));
+                      clearFormError("launchHireDate");
+                    }}
+                    dateFieldName="launchHireDate"
+                    timeFieldName="launchHireTime"
+                    placeholder="Select date and time"
+                  />
+                </div>
+                <FieldError message={formErrors.launchHireDate} />
+              </FormField>
+            </FieldRow>
+          )}
+        </FormGroup>
+      )}
+
+      <FormGroup icon="notebook" label="Remarks" accent={MATERIAL_ACCENT}>
+        <div className="cgpass-remarks">
+          <FormField>
+            <ReactQuillEditor
+              value={formData.remarks || ""}
+              onChange={(e) => handleFormChange("remarks", e.target.value)}
+              placeholder="Enter remarks..."
+              name="remarks"
+            />
+          </FormField>
+        </div>
+      </FormGroup>
+    </form>
   );
 
   // Left-hand form card footer (was the modal footer). Cancel only shows in edit mode.

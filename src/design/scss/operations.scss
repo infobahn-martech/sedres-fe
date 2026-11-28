@@ -5797,6 +5797,32 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
   color: var(--accent, var(--text-secondary));
 }
 
+/* Shared checkbox row (CheckboxField) — same look as the inline
+   "Launch hire required" checkbox used across husbandry service forms. */
+.husb-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--card-color);
+    cursor: inherit;
+  }
+
+  &--disabled {
+    cursor: default;
+    opacity: 0.75;
+  }
+}
+
 .husb-group__row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -11674,6 +11700,25 @@ a.operation-task-document-name--link {
       padding: 0;
       border-left: none;
       gap: 4px;
+    }
+
+    // Sub rows carry a count pill instead of a chevron — tighter icon/gaps
+    // so labels like "Inbound Orders" fit the 210px rail without truncating.
+    .op-tab-sub {
+      gap: 8px;
+      padding: 6px 8px 6px 6px;
+
+      .op-tab-icon {
+        width: 26px;
+        height: 26px;
+      }
+
+      .op-tab-count {
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        font-size: 10.5px;
+      }
     }
 
     .op-tab:focus-visible,

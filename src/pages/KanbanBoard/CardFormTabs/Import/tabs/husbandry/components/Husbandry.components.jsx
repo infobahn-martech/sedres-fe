@@ -152,6 +152,33 @@ FieldRow.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
+/** Inline validation message under a single field — same `cf-field-error` look as FormGroup's group-level error. */
+export const FieldError = ({ message }) =>
+  message ? (
+    <div className="cf-field-error" role="alert">
+      {message}
+    </div>
+  ) : null;
+
+FieldError.propTypes = {
+  message: PropTypes.string,
+};
+
+/** "Launch hire required"-style checkbox row used across husbandry service forms. */
+export const CheckboxField = ({ label, checked, onChange, disabled = false }) => (
+  <label className={`husb-check${disabled ? " husb-check--disabled" : ""}`}>
+    <input type="checkbox" checked={!!checked} onChange={onChange} disabled={disabled} />
+    <span>{label}</span>
+  </label>
+);
+
+CheckboxField.propTypes = {
+  label: PropTypes.node.isRequired,
+  checked: PropTypes.bool,
+  onChange: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
+};
+
 const AVATAR_PALETTE = ["purple", "orange", "blue", "green"];
 
 /** Initials avatar for crew-name table cells — same palette/rotation as CrewContent's avatar chips, so both feel like one system. */
@@ -387,7 +414,6 @@ export const HusbandryTabs = ({ activeMainTab, activeSubTab, onMainTabChange, on
                         ) : (
                           hasCrewCount && <span className="op-tab-count">{crewCount}</span>
                         )}
-                        <NavChevron />
                       </NavTabButton>
                     );
                   })}

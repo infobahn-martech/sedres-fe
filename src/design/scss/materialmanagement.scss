@@ -2500,6 +2500,109 @@ body .material-management-modal .upload-main-text {
     }
   }
 
+  // ---- Shared-field layout inside the edit card ----
+  .transport-date-time-field {
+    width: 100%;
+    min-width: 0;
+
+    .cf-datetime-picker,
+    .cf-input.date-time-row.cf-datetime-picker {
+      width: 100%;
+    }
+  }
+
+  // FieldRow zeroes its children's margins; give the row the field spacing instead.
+  .husb-group__row {
+    margin-bottom: 18px;
+  }
+
+  // Repeatable order/item cards (Inbound orders, Landing/Dispatch items).
+  .material-item-card {
+    margin-bottom: 12px;
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    background: var(--surface-primary);
+    overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      border-color: color-mix(in srgb, var(--accent, #0d9488) 45%, var(--border-primary));
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    }
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .dispatch-edit-item-header,
+    .landing-edit-item-header {
+      padding: 10px 14px;
+      border-radius: 0;
+      background: var(--bg-secondary);
+    }
+
+    .dispatch-edit-item-label,
+    .landing-edit-item-title-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .dispatch-edit-item-body,
+    .landing-edit-item-body {
+      padding: 16px 14px 4px;
+      border-top: 1px solid var(--border-primary);
+      border-radius: 0;
+    }
+  }
+
+  // Fields revealed by a checkbox (transport, packing) sit in a tinted inset.
+  .material-item-subfields {
+    margin: -6px 0 18px;
+    padding: 14px 14px 0;
+    border-radius: 10px;
+    background: var(--accent-tint, var(--bg-secondary));
+    border: 1px dashed color-mix(in srgb, var(--accent, #0d9488) 35%, transparent);
+  }
+
+  // Read-only details carried over from the source order (Landing items).
+  .material-item-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 14px;
+    margin: 0 0 16px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: var(--bg-secondary);
+
+    dt {
+      margin: 0 0 2px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+
+    dd {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-primary);
+      word-break: break-word;
+    }
+
+    .material-item-info__wide {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .material-field-hint {
+    margin-top: 4px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    text-align: right;
+  }
+
   // Order History: keep the expand-chevron column tight; expanded chain row spans edge to edge.
   .order-history-table {
     .custom-table-expand-header,

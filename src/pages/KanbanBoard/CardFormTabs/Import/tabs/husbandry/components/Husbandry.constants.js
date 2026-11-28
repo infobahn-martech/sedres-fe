@@ -324,3 +324,8 @@ export const SERVICE_FORM_RESET_VALUES = {
   addOnServicesLaunchHireBookingDate: "",
   addOnServicesLaunchHireBookingTime: "",
 };
+
+// Material Management (Landing / Dispatch note) document upload — same
+// file types the notes' original upload zone accepted.
+export const MATERIAL_DOCUMENT_ACCEPT = ".pdf,.doc,.docx,.jpg,.jpeg,.png";
+export const MATERIAL_DOCUMENT_HELPER = "PDF, DOC, DOCX, JPG, PNG (max 10MB per file)";

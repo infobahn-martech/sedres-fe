@@ -15,9 +15,20 @@ import {
   ReactQuillEditor,
   FormSection,
   FormGroup,
+  FieldRow,
+  FieldError,
+  CheckboxField,
   PremiumCardHeader,
 } from "./Husbandry.components";
-import { LAUNCH_HIRE_LOCATION_OPTIONS, validateDocumentFiles, MAIN_TABS, SERVICE_ACCENT } from "./Husbandry.constants";
+import {
+  LAUNCH_HIRE_LOCATION_OPTIONS,
+  validateDocumentFiles,
+  MAIN_TABS,
+  SERVICE_ACCENT,
+  MATERIAL_DOCUMENT_ACCEPT,
+  MATERIAL_DOCUMENT_HELPER,
+} from "./Husbandry.constants";
+import ServiceAttachmentsList from "../../appointment/AttachmentsList";
 import { splitApiDateTimeParts, nextDayOf } from "@/shared/helpers/dateTimeFieldUtils";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import LocationAutocomplete from "./LocationAutocomplete";
@@ -1222,303 +1233,343 @@ const LandingNoteContent = ({ formValues, cardColor }) => {
 
   const editingNoteLabel = editingNote?.landingNoteNo || editingNote?.landing_note_no || "";
 
+  const clearFormError = (key) => {
+    if (!formErrors[key]) return;
+    setFormErrors((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
   // Left-hand edit card body (was the Edit modal body).
+  // Field layout follows the shared husbandry service pattern:
+  // FormGroup → FormField / FieldRow, transport-date-time-field, CheckboxField,
+  // shared AttachmentsList for documents, Quill remarks.
   const renderFormBody = () => (
-        <form id="landingNoteForm" className="material-edit-form material-note-card-form" onSubmit={handleSubmit}>
+    <form id="landingNoteForm" className="material-edit-form material-note-card-form" onSubmit={handleSubmit}>
+      <FormGroup icon="calendar" label="Basic Details" accent={MATERIAL_ACCENT}>
+        <FieldRow>
+          <FormField label="Date *">
+            <div className="transport-date-time-field">
+              <DateTimePickerField
+                dateValue={formData.landing_date}
+                timeValue={formData.landing_time}
+                onDateTimeChange={(v) => {
+                  setFormData((p) => ({ ...p, landing_date: v.date, landing_time: v.time }));
+                  clearFormError("landing_date");
+                }}
+                dateFieldName="landing_date"
+                timeFieldName="landing_time"
+                placeholder="Select date and time"
+                minDate={editMinDate}
+              />
+            </div>
+            <FieldError message={formErrors.landing_date} />
+          </FormField>
 
-          {/* Basic Details */}
-          <FormGroup icon="calendar" label="Basic Details" accent={MATERIAL_ACCENT}>
-            <div className="row g-2 mb-3">
-              <div className="col-md-6">
-                <FormField label="Date *">
-                  <DateTimePickerField
-                    dateValue={formData.landing_date}
-                    timeValue={formData.landing_time}
-                    onDateTimeChange={(v) => {
-                      setFormData((p) => ({ ...p, landing_date: v.date, landing_time: v.time }));
-                      if (formErrors.landing_date) setFormErrors((p) => { const n = { ...p }; delete n.landing_date; return n; });
-                    }}
-                    dateFieldName="landing_date"
-                    timeFieldName="landing_time"
-                    placeholder="DD/MM/YYYY HH:mm"
-                    minDate={editMinDate}
-                  />
-                </FormField>
-                {formErrors.landing_date && <span className="text-danger small">{formErrors.landing_date}</span>}
+          <FormField label="Warehouse">
+            <FormSelect
+              value={formData.warehouse_id}
+              onChange={(e) => setFormData((p) => ({ ...p, warehouse_id: e.target.value }))}
+              options={warehouseOptions}
+              placeholder="Select warehouse..."
+              disabled
+            />
+          </FormField>
+        </FieldRow>
+
+        <FieldRow>
+          <FormField label="Received From *">
+            <FormInput
+              type="text"
+              value={formData.received_from}
+              onChange={(e) => {
+                setFormData((p) => ({ ...p, received_from: e.target.value }));
+                clearFormError("received_from");
+              }}
+              placeholder="Enter received from..."
+            />
+            <FieldError message={formErrors.received_from} />
+          </FormField>
+
+          <FormField label="Location *">
+            <FormInput
+              type="text"
+              value={formData.location}
+              onChange={(e) => {
+                setFormData((p) => ({ ...p, location: e.target.value }));
+                clearFormError("location");
+              }}
+              placeholder="Enter location..."
+            />
+            <FieldError message={formErrors.location} />
+          </FormField>
+        </FieldRow>
+
+        <FormField label="Signature">
+          <FormInput
+            type="text"
+            value={formData.signature}
+            onChange={(e) => setFormData((p) => ({ ...p, signature: e.target.value }))}
+            placeholder="Enter signature..."
+          />
+        </FormField>
+      </FormGroup>
+
+      {formData.items.length > 0 && (
+        <FormGroup icon="list" label="Order Items" accent={MATERIAL_ACCENT}>
+          {formData.items.map((item, index) => (
+            <div key={item.id} className="landing-edit-item-card material-item-card">
+              <div
+                className={`landing-edit-item-header${expandedEditItems[item.id] ? " landing-edit-item-header--expanded" : ""}`}
+                onClick={() => toggleEditItemExpand(item.id)}
+              >
+                <span className="landing-edit-item-title-text">
+                  Item {index + 1}{item.order_no ? ` — ${item.order_no}` : ""}
+                </span>
+                <svg
+                  width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  className={`landing-edit-chevron${expandedEditItems[item.id] ? " landing-edit-chevron--open" : ""}`}
+                >
+                  <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </div>
-              <div className="col-md-6">
-                <FormField label="Warehouse">
-                  <FormSelect value={formData.warehouse_id} onChange={(e) => setFormData((p) => ({ ...p, warehouse_id: e.target.value }))} options={warehouseOptions} placeholder="Select warehouse" disabled />
-                </FormField>
-              </div>
-            </div>
-            <div className="row g-2 mb-3">
-              <div className="col-md-6">
-                <FormField label="Received From *">
-                  <FormInput type="text" value={formData.received_from} onChange={(e) => { setFormData((p) => ({ ...p, received_from: e.target.value })); if (formErrors.received_from) setFormErrors((p) => { const n = { ...p }; delete n.received_from; return n; }); }} placeholder="Enter received from..." />
-                </FormField>
-                {formErrors.received_from && <span className="text-danger small">{formErrors.received_from}</span>}
-              </div>
-              <div className="col-md-6">
-                <FormField label="Location *">
-                  <FormInput type="text" value={formData.location} onChange={(e) => { setFormData((p) => ({ ...p, location: e.target.value })); if (formErrors.location) setFormErrors((p) => { const n = { ...p }; delete n.location; return n; }); }} placeholder="Enter location..." />
-                </FormField>
-                {formErrors.location && <span className="text-danger small">{formErrors.location}</span>}
-              </div>
-            </div>
-            <div className="row g-2 mb-3">
-              <div className="col-md-12">
-                <FormField label="Signature">
-                  <FormInput type="text" value={formData.signature} onChange={(e) => setFormData((p) => ({ ...p, signature: e.target.value }))} placeholder="Enter signature..." />
-                </FormField>
-              </div>
-            </div>
-            <div className="row g-2 mb-3">
-              <div className="col-md-12">
-                <FormField label="Remarks">
-                  <ReactQuillEditor
-                    key={editorKey}
-                    value={formData.remarks}
-                    onChange={(e) => setFormData((p) => ({ ...p, remarks: e.target.value }))}
-                    placeholder="Enter remarks..."
-                    name="remarks"
-                  />
-                </FormField>
-              </div>
-            </div>
-            <div className="row g-2">
-              <div className="col-md-12">
-                <FormField label="Documents">
-                  {formData.existingDocuments?.length > 0 && (
-                    <div className="landing-doc-list mb-2">
-                      {formData.existingDocuments.map((doc, i) => {
-                        const fileName = doc.file_name || doc.name || `File ${i + 1}`;
-                        const fileUrl = getFileUrl(doc.file_path || "");
-                        const isImg = isImageFile(fileName);
-                        return (
-                          <div key={i} className="landing-doc-card">
-                            {isImg ? (
-                              <img src={fileUrl} alt={fileName} className="landing-doc-thumbnail" />
-                            ) : (
-                              <div className="landing-doc-icon">
-                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#00368c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                  <path d="M14 2V8H20" stroke="#00368c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                              </div>
-                            )}
-                            <div className="landing-doc-info">
-                              <div className="landing-doc-name">{fileName}</div>
-                            </div>
-                            <a href={fileUrl} target="_blank" rel="noreferrer" className="landing-doc-view-btn">View</a>
-                            <button
-                              type="button"
-                              className="document-file-preview-remove"
-                              onClick={() => handleEditExistingDocumentRemove(i)}
-                              title="Remove file"
-                            >
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            </button>
-                          </div>
-                        );
-                      })}
+
+              {expandedEditItems[item.id] && (
+                <div className="landing-edit-item-body">
+                  {/* Read-only details carried over from the inbound order */}
+                  <dl className="material-item-info">
+                    <div>
+                      <dt>PO/DO</dt>
+                      <dd>{item.po_no || "—"}</dd>
                     </div>
-                  )}
-                  <AttachmentsList
-                    attachments={formData.documents || []}
-                    onRemove={handleEditDocumentsRemove}
-                    cardColor={cardColor}
-                    isDragging={isDraggingEditDocuments}
-                    onDragEnter={handleEditDocumentsDragEnter}
-                    onDragLeave={handleEditDocumentsDragLeave}
-                    onDragOver={handleEditDocumentsDragOver}
-                    onDrop={handleEditDocumentsDrop}
-                    fileInputRef={editDocInputRef}
-                    onFileInputChange={handleEditDocumentsFileInputChange}
-                  />
-                </FormField>
-              </div>
-            </div>
-          </FormGroup>
+                    <div>
+                      <dt>Package Type</dt>
+                      <dd>{item.package_type || "—"}</dd>
+                    </div>
+                    <div className="material-item-info__wide">
+                      <dt>Description</dt>
+                      <dd>{item.description || "—"}</dd>
+                    </div>
+                  </dl>
 
-          {/* Order Items */}
-          {formData.items.length > 0 && (
-            <FormGroup icon="list" label="Order Items" accent={MATERIAL_ACCENT}>
-              {formData.items.map((item, index) => (
-                <div key={item.id} className="landing-edit-item-card">
-                  <div
-                    className={`landing-edit-item-header${expandedEditItems[item.id] ? " landing-edit-item-header--expanded" : ""}`}
-                    onClick={() => toggleEditItemExpand(item.id)}
-                  >
-                    <span className="fw-semibold landing-edit-item-title-text">
-                      Item {index + 1}{item.order_no ? ` — ${item.order_no}` : ""}
-                    </span>
-                    <svg
-                      width="20" height="20" viewBox="0 0 24 24" fill="none"
-                      className={`landing-edit-chevron${expandedEditItems[item.id] ? " landing-edit-chevron--open" : ""}`}
-                    >
-                      <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
+                  <FieldRow>
+                    <FormField label="Quantity *">
+                      <FormInput
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => {
+                          handleEditItemChange(item.id, "quantity", e.target.value);
+                          clearFormError(`item_${index}_qty`);
+                        }}
+                        placeholder="Enter quantity..."
+                        disabled
+                      />
+                      <FieldError message={formErrors[`item_${index}_qty`]} />
+                    </FormField>
 
-                  {expandedEditItems[item.id] && (
-                    <div className="landing-edit-item-body">
-                      {/* Display-only info */}
-                      <div className="row g-2 mb-3">
-                        <div className="col-md-4">
-                          <div className="landing-edit-item-info-label">PO/DO</div>
-                          <div className="landing-edit-item-info-value">{item.po_no || "-"}</div>
-                        </div>
-                        <div className="col-md-4">
-                          <div className="landing-edit-item-info-label">Package Type</div>
-                          <div className="landing-edit-item-info-value">{item.package_type || "-"}</div>
-                        </div>
-                        <div className="col-md-4">
-                          <div className="landing-edit-item-info-label">Description</div>
-                          <div className="landing-edit-item-info-value">{item.description || "-"}</div>
-                        </div>
+                    <FormField label="Slot No">
+                      <FormSelect
+                        value={item.slot_no}
+                        onChange={(e) => handleEditItemChange(item.id, "slot_no", e.target.value)}
+                        options={slotOptions}
+                        placeholder="Select slot..."
+                      />
+                    </FormField>
+                  </FieldRow>
+
+                  <FieldRow>
+                    <FormField label="Reason">
+                      <FormSelect
+                        value={item.reason}
+                        onChange={(e) => handleEditItemChange(item.id, "reason", e.target.value)}
+                        options={reasonOptions}
+                        placeholder="Select reason..."
+                      />
+                    </FormField>
+
+                    <FormField label="Dispatch Date *">
+                      <div className="transport-date-time-field">
+                        <DateTimePickerField
+                          dateValue={item.dispatch_date}
+                          timeValue={item.dispatch_time}
+                          onDateTimeChange={(v) => {
+                            handleEditItemChange(item.id, "dispatch_date", v.date);
+                            handleEditItemChange(item.id, "dispatch_time", v.time);
+                          }}
+                          dateFieldName="dispatch_date"
+                          timeFieldName="dispatch_time"
+                          placeholder="Select date and time"
+                        />
                       </div>
+                    </FormField>
+                  </FieldRow>
 
-                      {/* Editable fields */}
-                      <div className="border-top pt-3">
-                        <div className="row g-2 mb-2">
-                          <div className="col-md-3">
-                            <FormField label="Quantity *">
-                              <FormInput
-                                type="number"
-                                value={item.quantity}
-                                onChange={(e) => {
-                                  handleEditItemChange(item.id, "quantity", e.target.value);
-                                  if (formErrors[`item_${index}_qty`]) setFormErrors((p) => { const n = { ...p }; delete n[`item_${index}_qty`]; return n; });
-                                }}
-                                placeholder="Enter quantity..."
-                                disabled
-                              />
-                            </FormField>
-                            {formErrors[`item_${index}_qty`] && <span className="text-danger landing-edit-error-msg">{formErrors[`item_${index}_qty`]}</span>}
-                          </div>
-                          <div className="col-md-3">
-                            <FormField label="Slot No">
-                              <FormSelect
-                                value={item.slot_no}
-                                onChange={(e) => handleEditItemChange(item.id, "slot_no", e.target.value)}
-                                options={slotOptions}
-                                placeholder="Select slot..."
-                              />
-                            </FormField>
-                          </div>
-                          <div className="col-md-3">
-                            <FormField label="Reason">
-                              <FormSelect
-                                value={item.reason}
-                                onChange={(e) => handleEditItemChange(item.id, "reason", e.target.value)}
-                                options={reasonOptions}
-                                placeholder="Select reason..."
-                              />
-                            </FormField>
-                          </div>
-                          <div className="col-md-3">
-                            <FormField label="Dispatch Date *" className="dispatch-date-plain">
-                              <DateTimePickerField
-                                dateValue={item.dispatch_date}
-                                timeValue={item.dispatch_time}
-                                onDateTimeChange={(v) => {
-                                  handleEditItemChange(item.id, "dispatch_date", v.date);
-                                  handleEditItemChange(item.id, "dispatch_time", v.time);
-                                }}
-                                dateFieldName="dispatch_date"
-                                timeFieldName="dispatch_time"
-                                placeholder="DD/MM/YYYY HH:mm"
-                              />
-                            </FormField>
-                          </div>
-                        </div>
+                  <FormField>
+                    <CheckboxField
+                      label="Transportation required"
+                      checked={item.transportation_required}
+                      onChange={(e) => handleEditItemChange(item.id, "transportation_required", e.target.checked)}
+                      disabled
+                    />
+                  </FormField>
 
-                        {/* Transportation */}
-                        <div className="mt-2">
-                          <label className="d-flex align-items-center gap-2 mb-2">
-                            <input
-                              type="checkbox"
-                              className="form-check-input"
-                              checked={item.transportation_required}
-                              onChange={(e) => handleEditItemChange(item.id, "transportation_required", e.target.checked)}
-                              disabled
-                            />
-                            <span className="fw-semibold landing-edit-transport-label-text">Transportation Required</span>
-                          </label>
-                          {item.transportation_required && (
-                            <div className="row g-2">
-                              <div className="col-md-4">
-                                <FormField label="Vehicle Type *">
-                                  <FormSelect
-                                    value={item.typeOfVehicle}
-                                    onChange={(e) => { handleEditItemChange(item.id, "typeOfVehicle", e.target.value); if (formErrors[`item_${index}_veh`]) setFormErrors((p) => { const n = { ...p }; delete n[`item_${index}_veh`]; return n; }); }}
-                                    options={mergeOptionForValue(vehicleOptions, item.typeOfVehicle)}
-                                    placeholder="Select vehicle..."
-                                    disabled
-                                  />
-                                </FormField>
-                                {formErrors[`item_${index}_veh`] && <span className="text-danger landing-edit-error-msg">{formErrors[`item_${index}_veh`]}</span>}
-                              </div>
-                              <div className="col-md-4">
-                                <FormField label="From Location *">
-                                  <FormSelect
-                                    value={item.fromLocation}
-                                    onChange={(e) => { handleEditItemChange(item.id, "fromLocation", e.target.value); if (formErrors[`item_${index}_from`]) setFormErrors((p) => { const n = { ...p }; delete n[`item_${index}_from`]; return n; }); }}
-                                    options={mergeOptionForValue(locationOptions, item.fromLocation)}
-                                    placeholder="From location..."
-                                    disabled
-                                  />
-                                </FormField>
-                                {formErrors[`item_${index}_from`] && <span className="text-danger landing-edit-error-msg">{formErrors[`item_${index}_from`]}</span>}
-                              </div>
-                              <div className="col-md-4">
-                                <FormField label="Pick-Up From *">
-                                  <LocationAutocomplete
-                                    value={item.pickUpFrom}
-                                    onChange={(e) => { handleEditItemChange(item.id, "pickUpFrom", e.target.value); if (formErrors[`item_${index}_pickup`]) setFormErrors((p) => { const n = { ...p }; delete n[`item_${index}_pickup`]; return n; }); }}
-                                    placeholder="Pick-up location..."
-                                  />
-                                </FormField>
-                                {formErrors[`item_${index}_pickup`] && <span className="text-danger landing-edit-error-msg">{formErrors[`item_${index}_pickup`]}</span>}
-                              </div>
-                              <div className="col-md-6">
-                                <FormField label="To Location *">
-                                  <FormSelect
-                                    value={item.toLocation}
-                                    onChange={(e) => { handleEditItemChange(item.id, "toLocation", e.target.value); if (formErrors[`item_${index}_to`]) setFormErrors((p) => { const n = { ...p }; delete n[`item_${index}_to`]; return n; }); }}
-                                    options={mergeOptionForValue(locationOptions, item.toLocation)}
-                                    placeholder="To location..."
-                                    disabled
-                                  />
-                                </FormField>
-                                {formErrors[`item_${index}_to`] && <span className="text-danger landing-edit-error-msg">{formErrors[`item_${index}_to`]}</span>}
-                              </div>
-                              <div className="col-md-6">
-                                <FormField label="Driver *">
-                                  <FormSelect
-                                    value={item.driverName}
-                                    onChange={(e) => { handleEditItemChange(item.id, "driverName", e.target.value); if (formErrors[`item_${index}_drv`]) setFormErrors((p) => { const n = { ...p }; delete n[`item_${index}_drv`]; return n; }); }}
-                                    options={mergeOptionForValue(driverOptions, item.driverName)}
-                                    placeholder="Select driver..."
-                                    disabled
-                                  />
-                                </FormField>
-                                {formErrors[`item_${index}_drv`] && <span className="text-danger landing-edit-error-msg">{formErrors[`item_${index}_drv`]}</span>}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                  {item.transportation_required && (
+                    <div className="material-item-subfields">
+                      <FieldRow>
+                        <FormField label="Vehicle Type *">
+                          <FormSelect
+                            value={item.typeOfVehicle}
+                            onChange={(e) => {
+                              handleEditItemChange(item.id, "typeOfVehicle", e.target.value);
+                              clearFormError(`item_${index}_veh`);
+                            }}
+                            options={mergeOptionForValue(vehicleOptions, item.typeOfVehicle)}
+                            placeholder="Select vehicle..."
+                            disabled
+                          />
+                          <FieldError message={formErrors[`item_${index}_veh`]} />
+                        </FormField>
+
+                        <FormField label="Driver *">
+                          <FormSelect
+                            value={item.driverName}
+                            onChange={(e) => {
+                              handleEditItemChange(item.id, "driverName", e.target.value);
+                              clearFormError(`item_${index}_drv`);
+                            }}
+                            options={mergeOptionForValue(driverOptions, item.driverName)}
+                            placeholder="Select driver..."
+                            disabled
+                          />
+                          <FieldError message={formErrors[`item_${index}_drv`]} />
+                        </FormField>
+                      </FieldRow>
+
+                      <FieldRow>
+                        <FormField label="From Location *">
+                          <FormSelect
+                            value={item.fromLocation}
+                            onChange={(e) => {
+                              handleEditItemChange(item.id, "fromLocation", e.target.value);
+                              clearFormError(`item_${index}_from`);
+                            }}
+                            options={mergeOptionForValue(locationOptions, item.fromLocation)}
+                            placeholder="Select from..."
+                            disabled
+                          />
+                          <FieldError message={formErrors[`item_${index}_from`]} />
+                        </FormField>
+
+                        <FormField label="To Location *">
+                          <FormSelect
+                            value={item.toLocation}
+                            onChange={(e) => {
+                              handleEditItemChange(item.id, "toLocation", e.target.value);
+                              clearFormError(`item_${index}_to`);
+                            }}
+                            options={mergeOptionForValue(locationOptions, item.toLocation)}
+                            placeholder="Select to..."
+                            disabled
+                          />
+                          <FieldError message={formErrors[`item_${index}_to`]} />
+                        </FormField>
+                      </FieldRow>
+
+                      <FormField label="Pick-Up From *">
+                        <LocationAutocomplete
+                          value={item.pickUpFrom}
+                          onChange={(e) => {
+                            handleEditItemChange(item.id, "pickUpFrom", e.target.value);
+                            clearFormError(`item_${index}_pickup`);
+                          }}
+                          placeholder="Enter pick-up location..."
+                        />
+                        <FieldError message={formErrors[`item_${index}_pickup`]} />
+                      </FormField>
                     </div>
                   )}
                 </div>
-              ))}
-            </FormGroup>
+              )}
+            </div>
+          ))}
+        </FormGroup>
+      )}
+
+      <FormGroup icon="folder" label="Documents" accent={MATERIAL_ACCENT}>
+        <FormField className="cf-field-full">
+          {formData.existingDocuments?.length > 0 && (
+            <div className="landing-doc-list mb-2">
+              {formData.existingDocuments.map((doc, i) => {
+                const fileName = doc.file_name || doc.name || `File ${i + 1}`;
+                const fileUrl = getFileUrl(doc.file_path || "");
+                const isImg = isImageFile(fileName);
+                return (
+                  <div key={i} className="landing-doc-card">
+                    {isImg ? (
+                      <img src={fileUrl} alt={fileName} className="landing-doc-thumbnail" />
+                    ) : (
+                      <div className="landing-doc-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="#00368c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M14 2V8H20" stroke="#00368c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+                    )}
+                    <div className="landing-doc-info">
+                      <div className="landing-doc-name">{fileName}</div>
+                    </div>
+                    <a href={fileUrl} target="_blank" rel="noreferrer" className="landing-doc-view-btn">View</a>
+                    <button
+                      type="button"
+                      className="document-file-preview-remove"
+                      onClick={() => handleEditExistingDocumentRemove(i)}
+                      title="Remove file"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           )}
-        </form>
+          <div className="transport-upload-box">
+            <ServiceAttachmentsList
+              attachments={formData.documents || []}
+              onAdd={() => {}}
+              onRemove={handleEditDocumentsRemove}
+              cardColor={cardColor}
+              isDragging={isDraggingEditDocuments}
+              onDragEnter={handleEditDocumentsDragEnter}
+              onDragLeave={handleEditDocumentsDragLeave}
+              onDragOver={handleEditDocumentsDragOver}
+              onDrop={handleEditDocumentsDrop}
+              fileInputRef={editDocInputRef}
+              onFileInputChange={handleEditDocumentsFileInputChange}
+              accept={MATERIAL_DOCUMENT_ACCEPT}
+              helperText={MATERIAL_DOCUMENT_HELPER}
+            />
+          </div>
+        </FormField>
+      </FormGroup>
+
+      <FormGroup icon="notebook" label="Remarks" accent={MATERIAL_ACCENT}>
+        <div className="cgpass-remarks">
+          <FormField>
+            <ReactQuillEditor
+              key={editorKey}
+              value={formData.remarks}
+              onChange={(e) => setFormData((p) => ({ ...p, remarks: e.target.value }))}
+              placeholder="Enter remarks..."
+              name="remarks"
+            />
+          </FormField>
+        </div>
+      </FormGroup>
+    </form>
   );
 
   // Left-hand edit card footer (was the modal footer).
