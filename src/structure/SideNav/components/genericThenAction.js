@@ -143,6 +143,15 @@ export const parseFilterConditions = (conditions = []) => conditions.map((c, ind
   positionColumns: String(c.position_value ?? '').split(',').map((id) => id.trim()).filter(Boolean).map((id) => ({ id, name: '' })),
 }));
 
+// One value of a create-card action: custom fields by id, the rest under their own property_key.
+const cardFieldProperty = (key, value) => (key.startsWith('custom-')
+  ? { custom_field_id: Number(key.slice('custom-'.length)), property_value: value }
+  : asProperty(key, value));
+
+const customFieldValues = (properties) => Object.fromEntries(properties
+  .filter((p) => p.custom_field_id != null)
+  .map((p) => [`custom-${p.custom_field_id}`, String(p.property_value ?? '')]));
+
 // One then_action per generic trigger action the user filled in. Regular fields go out as
 // field_key + field_value pairs, custom fields as custom_field_id + property_value, and a
 // board position as the four target_* ids (guide 5.4 / 5.5 / 5.6).
@@ -158,7 +167,7 @@ export const buildGenericThenActions = (triggerActions, genericActionValues) => 
         const cardProperties = [];
         if (card.title?.trim()) cardProperties.push(asProperty('card_title', card.title.trim()));
         Object.entries(card.fields).forEach(([key, fieldValue]) => {
-          if (fieldValue !== '' && fieldValue != null) cardProperties.push(asProperty(key, fieldValue));
+          if (fieldValue !== '' && fieldValue != null) cardProperties.push(cardFieldProperty(key, fieldValue));
         });
         Object.entries(POSITION_PROPERTY_KEY).forEach(([stateKey, propertyKey]) => {
           if (card.position[stateKey]) cardProperties.push(asProperty(propertyKey, card.position[stateKey]));
@@ -224,7 +233,7 @@ export const buildGenericThenActions = (triggerActions, genericActionValues) => 
 export const parseGenericThenAction = (savedAction, groupType) => {
   if (groupType === CREATE_CARDS_GROUP_TYPE) {
     const props = savedAction.properties ?? [];
-    const cardFields = {};
+    const cardFields = customFieldValues(props);
     props.forEach((p) => {
       if (p.property_key && !CREATE_CARDS_RESERVED_KEYS.includes(p.property_key)) cardFields[p.property_key] = String(p.property_value ?? '');
     });
@@ -309,6 +318,7 @@ export const makeCreateCardAction = (relationType, label) => ({
   position: { ...EMPTY_BOARD_POSITION },
   fields: {},
   copyKeys: [],
+  copyCustomKeys: [],
 });
 
 export const buildCreateCardThenActions = (actionTypeId, createCardActions) =>
@@ -319,20 +329,21 @@ export const buildCreateCardThenActions = (actionTypeId, createCardActions) =>
       if (action.position[stateKey]) properties.push(asProperty(propertyKey, action.position[stateKey]));
     });
     Object.entries(action.fields).forEach(([key, fieldValue]) => {
-      if (fieldValue !== '' && fieldValue != null) properties.push(asProperty(key, fieldValue));
+      if (fieldValue !== '' && fieldValue != null) properties.push(cardFieldProperty(key, fieldValue));
     });
     if (action.copyKeys.length > 0) properties.push(asProperty('copy_regular_fields', action.copyKeys.join(',')));
+    if (action.copyCustomKeys.length > 0) properties.push(asProperty('copy_custom_fields', action.copyCustomKeys.join(',')));
     const entry = { action_type_id: actionTypeId, properties };
     if (action.thenActionId != null) entry.then_action_id = action.thenActionId;
     return entry;
   });
 
-const CREATE_CARD_RESERVED_KEYS = ['relation_type', 'card_title', 'copy_regular_fields', ...Object.values(POSITION_PROPERTY_KEY)];
+const CREATE_CARD_RESERVED_KEYS = ['relation_type', 'card_title', 'copy_regular_fields', 'copy_custom_fields', ...Object.values(POSITION_PROPERTY_KEY)];
 
 export const parseCreateCardThenAction = (savedAction, label) => {
   const properties = savedAction.properties ?? [];
   const get = (key) => properties.find((p) => p.property_key === key)?.property_value ?? '';
-  const fields = {};
+  const fields = customFieldValues(properties);
   properties.forEach((p) => {
     if (p.property_key && !CREATE_CARD_RESERVED_KEYS.includes(p.property_key)) fields[p.property_key] = String(p.property_value ?? '');
   });
@@ -344,5 +355,6 @@ export const parseCreateCardThenAction = (savedAction, label) => {
     position: positionFromProperties(properties),
     fields,
     copyKeys: String(get('copy_regular_fields')).split(',').map((k) => k.trim()).filter(Boolean),
+    copyCustomKeys: String(get('copy_custom_fields')).split(',').map((k) => k.trim()).filter(Boolean),
   };
 };

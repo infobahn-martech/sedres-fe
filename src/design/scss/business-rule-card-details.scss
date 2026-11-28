@@ -1,0 +1,580 @@
+@import 'partials/partials';
+
+// Card details editor of the THEN create-card action, sized like the client's card.
+// Scoped under .br-card-details so the shared modal and form styles do not override it.
+$card-section: #eaecee;
+
+.br-card-details-dialog {
+  max-width: 1360px !important;
+  width: 90vw !important;
+  height: 94vh !important;
+  margin: 3vh auto !important;
+}
+
+.card-property-match-modal .br-card-details-dialog .modal-content {
+  height: 94vh;
+  max-height: 94vh;
+  // The template button sits half outside the top-left corner.
+  overflow: visible !important;
+}
+
+.br-card-details {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--surface-primary);
+  font-family: $font-primary;
+  color: $txtColor;
+
+  .br-card-details-title-input {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    padding: 11px 18px;
+    border: 1px solid var(--border-primary);
+    border-radius: 10px;
+    outline: none;
+    font-size: 15px;
+    color: $txtColor;
+  }
+
+  .br-card-details-round {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border: 1px solid var(--border-primary);
+    border-radius: 50%;
+    background: var(--surface-primary);
+    color: $txtColor;
+
+    &:disabled {
+      cursor: not-allowed;
+      color: var(--text-muted);
+    }
+  }
+
+  .br-card-details-body {
+    flex: 1;
+    display: flex;
+    gap: 16px;
+    min-height: 0;
+    padding: 18px 16px;
+  }
+
+  .br-card-details-description {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    resize: none;
+    padding: 16px 22px;
+    border: 1px solid var(--border-primary);
+    border-radius: 10px;
+    font-size: 14px;
+    color: $txtColor;
+    outline: none;
+  }
+
+  .br-card-details-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 430px;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  .br-card-details-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 8px 16px;
+    border-radius: 24px;
+    background: $card-section;
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .br-card-details-section-toggle {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: none;
+    background: transparent;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+  }
+
+  .br-card-details-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #333333;
+    color: var(--text-inverse);
+  }
+
+  .br-card-details-section-action {
+    border: none;
+    background: transparent;
+    padding: 4px;
+    color: $txtColor;
+
+    &:disabled {
+      cursor: not-allowed;
+      color: var(--text-muted);
+    }
+  }
+
+  .br-card-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 16px;
+    padding: 0 16px;
+  }
+
+  .br-card-details-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+
+    label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    &.br-card-details-field--full {
+      grid-column: 1 / -1;
+    }
+
+    input.form-control,
+    select.form-select {
+      height: 40px;
+    }
+  }
+
+  .br-card-details-field-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .br-card-details-custom {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 16px;
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      border-top: 1px solid var(--border-primary);
+    }
+  }
+
+  .br-card-details-custom-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 16px;
+    border: 1px solid var(--border-primary);
+    border-radius: 999px;
+    background: var(--surface-primary);
+    font-size: 13px;
+    font-weight: 600;
+    color: $txtColor;
+  }
+
+  .br-card-details-subtask {
+    min-height: 60px;
+    margin: 0 16px;
+    padding: 12px 16px;
+    resize: none;
+    flex-shrink: 0;
+    border: 1px solid var(--border-primary);
+    border-radius: 10px;
+    font-size: 13px;
+  }
+
+  .br-card-details-footer {
+    flex-shrink: 0;
+    padding: 0 32px;
+    border-top: 1px solid var(--border-primary);
+  }
+
+  .br-card-details-breadcrumb {
+    padding: 8px 0;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .br-card-details-link {
+    border: none;
+    background: transparent;
+    padding: 0;
+    color: $colorPrimary;
+    text-decoration: underline;
+  }
+
+  .br-card-details-footer-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 0;
+  }
+
+  .br-card-details-stepper {
+    flex: 1;
+    display: flex;
+    min-width: 0;
+    overflow-x: auto;
+  }
+
+  // Circles joined by a line; only the picked column shows its name.
+  .br-card-details-step {
+    position: relative;
+    flex: 1 0 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    padding: 0;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 12px;
+      left: 0;
+      right: 0;
+      border-top: 1px solid var(--border-primary);
+    }
+
+    svg {
+      position: relative;
+      border-radius: 50%;
+      background: var(--surface-primary);
+    }
+  }
+
+  .br-card-details-step-label {
+    min-height: 15px;
+    max-width: 90px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: $txtColor;
+  }
+}
+
+@media (max-width: 900px) {
+  .br-card-details {
+    .br-card-details-body {
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .br-card-details-description {
+      flex: 0 0 200px;
+    }
+
+    .br-card-details-sidebar {
+      width: 100%;
+      overflow: visible;
+    }
+  }
+}
+
+// The picked card color is drawn behind the common header as an SVG fill.
+.br-card-details .br-card-details-header {
+  position: relative;
+
+  .br-card-details-header-fill {
+    position: absolute;
+    inset: 0;
+  }
+
+  .card-property-match-modal-title,
+  .br-card-details-header-actions {
+    position: relative;
+  }
+
+  .br-card-details-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.br-card-details .br-card-details-color-panel {
+  position: absolute;
+  top: 70px;
+  right: 24px;
+  z-index: 10;
+}
+
+.br-card-details .br-card-details-priority-panel {
+  position: absolute;
+  top: 70px;
+  right: 24px;
+  z-index: 10;
+  width: 260px;
+  padding: 14px;
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  background: var(--surface-primary);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+}
+
+.br-card-details .br-card-details-header {
+  gap: 16px;
+  border-radius: 8px 8px 0 0;
+}
+
+.br-card-details .br-card-details-corner {
+  position: absolute;
+  top: -20px;
+  left: -20px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+// Header buttons: white circles sitting half above the card's top edge.
+.br-card-details .br-card-details-header {
+  min-height: 80px;
+
+  .br-card-details-header-actions {
+    position: absolute;
+    top: -16px;
+    right: -16px;
+    z-index: 2;
+  }
+
+  .br-card-details-header-actions button {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: var(--surface-primary);
+    color: $txtColor;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+
+    &:disabled {
+      opacity: 1;
+      color: var(--text-muted);
+    }
+  }
+}
+
+// Every card field reads as a 40px box, whatever control its type draws.
+.br-card-details .br-card-details-field {
+  .br-condition-operator-wrap,
+  .br-update-user-wrap,
+  .br-color-condition-wrap {
+    width: 100%;
+  }
+
+  .br-condition-value-text,
+  .br-nonworking-trigger,
+  .br-card-details-user {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 40px;
+    padding: 6px 14px;
+    border: 1px solid var(--border-primary);
+    border-radius: 10px;
+    background: var(--surface-primary);
+    text-align: left;
+  }
+
+  .br-card-details-user {
+    justify-content: flex-start;
+    gap: 8px;
+    padding-left: 0;
+    border: none;
+    color: $txtColor;
+
+    &:disabled {
+      cursor: not-allowed;
+    }
+  }
+
+  .br-card-details-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #eaecee;
+  }
+}
+
+// One text size for every card field control.
+.br-card-details .br-card-details-field {
+  input.form-control,
+  input.business-rule-form-condition-input,
+  select.form-select,
+  textarea,
+  .br-condition-value-text,
+  .br-nonworking-trigger,
+  .br-card-details-user,
+  .br-color-condition-trigger {
+    font-size: 13px;
+  }
+}
+
+// Boxed controls look the same: no link underline, no grey disabled fill.
+.br-card-details .br-card-details-field {
+  .br-condition-value-text,
+  .br-condition-value-text:hover,
+  .br-condition-value-text:focus {
+    text-decoration: none;
+  }
+
+  select.form-select:disabled {
+    background-color: var(--surface-primary);
+    cursor: not-allowed;
+  }
+}
+
+.br-card-details .br-card-details-note {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0 16px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+// "+" of Card fields: a dropdown under the section bar.
+.br-card-details .br-card-details-add {
+  position: relative;
+  flex-shrink: 0;
+
+  .br-card-details-add-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    border: none;
+    background: transparent;
+    cursor: default;
+  }
+
+  .br-card-details-add-panel {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px 0;
+    border-radius: 24px;
+    background: var(--surface-primary);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.2);
+
+    input {
+      border: none;
+      outline: none;
+      padding: 6px 22px;
+      font-size: 13px;
+    }
+
+    > button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      border: none;
+      background: transparent;
+      padding: 8px 22px;
+      font-size: 13px;
+      text-align: left;
+      color: $txtColor;
+
+      &:hover {
+        background: var(--bg-secondary);
+      }
+    }
+  }
+}
+
+.br-card-details .br-card-details-header .br-card-details-heading {
+  position: relative;
+  flex: 1;
+
+  button {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: text;
+  }
+}
+
+// Smaller list text; the dot keeps one size however long the label wraps.
+.br-card-details .br-card-details-add .br-card-details-add-panel {
+  input,
+  > button {
+    font-size: 12px;
+  }
+
+  > button {
+    line-height: 1.35;
+
+    svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+  }
+}
+
+// Filter stays on top of the list as a boxed search field.
+.br-card-details .br-card-details-add .br-card-details-add-panel {
+  padding-top: 0;
+
+  input {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    flex-shrink: 0;
+    margin: 0 0 4px;
+    padding: 12px 22px;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--surface-primary);
+    color: $txtColor;
+  }
+}

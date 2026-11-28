@@ -8227,7 +8227,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                                 || action.label || action.relationType,
                             }}
                             catalog={createCardCatalog}
-                            collapsible
+                            triggerTypeId={rule.id}
                             templateSelectable
                             defaultBoardId={boardConditionRows.find((row) => row.boardId)?.boardId}
                             onChange={(next) => setCreateCardActions((prev) => prev.map((a) => (a.id === action.id ? { ...next, label: a.label } : a)))}

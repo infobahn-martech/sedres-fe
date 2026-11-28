@@ -1,26 +1,23 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
-import { FiPlus, FiTrash2, FiX } from 'react-icons/fi';
-import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
+import { FiX } from 'react-icons/fi';
 import useFormTemplateReducer from '../../../store/FormTemplateReducer';
 import InlineTextDropdown from './InlineTextDropdown';
-import BusinessRuleFieldValue from './BusinessRuleFieldValue';
 import MoveTargetAction from './MoveTargetAction';
-import ThenFieldPickerModal from './ThenFieldPickerModal';
+import CopyCardDetailsModal from './CopyCardDetailsModal';
+import CardDetailsModal from './CardDetailsModal';
 import '../../../design/scss/business-rule-generic-action.scss';
-import { getGenericFieldKey } from './genericThenAction';
 
-const OPTION_FIELD_TYPES = ['dropdown', 'radio', 'multiselect', 'checkbox'];
 const EMPTY_LIST = [];
 
 // One Create card / child / parent action (guide 5.7): title, where it is created (board
 // minimap), the card fields to set and the fields copied from this card. The lists of card
 // fields and copy fields come from get_then_action_fields; nothing is typed in the code.
-function CreateCardActionCard({ action, catalog, defaultBoardId, collapsible = false, templateSelectable = false, onChange, onRemove }) {
-  const { fieldDetailsByKey, getFieldDetails } = useBusinessRuleReducer((s) => s);
+function CreateCardActionCard({ action, catalog, triggerTypeId, defaultBoardId, templateSelectable = false, copyable = true, onChange, onRemove }) {
   const allTemplates = useFormTemplateReducer((s) => s.allTemplates);
   const getAllTemplates = useFormTemplateReducer((s) => s.getAllTemplates);
-  const [showFieldPicker, setShowFieldPicker] = useState(false);
+  const [showCopyDetails, setShowCopyDetails] = useState(false);
+  const [showCardDetails, setShowCardDetails] = useState(false);
 
   useEffect(() => {
     if (templateSelectable && allTemplates === null) getAllTemplates();
@@ -42,31 +39,22 @@ function CreateCardActionCard({ action, catalog, defaultBoardId, collapsible = f
   const cardFields = catalog?.cardFields ?? EMPTY_LIST;
   const copyFields = catalog?.copyFields ?? EMPTY_LIST;
 
-  useEffect(() => {
-    cardFields.forEach((field) => {
-      if (!OPTION_FIELD_TYPES.includes(field.field_type) || field.regular_field_id == null) return;
-      if (fieldDetailsByKey[`regular-${field.regular_field_id}`] === undefined) getFieldDetails('regular', field.regular_field_id);
-    });
-  }, [catalog]);
+  const withCustomProperties = templateSelectable && !action.templateId;
+  const titleCopyKey = copyFields.find((f) => String(f.field_label).trim().toLowerCase() === 'title')?.field_key;
+  const isTitleCopied = action.copyKeys.includes(titleCopyKey);
+
+  // Set once every regular field, or any custom field, is copied from the originator.
+  const allCopied = copyFields.length > 0 && copyFields.every((f) => action.copyKeys?.includes(f.field_key));
+  const showCopyNote = allCopied || Boolean(action.copyCustomKeys?.length);
 
   const set = (patch) => onChange({ ...action, ...patch });
-  const addedKeys = Object.keys(action.fields);
-  const addedFields = cardFields.filter((f) => addedKeys.includes(getGenericFieldKey(f)));
 
-  const getDetails = (field) => fieldDetailsByKey[`regular-${field.regular_field_id}`] ?? field;
-
-  const handleAddFields = (picked) => {
-    const next = { ...action.fields };
-    picked.forEach((f) => { next[getGenericFieldKey(f)] = ''; });
-    set({ fields: next });
-  };
-
-  const handleRemoveField = (key) => {
-    set({ fields: Object.fromEntries(Object.entries(action.fields).filter(([k]) => k !== key)) });
-  };
-
-  const toggleCopyKey = (key) => {
-    set({ copyKeys: action.copyKeys.includes(key) ? action.copyKeys.filter((k) => k !== key) : [...action.copyKeys, key] });
+  // The action as it was before the modals opened: closing without "Save details" puts it back.
+  const beforeEdit = useRef(action);
+  const cancelEdit = () => {
+    setShowCopyDetails(false);
+    setShowCardDetails(false);
+    onChange(beforeEdit.current);
   };
 
   return (
@@ -86,86 +74,54 @@ function CreateCardActionCard({ action, catalog, defaultBoardId, collapsible = f
             onChange={(templateId) => set({ templateId })}
           />
         </h5>
-      ) : collapsible ? (
-        <h5 className="business-rule-form-action-detail-title">{action.label}</h5>
       ) : (
-        <div className="br-link-card-header">
-          <span className="br-sticker-action-label">{action.label}</span>
-        </div>
+        <h5 className="business-rule-form-action-detail-title">{action.label}</h5>
       )}
 
+      {/* Custom-property cards always read "Configure details", which starts again at the board minimap. */}
       <MoveTargetAction
         embedded
-        emptyLabel={collapsible ? 'Configure details' : 'Choose where to create'}
+        cellOnly
+        emptyLabel="Configure details"
+        linkLabel={withCustomProperties ? 'Configure details' : ''}
         position={action.position}
         defaultBoardId={defaultBoardId}
-        onChange={(position) => set({ position })}
+        onChange={(position) => {
+          beforeEdit.current = action;
+          set({ position });
+          if (!withCustomProperties) return;
+          if (copyable) setShowCopyDetails(true);
+          else setShowCardDetails(true);
+        }}
       />
 
-      {!collapsible && (
-      <>
-
-      {addedFields.map((field) => {
-        const key = getGenericFieldKey(field);
-        return (
-          <div key={key} className="d-flex flex-column gap-1">
-            <span className="br-sticker-action-label">{field.field_label}</span>
-            <div className="br-link-card-value-row br-generic-action">
-              <div className="br-generic-action-value">
-                <BusinessRuleFieldValue
-                  details={getDetails(field)}
-                  value={action.fields[key] ?? ''}
-                  label={field.field_label}
-                  onChange={(next) => set({ fields: { ...action.fields, [key]: next } })}
-                />
-              </div>
-              <div className="business-rule-form-filter-row-actions">
-                <button
-                  type="button"
-                  className="business-rule-form-filter-row-delete"
-                  onClick={() => handleRemoveField(key)}
-                  aria-label={`Remove ${field.field_label}`}
-                >
-                  <FiTrash2 size={14} />
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-
-      {!collapsible && cardFields.length > 0 && (
-        <button type="button" className="business-rule-form-add-link" onClick={() => setShowFieldPicker(true)}>
-          <FiPlus size={14} aria-hidden />
-          Add new property
-        </button>
-      )}
-
-      {copyFields.length > 0 && (
-        <div className="d-flex flex-column gap-2">
-          <span className="br-sticker-action-label">Copy from this card</span>
-          {copyFields.map((field) => (
-            <label key={field.field_key} className="br-link-checkbox-row">
-              <input
-                type="checkbox"
-                checked={action.copyKeys.includes(field.field_key)}
-                onChange={() => toggleCopyKey(field.field_key)}
-              />
-              {field.field_label}
-            </label>
-          ))}
-        </div>
-      )}
-      </>
-      )}
-
-      <ThenFieldPickerModal
-        show={showFieldPicker}
-        fields={cardFields}
-        addedKeys={addedKeys}
-        onClose={() => setShowFieldPicker(false)}
-        onAdd={handleAddFields}
+      <CardDetailsModal
+        show={showCardDetails}
+        action={action}
+        cardFields={cardFields}
+        titleCopied={isTitleCopied}
+        showCopyNote={showCopyNote}
+        triggerTypeId={triggerTypeId}
+        // A typed title replaces copying it from the originator, so both are never sent.
+        onChange={(patch) => set(patch.title ? { ...patch, copyKeys: action.copyKeys.filter((k) => k !== titleCopyKey) } : patch)}
+        onSave={() => setShowCardDetails(false)}
+        onClose={cancelEdit}
       />
+
+      {copyable && <CopyCardDetailsModal
+        show={showCopyDetails}
+        copyFields={copyFields}
+        triggerTypeId={triggerTypeId}
+        boardId={defaultBoardId}
+        copyKeys={action.copyKeys}
+        copyCustomKeys={action.copyCustomKeys}
+        onClose={cancelEdit}
+        onContinue={(copyKeys, copyCustomKeys) => {
+          set({ copyKeys, copyCustomKeys });
+          setShowCopyDetails(false);
+          setShowCardDetails(true);
+        }}
+      />}
     </div>
   );
 }
@@ -177,12 +133,14 @@ CreateCardActionCard.propTypes = {
     position: PropTypes.object,
     fields: PropTypes.object,
     copyKeys: PropTypes.array,
+    copyCustomKeys: PropTypes.array,
     templateId: PropTypes.string,
   }).isRequired,
   catalog: PropTypes.object,
+  triggerTypeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  collapsible: PropTypes.bool,
   templateSelectable: PropTypes.bool,
+  copyable: PropTypes.bool,
   onChange: PropTypes.func.isRequired,
   onRemove: PropTypes.func.isRequired,
 };

@@ -11,7 +11,7 @@ const hasPosition = (position) => Boolean(position.boardId || position.workflowI
 
 // "Move card to / Choose where to move" card of the Move the card THEN action. The target is
 // picked on the Board Minimap; only ids are kept, the names shown here are looked up.
-function MoveTargetAction({ position, title = 'Move card to', defaultBoardId = '', embedded = false, startOpen = false, emptyLabel = 'Choose where to move', onChange }) {
+function MoveTargetAction({ position, title = 'Move card to', defaultBoardId = '', embedded = false, startOpen = false, emptyLabel = 'Choose where to move', cellOnly = false, linkLabel = '', onChange }) {
   const [isOpen, setIsOpen] = useState(startOpen);
   const [showMinimap, setShowMinimap] = useState(false);
   const [minimapBoardId, setMinimapBoardId] = useState(position.boardId);
@@ -54,6 +54,7 @@ function MoveTargetAction({ position, title = 'Move card to', defaultBoardId = '
       show={showMinimap}
       value={position}
       boardId={minimapBoardId}
+      cellOnly={cellOnly}
       onBoardChange={setMinimapBoardId}
       onPick={(next) => { onChange(next); setShowMinimap(false); }}
       onClose={() => setShowMinimap(false)}
@@ -67,7 +68,7 @@ function MoveTargetAction({ position, title = 'Move card to', defaultBoardId = '
     return (
       <>
         <button type="button" className="br-create-action-link br-create-action-link--btn" onClick={handleOpenMinimap}>
-          {hasPosition(position) ? (label || 'Selected') : emptyLabel}
+          {linkLabel || (hasPosition(position) ? (label || 'Selected') : emptyLabel)}
         </button>
         {minimap}
       </>
@@ -116,6 +117,8 @@ MoveTargetAction.propTypes = {
   embedded: PropTypes.bool,
   startOpen: PropTypes.bool,
   emptyLabel: PropTypes.string,
+  cellOnly: PropTypes.bool,
+  linkLabel: PropTypes.string,
   onChange: PropTypes.func.isRequired,
 };
 
