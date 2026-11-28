@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef, Fragment } from "react";
 import { createPortal } from "react-dom";
 import PropTypes from "prop-types";
-import { Tooltip } from "react-tooltip";
-import "react-tooltip/dist/react-tooltip.css";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import CustomModal from "@/components/CustomModal";
@@ -27,8 +25,6 @@ import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/compone
 import LocationAutocomplete from "./LocationAutocomplete";
 import editIcon from "@/assets/images/edit.svg";
 import deleteIcon from "@/assets/images/delete.svg";
-import eyeIcon from "@/assets/images/eye.svg";
-import printIcon from "@/assets/images/print.svg";
 import logisticsWarehouseService from "@/services/logisticsWarehouseService";
 import packingTypeService from "@/services/packingTypeService";
 import useInboundOrderReducer from "@/store/InboundOrderReducer";
@@ -46,7 +42,18 @@ import {
 } from "@/shared/helpers/dateTimeFieldUtils";
 import "@/design/scss/material-edit-form.scss";
 import "@/design/scss/dispatch-note.scss";
-import MaterialTablePagination from "./MaterialTablePagination";
+import PremiumSelect from "@/components/form/PremiumSelect";
+import {
+  FiCopy,
+  FiEye,
+  FiPrinter,
+  FiMoreVertical,
+  FiFileText,
+  FiArrowUp,
+  FiArrowDown,
+  FiChevronLeft,
+  FiChevronRight,
+} from "react-icons/fi";
 
 const MATERIAL_ACCENT = SERVICE_ACCENT[MAIN_TABS.MATERIAL_MANAGEMENT];
 
@@ -376,6 +383,8 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
   const dropdownButtonRefs = useRef({});
   const [inboundPage, setInboundPage] = useState(1);
+  // Inbound list date sort (applies to the orders loaded for the current page).
+  const [dateSortAsc, setDateSortAsc] = useState(true);
   const [formErrors, setFormErrors] = useState({});
   const INBOUND_LIMIT = 10;
 
@@ -1341,6 +1350,63 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
     { value: "Juaymah", label: "Juaymah" },
   ];
 
+
+  const WEEKDAY_FMT = { weekday: "long" };
+  const DAY_FMT = { day: "2-digit", month: "short", year: "numeric" };
+
+  const itemPackageLabel = (item) =>
+    item?.package_type ||
+    packageTypeOptions.find((o) => o.value === String(item?.package_type_id ?? ""))?.label ||
+    "";
+
+  const formatQty = (value) => {
+    const n = Number(value);
+    if (value == null || value === "" || Number.isNaN(n)) return "—";
+    return Number.isInteger(n) ? String(n) : String(Number(n.toFixed(2)));
+  };
+
+  const orderSortKey = (order) => {
+    const { date, time } = splitApiDateTimeParts(order.inbound_date || order.date || "", order.inbound_time || order.time || "");
+    return date ? `${date} ${time || "00:00"}` : "";
+  };
+
+  // "28 Nov 2026" on top, weekday (+ time when set) underneath.
+  const orderDateParts = (order) => {
+    const { date, time } = splitApiDateTimeParts(order.inbound_date || order.date || "", order.inbound_time || order.time || "");
+    if (!date) return null;
+    const [y, m, d] = date.split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    if (Number.isNaN(dt.getTime())) return null;
+    const weekday = dt.toLocaleDateString("en-GB", WEEKDAY_FMT);
+    return {
+      date: dt.toLocaleDateString("en-GB", DAY_FMT),
+      sub: time && time !== "00:00" ? `${weekday} · ${time}` : weekday,
+    };
+  };
+
+  const handleCopyOrderNo = (orderNo) => {
+    if (!orderNo || !navigator?.clipboard?.writeText) return;
+    navigator.clipboard
+      .writeText(orderNo)
+      .then(() => useAlertReducer.getState().success("Order number copied"))
+      .catch(() => useAlertReducer.getState().error("Could not copy order number"));
+  };
+
+  const visibleOrders = inboundOrders
+    .slice()
+    .sort((a, b) => {
+      const cmp = orderSortKey(a).localeCompare(orderSortKey(b));
+      return dateSortAsc ? cmp : -cmp;
+    });
+
+  const visibleTotalQty = visibleOrders.reduce(
+    (sum, order) =>
+      sum + (Array.isArray(order.items) ? order.items : []).reduce((s, item) => s + (Number(item.quantity) || 0), 0),
+    0
+  );
+
+  const inboundTotalPages = Math.max(1, Math.ceil((inboundTotal || 0) / INBOUND_LIMIT));
+
   const editingOrderLabel = editingOrder?.inbound_no || editingOrder?.order_no || "";
   const editingInboundId = editingOrder ? resolveInboundId(editingOrder) : null;
   // The form card replaces the old "+ Add" modal, so hide it when the user can neither add nor is editing.
@@ -1360,7 +1426,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
   // FormGroup → FormField / FieldRow, transport-date-time-field, CheckboxField, Quill remarks.
   const renderFormBody = () => (
     <form id="inboundOrderForm" className="material-edit-form material-note-card-form" onSubmit={handleSubmit}>
-      <FormGroup icon="calendar" label="Basic Details" accent={MATERIAL_ACCENT}>
+      <FormGroup icon="calendar" label="" accent={MATERIAL_ACCENT}>
         <FormField label="Date *">
           <div className="transport-date-time-field">
             <DateTimePickerField
@@ -1380,192 +1446,255 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
         </FormField>
 
         <FormField label="Warehouse *">
-          <FormSelect
+          <PremiumSelect
             value={formData.warehouse}
             onChange={(e) => {
               handleFormChange("warehouse", e.target.value);
               clearFormError("warehouse");
             }}
             options={mergeOptionForValue(warehouseLocationOptions, formData.warehouse)}
-            placeholder="Select warehouse..."
+            placeholder="Select warehouse"
+            searchPlaceholder="Search warehouse..."
+            hasError={!!formErrors.warehouse}
           />
           <FieldError message={formErrors.warehouse} />
         </FormField>
       </FormGroup>
 
       <FormGroup icon="list" label="Order Details" accent={MATERIAL_ACCENT}>
-        {formData.orders.map((order, index) => (
-          <div key={order.id} className="dispatch-edit-item-card material-item-card">
-            <div className="dispatch-edit-item-header" onClick={() => toggleOrderExpand(order.id)}>
-              <span className="dispatch-edit-item-label">Order {index + 1}</span>
-              <div className="dispatch-item-actions">
-                {index === formData.orders.length - 1 && (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); handleAddNewOrder(); }}
-                    className="dispatch-order-icon-btn"
-                    title="Add order"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                  </button>
-                )}
-                {formData.orders.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); handleRemoveOrder(order.id); }}
-                    className="dispatch-order-icon-btn dispatch-order-icon-btn--delete"
-                    title="Remove order"
-                  >
-                    <img src={deleteIcon} alt="delete" />
-                  </button>
-                )}
-                <svg
-                  width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-                  className={`dispatch-edit-chevron${expandedOrders[order.id] ? " expanded" : ""}`}
+        <div className="inbound-orders">
+          {formData.orders.map((order, index) => {
+            const isOpen = !!expandedOrders[order.id];
+            const hasOrderError = Object.keys(formErrors).some((k) => k.startsWith(`o${index}_`) && formErrors[k]);
+            const pkgLabel = packageTypeOptions.find((o) => o.value === order.packageType)?.label || "";
+            const summaryParts = [
+              order.quantity ? `${order.quantity}${pkgLabel ? ` × ${pkgLabel}` : ""}` : "",
+              order.poDo ? `PO/DO ${order.poDo}` : "",
+            ].filter(Boolean);
+            return (
+              <div
+                key={order.id}
+                className={`inbound-order${isOpen ? " is-open" : ""}${hasOrderError ? " has-error" : ""}`}
+              >
+                <div
+                  className="inbound-order__head"
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={isOpen}
+                  onClick={() => toggleOrderExpand(order.id)}
+                  onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      toggleOrderExpand(order.id);
+                    }
+                  }}
                 >
-                  <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-            </div>
+                  <span className="inbound-order__index">{index + 1}</span>
+                  <div className="inbound-order__title">
+                    <span className="inbound-order__name">Order {index + 1}</span>
+                    {!isOpen && (
+                      <span className="inbound-order__summary">
+                        {summaryParts.length ? summaryParts.join(" · ") : "No details yet"}
+                      </span>
+                    )}
+                  </div>
+                  {order.transportation && (
+                    <span className="inbound-order__chip">
+                      {renderLaunchHireStepIcon("truck")}
+                      Transport
+                    </span>
+                  )}
+                  <div className="inbound-order__actions">
+                    {formData.orders.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleRemoveOrder(order.id); }}
+                        className="inbound-order__icon-btn inbound-order__icon-btn--delete"
+                        title="Remove order"
+                        aria-label={`Remove order ${index + 1}`}
+                      >
+                        <img src={deleteIcon} alt="" />
+                      </button>
+                    )}
+                    <svg
+                      width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                      className={`inbound-order__chevron${isOpen ? " expanded" : ""}`}
+                    >
+                      <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                </div>
 
-            {expandedOrders[order.id] && (
-              <div className="dispatch-edit-item-body">
-                <FormField label="PO/DO">
-                  <FormInput
-                    type="text"
-                    value={order.poDo}
-                    onChange={(e) => {
-                      handleOrderChange(order.id, "poDo", e.target.value);
-                      clearFormError(`o${index}_poDo`);
-                    }}
-                    placeholder="Enter PO/DO number..."
-                  />
-                  <FieldError message={formErrors[`o${index}_poDo`]} />
-                </FormField>
-
-                <FieldRow>
-                  <FormField label="Quantity *">
-                    <FormInput
-                      type="number"
-                      value={order.quantity}
-                      onChange={(e) => {
-                        handleOrderChange(order.id, "quantity", e.target.value);
-                        clearFormError(`o${index}_quantity`);
-                      }}
-                      placeholder="Enter quantity..."
-                    />
-                    <FieldError message={formErrors[`o${index}_quantity`]} />
-                  </FormField>
-
-                  <FormField label="Package Type *">
-                    <FormSelect
-                      value={order.packageType}
-                      onChange={(e) => {
-                        handleOrderChange(order.id, "packageType", e.target.value);
-                        clearFormError(`o${index}_packageType`);
-                      }}
-                      options={mergeOptionForValue(packageTypeOptions, order.packageType)}
-                      placeholder="Select package type..."
-                    />
-                    <FieldError message={formErrors[`o${index}_packageType`]} />
-                  </FormField>
-                </FieldRow>
-
-                <FormField label="Description">
-                  <FormInput
-                    type="text"
-                    value={order.description}
-                    onChange={(e) => handleOrderChange(order.id, "description", e.target.value)}
-                    placeholder="Enter description..."
-                  />
-                </FormField>
-
-                <FormField>
-                  <CheckboxField
-                    label="Transportation required"
-                    checked={order.transportation}
-                    onChange={(e) => handleOrderChange(order.id, "transportation", e.target.checked)}
-                  />
-                </FormField>
-
-                {order.transportation && (
-                  <div className="material-item-subfields">
-                    <FieldRow>
-                      <FormField label="Type of Vehicle *">
-                        <FormSelect
-                          value={order.typeOfVehicle}
+                {isOpen && (
+                  <div className="inbound-order__body">
+                    <div className="inbound-order__grid">
+                      <FormField label="PO/DO" className="inbound-order__span-2">
+                        <FormInput
+                          type="text"
+                          value={order.poDo}
                           onChange={(e) => {
-                            handleOrderChange(order.id, "typeOfVehicle", e.target.value);
-                            clearFormError(`o${index}_typeOfVehicle`);
+                            handleOrderChange(order.id, "poDo", e.target.value);
+                            clearFormError(`o${index}_poDo`);
                           }}
-                          options={mergeOptionForValue(materialVehicleOptions, order.typeOfVehicle)}
-                          placeholder="Select vehicle..."
+                          placeholder="Enter PO/DO number..."
                         />
-                        <FieldError message={formErrors[`o${index}_typeOfVehicle`]} />
+                        <FieldError message={formErrors[`o${index}_poDo`]} />
                       </FormField>
 
-                      <FormField label="Driver Name *">
-                        <FormSelect
-                          value={order.driverName}
+                      <FormField label="Quantity *">
+                        <FormInput
+                          type="number"
+                          value={order.quantity}
                           onChange={(e) => {
-                            handleOrderChange(order.id, "driverName", e.target.value);
-                            clearFormError(`o${index}_driverName`);
+                            handleOrderChange(order.id, "quantity", e.target.value);
+                            clearFormError(`o${index}_quantity`);
                           }}
-                          options={mergeOptionForValue(materialDriverOptions, order.driverName)}
-                          placeholder="Select driver..."
+                          placeholder="Enter quantity..."
+                          className={formErrors[`o${index}_quantity`] ? "is-invalid" : ""}
                         />
-                        <FieldError message={formErrors[`o${index}_driverName`]} />
-                      </FormField>
-                    </FieldRow>
-
-                    <FieldRow>
-                      <FormField label="From Location *">
-                        <FormSelect
-                          value={order.fromLocation}
-                          onChange={(e) => {
-                            handleOrderChange(order.id, "fromLocation", e.target.value);
-                            clearFormError(`o${index}_fromLocation`);
-                          }}
-                          options={mergeOptionForValue(transportLocationOptions, order.fromLocation)}
-                          placeholder="Select from..."
-                        />
-                        <FieldError message={formErrors[`o${index}_fromLocation`]} />
+                        <FieldError message={formErrors[`o${index}_quantity`]} />
                       </FormField>
 
-                      <FormField label="To Location *">
-                        <FormSelect
-                          value={order.toLocation}
+                      <FormField label="Package Type *">
+                        <PremiumSelect
+                          value={order.packageType}
                           onChange={(e) => {
-                            handleOrderChange(order.id, "toLocation", e.target.value);
-                            clearFormError(`o${index}_toLocation`);
+                            handleOrderChange(order.id, "packageType", e.target.value);
+                            clearFormError(`o${index}_packageType`);
                           }}
-                          options={mergeOptionForValue(transportLocationOptions, order.toLocation)}
-                          placeholder="Select to..."
+                          options={mergeOptionForValue(packageTypeOptions, order.packageType)}
+                          placeholder="Select package type"
+                          searchPlaceholder="Search package type..."
+                          hasError={!!formErrors[`o${index}_packageType`]}
                         />
-                        <FieldError message={formErrors[`o${index}_toLocation`]} />
+                        <FieldError message={formErrors[`o${index}_packageType`]} />
                       </FormField>
-                    </FieldRow>
 
-                    <FormField label="Pick-Up From *">
-                      <LocationAutocomplete
-                        value={order.pickUpFrom}
-                        onChange={(e) => {
-                          handleOrderChange(order.id, "pickUpFrom", e.target.value);
-                          clearFormError(`o${index}_pickUpFrom`);
-                        }}
-                        placeholder="Enter pick-up location..."
-                      />
-                      <FieldError message={formErrors[`o${index}_pickUpFrom`]} />
-                    </FormField>
+                      <FormField label="Description" className="inbound-order__span-2">
+                        <FormInput
+                          type="text"
+                          value={order.description}
+                          onChange={(e) => handleOrderChange(order.id, "description", e.target.value)}
+                          placeholder="Enter description..."
+                        />
+                      </FormField>
+                    </div>
+
+                    <div className={`inbound-order__transport${order.transportation ? " is-on" : ""}`}>
+                      <label className="inbound-order__transport-toggle">
+                        <span className="inbound-order__transport-icon">{renderLaunchHireStepIcon("truck")}</span>
+                        <span className="inbound-order__transport-text">
+                          <span className="inbound-order__transport-title">Transportation required</span>
+                          <span className="inbound-order__transport-hint">Arrange a vehicle and driver for this order</span>
+                        </span>
+                        <input
+                          type="checkbox"
+                          className="inbound-order__switch"
+                          checked={!!order.transportation}
+                          onChange={(e) => handleOrderChange(order.id, "transportation", e.target.checked)}
+                        />
+                      </label>
+
+                      {order.transportation && (
+                        <div className="inbound-order__transport-body">
+                          <div className="inbound-order__grid">
+                            <FormField label="Type of Vehicle *">
+                              <PremiumSelect
+                                value={order.typeOfVehicle}
+                                onChange={(e) => {
+                                  handleOrderChange(order.id, "typeOfVehicle", e.target.value);
+                                  clearFormError(`o${index}_typeOfVehicle`);
+                                }}
+                                options={mergeOptionForValue(materialVehicleOptions, order.typeOfVehicle)}
+                                placeholder="Select vehicle"
+                                searchPlaceholder="Search vehicle..."
+                                hasError={!!formErrors[`o${index}_typeOfVehicle`]}
+                              />
+                              <FieldError message={formErrors[`o${index}_typeOfVehicle`]} />
+                            </FormField>
+
+                            <FormField label="Driver Name *">
+                              <PremiumSelect
+                                value={order.driverName}
+                                onChange={(e) => {
+                                  handleOrderChange(order.id, "driverName", e.target.value);
+                                  clearFormError(`o${index}_driverName`);
+                                }}
+                                options={mergeOptionForValue(materialDriverOptions, order.driverName)}
+                                placeholder="Select driver"
+                                searchPlaceholder="Search driver..."
+                                hasError={!!formErrors[`o${index}_driverName`]}
+                              />
+                              <FieldError message={formErrors[`o${index}_driverName`]} />
+                            </FormField>
+                          </div>
+
+                          <div className="inbound-order__route">
+                            <FormField label="From Location *">
+                              <PremiumSelect
+                                value={order.fromLocation}
+                                onChange={(e) => {
+                                  handleOrderChange(order.id, "fromLocation", e.target.value);
+                                  clearFormError(`o${index}_fromLocation`);
+                                }}
+                                options={mergeOptionForValue(transportLocationOptions, order.fromLocation)}
+                                placeholder="Select from"
+                                searchPlaceholder="Search location..."
+                                hasError={!!formErrors[`o${index}_fromLocation`]}
+                              />
+                              <FieldError message={formErrors[`o${index}_fromLocation`]} />
+                            </FormField>
+
+                            <span className="inbound-order__route-arrow" aria-hidden="true">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </span>
+
+                            <FormField label="To Location *">
+                              <PremiumSelect
+                                value={order.toLocation}
+                                onChange={(e) => {
+                                  handleOrderChange(order.id, "toLocation", e.target.value);
+                                  clearFormError(`o${index}_toLocation`);
+                                }}
+                                options={mergeOptionForValue(transportLocationOptions, order.toLocation)}
+                                placeholder="Select to"
+                                searchPlaceholder="Search location..."
+                                hasError={!!formErrors[`o${index}_toLocation`]}
+                              />
+                              <FieldError message={formErrors[`o${index}_toLocation`]} />
+                            </FormField>
+                          </div>
+
+                          <FormField label="Pick-Up From *">
+                            <LocationAutocomplete
+                              value={order.pickUpFrom}
+                              onChange={(e) => {
+                                handleOrderChange(order.id, "pickUpFrom", e.target.value);
+                                clearFormError(`o${index}_pickUpFrom`);
+                              }}
+                              placeholder="Enter pick-up location..."
+                            />
+                            <FieldError message={formErrors[`o${index}_pickUpFrom`]} />
+                          </FormField>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
-            )}
-          </div>
-        ))}
+            );
+          })}
+
+          <button type="button" className="inbound-orders__add" onClick={handleAddNewOrder}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            Add another order
+          </button>
+        </div>
       </FormGroup>
 
       {showLaunchHire && (
@@ -1581,11 +1710,12 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
           {formData.launchHire && (
             <FieldRow>
               <FormField label="Location">
-                <FormSelect
+                <PremiumSelect
                   value={formData.launchHireLocation}
                   onChange={(e) => handleFormChange("launchHireLocation", e.target.value)}
                   options={mergeOptionForValue(launchHireLocationOptions, formData.launchHireLocation)}
-                  placeholder="Select location..."
+                  placeholder="Select location"
+                  searchPlaceholder="Search location..."
                 />
               </FormField>
               <FormField label="Booking Date Time *">
@@ -2352,7 +2482,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
             )}
 
             <div className="general-info-right crew-pass-requests-sidebar">
-              <div className={`crew-pass-requests-table-card husb-accent-${MATERIAL_ACCENT}`} role="region" aria-label="Inbound orders">
+              <div className={`crew-pass-requests-table-card husb-accent-${MATERIAL_ACCENT} inbound-list-card`} role="region" aria-label="Inbound orders">
                 <PremiumCardHeader
                   icon="list"
                   title="Inbound orders"
@@ -2361,6 +2491,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                   headerClassName="crew-pass-requests-table-card__header"
                   titleClassName="crew-pass-requests-table-card__title"
                 />
+
                 <div className="crew-pass-requests-table-card__body">
                   {isLoadingOrders ? (
                     <div className="crew-pass-requests-table-card__skeleton" aria-busy="true">
@@ -2370,133 +2501,159 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                   ) : inboundOrders.length === 0 ? (
                     <div className="crew-pass-requests-table-card__empty">No inbound orders found</div>
                   ) : (
-                    <div className="crew-pass-requests-table-scroll crew-pass-thin-scrollbar material-table-container">
-                      <table className="crew-pass-requests-table material-notes-table inbound-orders-table">
+                    <div className="crew-pass-requests-table-scroll crew-pass-thin-scrollbar">
+                      <table className="inbound-table">
+                        <colgroup>
+                          <col className="inbound-table__col-order" />
+                          <col className="inbound-table__col-date" />
+                          <col />
+                          <col className="inbound-table__col-warehouse" />
+                          <col className="inbound-table__col-actions" />
+                        </colgroup>
                         <thead>
                           <tr>
-                            <th>Order No</th>
-                            <th>Date</th>
-                            <th>PO/DO</th>
-                            <th>Quantity</th>
-                            <th>Package Type</th>
-                            <th>Description</th>
-                            <th className="note-actions-th">Actions</th>
+                            <th>Order no.</th>
+                            <th aria-sort={dateSortAsc ? "ascending" : "descending"}>
+                              <button
+                                type="button"
+                                className="inbound-table__sort"
+                                onClick={() => setDateSortAsc((v) => !v)}
+                              >
+                                Date
+                                {dateSortAsc ? <FiArrowUp size={12} aria-hidden="true" /> : <FiArrowDown size={12} aria-hidden="true" />}
+                              </button>
+                            </th>
+                            <th>Package</th>
+                            <th>Warehouse</th>
+                            <th className="inbound-table__actions-th">Actions</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {inboundOrders.map((order) => {
-                              const firstItem = Array.isArray(order.items) ? order.items[0] : null;
-                              const rowKey = order.inbound_id ?? order.id ?? Math.random();
-                              const description = firstItem?.description || "";
-                              return (
-                                <tr
-                                  key={rowKey}
-                                  className={editingInboundId != null && resolveInboundId(order) === editingInboundId ? "material-notes-table__row--editing" : undefined}
-                                >
-                                  <td>
-                                    <div className="material-table-cell">{order.inbound_no || ""}</div>
-                                  </td>
-                                  <td>
-                                    <div className="material-table-cell">
-                                      {formatDate(order.inbound_date || order.date, order.inbound_time || order.time)}
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div className="material-table-cell">{firstItem?.po_do_no ?? firstItem?.po_no ?? ""}</div>
-                                  </td>
-                                  <td>
-                                    <div className="material-table-cell">{firstItem?.quantity ?? ""}</div>
-                                  </td>
-                                  <td>
-                                    <div className="material-table-cell">
-                                      {firstItem?.package_type ||
-                                        packageTypeOptions.find((o) => o.value === String(firstItem?.package_type_id))?.label ||
-                                        ""}
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div className="material-table-cell">
-                                      {description.length > 25 ? (
-                                        <>
-                                          <Tooltip
-                                            id={`description-tooltip-${rowKey}`}
-                                            place="right"
-                                            content={description}
-                                            className="material-table-tooltip"
-                                          />
-                                          <span
-                                            data-tooltip-id={`description-tooltip-${rowKey}`}
-                                            className="note-desc-tip"
-                                          >
-                                            {description.substring(0, 25)}...
-                                          </span>
-                                        </>
-                                      ) : (
-                                        <span>{description}</span>
-                                      )}
-                                    </div>
-                                  </td>
-                                  <td className="note-actions-td">
-                                    <div className="material-table-cell note-actions-cell">
-                                      <Tooltip id={`view-order-${rowKey}`} place="left" content="View" />
+                          {visibleOrders.map((order, orderIdx) => {
+                            const inboundId = resolveInboundId(order);
+                            const rowKey = inboundId ?? `inbound-${orderIdx}`;
+                            const items = Array.isArray(order.items) ? order.items : [];
+                            const firstItem = items[0] || null;
+                            const extraItems = Math.max(0, items.length - 1);
+                            const packageLabel = firstItem ? itemPackageLabel(firstItem) : "";
+                            const warehouseLabel = warehouseLocationOptions.find(
+                              (o) => o.value === String(order.warehouse_id ?? "")
+                            )?.label;
+                            const isEditingRow = editingInboundId != null && inboundId === editingInboundId;
+                            const orderNo = String(order.inbound_no || "");
+                            const splitAt = orderNo.lastIndexOf("-");
+                            const orderPrefix = splitAt > 0 ? orderNo.slice(0, splitAt + 1) : "";
+                            const orderTail = splitAt > 0 ? orderNo.slice(splitAt + 1) : orderNo;
+                            const dateInfo = orderDateParts(order);
+                            const emptyCell = <span className="inbound-table__muted">—</span>;
+                            return (
+                              <tr key={rowKey} className={isEditingRow ? "is-editing" : undefined}>
+                                <td>
+                                  {orderNo ? (
+                                    <div className="inbound-table__order">
+                                      <span className="inbound-table__order-no" title={orderNo}>
+                                        {orderPrefix && <span className="inbound-table__order-prefix">{orderPrefix}</span>}
+                                        <span className="inbound-table__order-tail">{orderTail}</span>
+                                      </span>
                                       <button
                                         type="button"
-                                        onClick={() => handleViewOrder(order)}
-                                        data-tooltip-id={`view-order-${rowKey}`}
-                                        className="note-action-btn"
+                                        className="inbound-table__copy"
+                                        onClick={() => handleCopyOrderNo(orderNo)}
+                                        data-tip="Copy"
+                                        aria-label={`Copy order number ${orderNo}`}
                                       >
-                                        <img src={eyeIcon} alt="view" className="note-action-icon" />
+                                        <FiCopy size={13} />
                                       </button>
-                                      {canPrintInbound && (
+                                      {isEditingRow && <span className="inbound-table__editing">Editing</span>}
+                                    </div>
+                                  ) : emptyCell}
+                                </td>
+                                <td>
+                                  {dateInfo ? (
+                                    <div className="inbound-table__stack">
+                                      <span className="inbound-table__primary">{dateInfo.date}</span>
+                                      <span className="inbound-table__secondary">{dateInfo.sub}</span>
+                                    </div>
+                                  ) : emptyCell}
+                                </td>
+                                <td>
+                                  {firstItem ? (
+                                    <div className="inbound-table__package">
+                                      <span className="inbound-table__qty">{formatQty(firstItem.quantity)}</span>
+                                      <span className="inbound-table__times" aria-hidden="true">×</span>
+                                      <span className="inbound-table__package-name" title={packageLabel || undefined}>
+                                        {packageLabel || "Package not set"}
+                                      </span>
+                                      {extraItems > 0 && (
                                         <>
-                                          <Tooltip id={`print-order-${rowKey}`} place="left" content="Print" />
-                                          <button
-                                            type="button"
-                                            onClick={() => handlePrintOrder(order)}
-                                            data-tooltip-id={`print-order-${rowKey}`}
-                                            disabled={printingId === resolveInboundId(order)}
-                                            className="print-action-icon-wrap"
+                                          <span
+                                            className="inbound-table__more"
+                                            data-tip={`${extraItems} more item${extraItems === 1 ? "" : "s"} — open View`}
+                                            tabIndex={0}
                                           >
-                                            {printingId === resolveInboundId(order) ? (
-                                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="icon-spinning">
-                                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
-                                              </svg>
-                                            ) : (
-                                              <img src={printIcon} alt="print" className="material-action-icon" />
-                                            )}
-                                          </button>
+                                            +{extraItems}
+                                          </span>
                                         </>
                                       )}
-                                      {canConvertToLandingNote && (
-                                        <>
-                                          <Tooltip id={`convert-order-${rowKey}`} place="left" content=" Convert" />
-                                          <button
-                                            type="button"
-                                            onClick={() => handleConvertToLanding(order)}
-                                            data-tooltip-id={`convert-order-${rowKey}`}
-                                            className="note-action-btn"
-                                          >
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                              <path d="M2 18L4 16L6 18L8 16L10 18L12 16L14 18L16 16L18 18L20 16L22 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                              <path d="M2 10L12 4L22 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                              <path d="M12 4V18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </div>
+                                  ) : emptyCell}
+                                </td>
+                                <td>
+                                  <span className="inbound-table__ellipsis" title={warehouseLabel || undefined}>
+                                    {warehouseLabel || emptyCell}
+                                  </span>
+                                </td>
+                                <td className="inbound-table__actions-td">
+                                  <div className="inbound-table__actions">
+                                    {canConvertToLandingNote && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleConvertToLanding(order)}
+                                        className="inbound-table__landing"
+                                      >
+                                        <FiFileText size={14} aria-hidden="true" />
+                                        Landing note
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleViewOrder(order)}
+                                      data-tip="View"
+                                      className="inbound-table__icon-action"
+                                      aria-label="View order"
+                                    >
+                                      <FiEye size={17} />
+                                    </button>
+                                    {canPrintInbound && (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => handlePrintOrder(order)}
+                                          data-tip="Print"
+                                          disabled={printingId === inboundId}
+                                          className="inbound-table__icon-action"
+                                          aria-label="Print order"
+                                        >
+                                          {printingId === inboundId ? (
+                                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="icon-spinning">
+                                              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
                                             </svg>
-                                          </button>
-                                        </>
-                                      )}
+                                          ) : (
+                                            <FiPrinter size={17} />
+                                          )}
+                                        </button>
+                                      </>
+                                    )}
+                                    {(canUpdateInbound || canDeleteInbound) && (
                                       <div className={`action-dropdown-wrapper${openDropdownId === rowKey ? " action-dropdown-wrapper--open" : ""}`}>
-                                        <Tooltip id={`more-actions-${rowKey}`} place="left" content="More actions" />
                                         <button
                                           type="button"
                                           onClick={(e) => handleToggleDropdown(rowKey, e)}
-                                          data-tooltip-id={`more-actions-${rowKey}`}
-                                          className="note-action-btn"
+                                          data-tip="More actions"
+                                          className="inbound-table__icon-action"
+                                          aria-label="More actions"
                                         >
-                                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <circle cx="12" cy="6" r="1.5" fill="currentColor" />
-                                            <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-                                            <circle cx="12" cy="18" r="1.5" fill="currentColor" />
-                                          </svg>
+                                          <FiMoreVertical size={17} />
                                         </button>
                                         {openDropdownId === rowKey && createPortal(
                                           <div
@@ -2528,23 +2685,47 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                                           document.body
                                         )}
                                       </div>
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            })}
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
                   )}
                   {!isLoadingOrders && inboundOrders.length > 0 && (
-                    <div className="crew-pass-requests-table-card__pagination">
-                      <MaterialTablePagination
-                        page={inboundPage}
-                        total={inboundTotal}
-                        limit={INBOUND_LIMIT}
-                        onPageChange={setInboundPage}
-                      />
+                    <div className="inbound-list-footer">
+                      <span>
+                        {visibleOrders.length} of {inboundTotal || inboundOrders.length} order{(inboundTotal || inboundOrders.length) === 1 ? "" : "s"}
+                        {" · "}Total quantity {formatQty(visibleTotalQty)}
+                      </span>
+                      {inboundTotalPages > 1 && (
+                        <div className="inbound-list-pager">
+                          <button
+                            type="button"
+                            className="crew-pass-requests-pagination__btn"
+                            disabled={inboundPage <= 1}
+                            onClick={() => setInboundPage((p) => Math.max(1, p - 1))}
+                            aria-label="Previous page"
+                          >
+                            <FiChevronLeft size={14} />
+                          </button>
+                          <span className="inbound-list-pager__label">
+                            Page {inboundPage} of {inboundTotalPages}
+                          </span>
+                          <button
+                            type="button"
+                            className="crew-pass-requests-pagination__btn"
+                            disabled={inboundPage >= inboundTotalPages}
+                            onClick={() => setInboundPage((p) => Math.min(inboundTotalPages, p + 1))}
+                            aria-label="Next page"
+                          >
+                            <FiChevronRight size={14} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
