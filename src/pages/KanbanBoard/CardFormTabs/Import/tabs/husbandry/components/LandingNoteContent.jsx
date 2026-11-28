@@ -5,8 +5,19 @@ import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import CustomModal from "@/components/CustomModal";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
-import { FormField, FormInput, FormSelect, ReactQuillEditor } from "./Husbandry.components";
-import { LAUNCH_HIRE_LOCATION_OPTIONS, validateDocumentFiles } from "./Husbandry.constants";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+import GroupSettingsIcon from "@/assets/images/cv.png";
+import {
+  FormField,
+  FormInput,
+  FormSelect,
+  ReactQuillEditor,
+  FormSection,
+  FormGroup,
+  PremiumCardHeader,
+} from "./Husbandry.components";
+import { LAUNCH_HIRE_LOCATION_OPTIONS, validateDocumentFiles, MAIN_TABS, SERVICE_ACCENT } from "./Husbandry.constants";
 import { splitApiDateTimeParts, nextDayOf } from "@/shared/helpers/dateTimeFieldUtils";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import LocationAutocomplete from "./LocationAutocomplete";
@@ -98,6 +109,8 @@ const AttachmentsList = ({ attachments = [], onRemove, cardColor, isDragging, on
   );
 };
 
+
+const MATERIAL_ACCENT = SERVICE_ACCENT[MAIN_TABS.MATERIAL_MANAGEMENT];
 
 const getLandingNoteItemId = (item) => (
   item?.landing_note_item_id
@@ -453,7 +466,7 @@ const LandingNoteContent = ({ formValues, cardColor }) => {
     { value: "Transit", label: "Transit" },
   ];
 
-  const [showModal, setShowModal] = useState(false);
+  const formBodyRef = useRef(null);
   const [editorKey, setEditorKey] = useState(0);
   const [printingNoteId, setPrintingNoteId] = useState(null);
   const [showConvertModal, setShowConvertModal] = useState(false);
@@ -572,30 +585,26 @@ const LandingNoteContent = ({ formValues, cardColor }) => {
     }
   };
 
-  const handleOpenModal = (note = null) => {
-    if (note) {
-      if (!canUpdateLandingNote) return;
-      setEditingNote(note);
-      setShowModal(true);
-      const noteId = note?.landing_note_id ?? note?.id;
-      if (noteId != null) {
-        getLandingNoteById({
-          id: noteId,
-          cb: (detail) => { if (detail) populateFormFromDetail(detail); },
-        });
-      }
-      return;
-    }
-    setEditingNote(null);
+  // Loads a landing note into the left-hand edit card.
+  const handleEditNote = (note) => {
+    if (!note || !canUpdateLandingNote) return;
     setFormData(emptyEditFormData());
     setExpandedEditItems({});
     setFormErrors({});
     setEditMinDate(undefined);
-    setShowModal(true);
+    setEditingNote(note);
+    formBodyRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
+    const noteId = note?.landing_note_id ?? note?.id;
+    if (noteId != null) {
+      getLandingNoteById({
+        id: noteId,
+        cb: (detail) => { if (detail) populateFormFromDetail(detail); },
+      });
+    }
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
+  // Exits edit mode and returns the card to its idle state.
+  const resetEditForm = () => {
     setEditingNote(null);
     setFormData(emptyEditFormData());
     setExpandedEditItems({});
@@ -680,7 +689,7 @@ const LandingNoteContent = ({ formValues, cardColor }) => {
       landingNoteId,
       data: fd,
       cb: () => {
-        handleCloseModal();
+        resetEditForm();
         if (callId) {
           getAllLandingNotes({ call_id: callId, page: landingPage, limit: LANDING_LIMIT });
           getLandingNotesTotal({ call_id: callId });
@@ -713,6 +722,10 @@ const LandingNoteContent = ({ formValues, cardColor }) => {
       landingNoteId,
       cb: () => {
         setShowDeleteModal(false);
+        // Drop out of edit mode if the note being edited was deleted.
+        if (editingNote && (editingNote.landing_note_id ?? editingNote.id) === landingNoteId) {
+          resetEditForm();
+        }
         setDeletingNote(null);
         if (callId) {
           getAllLandingNotes({ call_id: callId, page: landingPage, limit: LANDING_LIMIT });
@@ -1207,18 +1220,14 @@ const LandingNoteContent = ({ formValues, cardColor }) => {
     }
   };
 
-  const renderHeader = () => (
-    <h1 className="modal-title">Edit Landing Note</h1>
-  );
+  const editingNoteLabel = editingNote?.landingNoteNo || editingNote?.landing_note_no || "";
 
-  const renderBody = () => (
-    <div className="modal-body">
-      <div className="lead-form">
-        <form id="landingNoteForm" className="material-edit-form" onSubmit={handleSubmit}>
+  // Left-hand edit card body (was the Edit modal body).
+  const renderFormBody = () => (
+        <form id="landingNoteForm" className="material-edit-form material-note-card-form" onSubmit={handleSubmit}>
 
           {/* Basic Details */}
-          <div className="dispatch-edit-section">
-            <h3 className="landing-edit-section-title">Basic Details</h3>
+          <FormGroup icon="calendar" label="Basic Details" accent={MATERIAL_ACCENT}>
             <div className="row g-2 mb-3">
               <div className="col-md-6">
                 <FormField label="Date *">
@@ -1332,12 +1341,11 @@ const LandingNoteContent = ({ formValues, cardColor }) => {
                 </FormField>
               </div>
             </div>
-          </div>
+          </FormGroup>
 
           {/* Order Items */}
           {formData.items.length > 0 && (
-            <div className="dispatch-edit-section dispatch-edit-section--last">
-              <h3 className="landing-edit-section-title">Order Items</h3>
+            <FormGroup icon="list" label="Order Items" accent={MATERIAL_ACCENT}>
               {formData.items.map((item, index) => (
                 <div key={item.id} className="landing-edit-item-card">
                   <div
@@ -1508,24 +1516,23 @@ const LandingNoteContent = ({ formValues, cardColor }) => {
                   )}
                 </div>
               ))}
-            </div>
+            </FormGroup>
           )}
         </form>
-      </div>
-    </div>
   );
 
-  const renderFooter = () => (
-    <div className="modal-footer">
-      <button type="button" className="btn btn-secondary" onClick={handleCloseModal} disabled={isLoadingUpdate}>
-        Cancel
-      </button>
-      <button type="submit" form="landingNoteForm" className="btn btn-primary" disabled={isLoadingUpdate}>
-        {isLoadingUpdate
-          ? <><span className="spinner-border spinner-border-sm me-2" role="status" />Updating...</>
-          : "Update"
-        }
-      </button>
+  // Left-hand edit card footer (was the modal footer).
+  const renderFormFooter = () => (
+    <div className="form-save-button-wrapper cgpass-save-footer material-note-save-footer">
+      <span />
+      <div className="material-note-footer-actions">
+        <button type="button" className="material-note-ghost-action" onClick={resetEditForm} disabled={isLoadingUpdate}>
+          Cancel
+        </button>
+        <button type="submit" form="landingNoteForm" className="form-save-button" disabled={isLoadingUpdate}>
+          {isLoadingUpdate ? "Updating..." : "Update"}
+        </button>
+      </div>
     </div>
   );
 
@@ -2216,222 +2223,258 @@ const LandingNoteContent = ({ formValues, cardColor }) => {
   );
 
   return (
-    <div className="cardform-left-full material-management-content-wrapper" style={{ "--card-color": cardColor }}>
-      <div className="material-list-header">
-        <h3 className="material-list-title">
-          <span className="material-list-title-bar"></span>
-          Landing Note
-        </h3>
-      </div>
-      <div className="table-wrapper table-responsive material-table-container landing-table-wrapper">
-        <div className="landing-table-scroll">
-        <table className="table table-striped material-table sub-note-table landing-table">
-          <thead>
-            <tr>
-              <th>Order No</th>
-              <th>Date</th>
-              <th>PO/DO</th>
-              <th>Landing Proof</th>
-              <th>Quantity</th>
-              <th>Package Type</th>
-              <th>Description</th>
-              <th className="landing-table-actions-th">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoadingList ? (
-              <tr>
-                <td colSpan="8" className="landing-table-loading">Loading...</td>
-              </tr>
-            ) : notesList.length > 0 ? (
-              notesList.map((note) => (
-                <tr key={note.id}>
-                  <td>
-                    <div className="material-table-cell">{note.landingNoteNo || ""}</div>
-                  </td>
-                  <td>
-                    <div className="material-table-cell">
-                      {formatDate(note.date)}
-                    </div>
-                  </td>
-                  <td>
-                    <div className="material-table-cell">{note.poDo || ""}</div>
-                  </td>
-                  <td>
-                    <div className="material-table-cell">
-                      {note.landingProof && note.landingProof.length > 0 ? (
-                        <span className="landing-table-proof-link">
-                          {note.landingProof.length} file(s)
-                        </span>
-                      ) : (
-                        <span className="landing-table-proof-none">No files</span>
-                      )}
-                    </div>
-                  </td>
-                  <td>
-                    <div className="material-table-cell">{note.quantity || ""}</div>
-                  </td>
-                  <td>
-                    <div className="material-table-cell">{note.packageType || ""}</div>
-                  </td>
-                  <td>
-                    <div className="material-table-cell">
-                      {note.description && note.description.length > 13 ? (
-                        <>
-                          <Tooltip
-                            id={`description-tooltip-${note.id}`}
-                            place="right"
-                            content={note.description}
-                            className="material-table-tooltip"
-                          />
-                          <span
-                            data-tooltip-id={`description-tooltip-${note.id}`}
-                            className="landing-table-description"
-                          >
-                            {note.description.substring(0, 13)}...
-                          </span>
-                        </>
-                      ) : (
-                        <span>{note.description || ""}</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="landing-table-actions-td">
-                    <div className="material-table-cell landing-table-actions-cell">
-                      <Tooltip id={`view-note-${note.id}`} place="left" content="View" />
-                      <button
-                        type="button"
-                        onClick={() => handleViewNote(note)}
-                        data-tooltip-id={`view-note-${note.id}`}
-                        className="landing-action-btn"
+    <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+      <FormSection icon={GroupSettingsIcon} title="">
+        <div className="pre-arrival-form material-notes-form">
+          <div className={`general-info-two-column operation-section-form-layout crew-pass-premium-grid${canUpdateLandingNote ? "" : " material-notes-grid--list-only"}`}>
+            {canUpdateLandingNote && (
+              <div className="general-info-left crew-pass-premium-left">
+                <div className={`crew-pass-request-details-card husb-accent-${MATERIAL_ACCENT}`}>
+                  <PremiumCardHeader
+                    icon={MAIN_TABS.MATERIAL_MANAGEMENT}
+                    title={editingNote ? `Edit landing note${editingNoteLabel ? ` ${editingNoteLabel}` : ""}` : "Edit landing note"}
+                    subtitle={editingNote ? "Update the landing details and save your changes" : "Select a landing note from the list to edit"}
+                    headerClassName="crew-pass-request-details-card__header"
+                    titleClassName="crew-pass-request-details-card__title"
+                  />
+                  {editingNote ? (
+                    <>
+                      <div
+                        ref={formBodyRef}
+                        className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar"
                       >
-                        <img src={eyeIcon} alt="view" />
-                      </button>
-                      {canPrintLandingNote && (
-                        <>
-                          <Tooltip id={`print-note-${note.id}`} place="left" content="Print" />
-                          <button
-                            type="button"
-                            onClick={() => handlePrintNote(note)}
-                            data-tooltip-id={`print-note-${note.id}`}
-                            disabled={printingNoteId === (note.landing_note_id ?? note.id)}
-                            className="landing-action-btn"
-                          >
-                            {printingNoteId === (note.landing_note_id ?? note.id) ? (
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="landing-spin">
-                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
-                              </svg>
-                            ) : (
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M6 9V2H18V9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M6 18H4C2.89543 18 2 17.1046 2 16V11C2 9.89543 2.89543 9 4 9H20C21.1046 9 22 9.89543 22 11V16C22 17.1046 21.1046 18 20 18H18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M18 14H6V22H18V14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M18 9H6V14H18V9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            )}
-                          </button>
-                        </>
-                      )}
-                      {canConvertToDispatchNote && (
-                        <>
-                          <Tooltip id={`convert-note-${note.id}`} place="left" content=" Convert" />
-                          <button
-                            type="button"
-                            onClick={() => handleConvertToDispatch(note)}
-                            data-tooltip-id={`convert-note-${note.id}`}
-                            className="landing-action-btn"
-                          >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M1 4H10V12H1V4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              <path d="M10 6H16L19 9V12H10V6Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              <circle cx="4" cy="17" r="2" stroke="currentColor" strokeWidth="2" />
-                              <circle cx="17" cy="17" r="2" stroke="currentColor" strokeWidth="2" />
-                              <path d="M19 9H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                            </svg>
-                          </button>
-                        </>
-                      )}
-                      <div className={`action-dropdown-wrapper landing-more-actions-wrapper${openDropdownId === note.id ? " landing-more-actions-wrapper--open" : ""}`}>
-                        <Tooltip id={`more-actions-${note.id}`} place="left" content="More actions" />
-                        <button
-                          type="button"
-                          onClick={(e) => handleToggleDropdown(note.id, e)}
-                          data-tooltip-id={`more-actions-${note.id}`}
-                          className="landing-action-btn"
-                        >
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="12" cy="6" r="1.5" fill="currentColor" />
-                            <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-                            <circle cx="12" cy="18" r="1.5" fill="currentColor" />
-                          </svg>
-                        </button>
-                        {openDropdownId === note.id && createPortal(
-                          <div
-                            data-dropdown-menu
-                            className="landing-dropdown-menu"
-                            style={{ top: `${dropdownPosition.top}px`, right: `${dropdownPosition.right}px` }}
-                          >
-                            {canUpdateLandingNote && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleCloseDropdown();
-                                  handleOpenModal(note);
-                                }}
-                                className="landing-dropdown-item landing-dropdown-item--default"
-                              >
-                                <img src={editIcon} alt="edit" />
-                                <span>Edit</span>
-                              </button>
-                            )}
-                            {canDeleteLandingNote && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleCloseDropdown();
-                                  handleDelete(note);
-                                }}
-                                className="landing-dropdown-item landing-dropdown-item--danger"
-                              >
-                                <img src={deleteIcon} alt="delete" />
-                                <span>Delete</span>
-                              </button>
-                            )}
-                          </div>,
-                          document.body
-                        )}
+                        {renderFormBody()}
                       </div>
+                      {renderFormFooter()}
+                    </>
+                  ) : (
+                    <div className="crew-pass-requests-table-card__empty material-note-idle">
+                      <span>No landing note selected</span>
+                      <small>Landing notes are created by converting an inbound order. Choose <b>Edit</b> from a row&apos;s menu to update one here.</small>
                     </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="8" className="landing-table-empty">
-                  No landing notes added yet.
-                </td>
-              </tr>
+                  )}
+                </div>
+              </div>
             )}
-          </tbody>
-        </table>
-        </div>
-        <MaterialTablePagination
-          page={landingPage}
-          total={landingTotal || notesList.length}
-          limit={LANDING_LIMIT}
-          onPageChange={setLandingPage}
-        />
-      </div>
 
-      <CustomModal
-        className="material-management-modal"
-        dialgName="modal-dialog modal-dialog-centered modal-dialog-scrollable"
-        show={showModal}
-        closeModal={handleCloseModal}
-        header={renderHeader()}
-        body={renderBody()}
-        footer={renderFooter()}
-      />
+            <div className="general-info-right crew-pass-requests-sidebar">
+              <div className={`crew-pass-requests-table-card husb-accent-${MATERIAL_ACCENT}`} role="region" aria-label="Landing notes">
+                <PremiumCardHeader
+                  icon="list"
+                  title="Landing notes"
+                  subtitle="All landing notes for this job"
+                  count={landingTotal || undefined}
+                  headerClassName="crew-pass-requests-table-card__header"
+                  titleClassName="crew-pass-requests-table-card__title"
+                />
+                <div className="crew-pass-requests-table-card__body">
+                  {isLoadingList ? (
+                    <div className="crew-pass-requests-table-card__skeleton" aria-busy="true">
+                      <Skeleton height={14} borderRadius={6} count={1} style={{ marginBottom: 12 }} />
+                      <Skeleton height={36} borderRadius={6} count={6} />
+                    </div>
+                  ) : notesList.length === 0 ? (
+                    <div className="crew-pass-requests-table-card__empty">No landing notes added yet</div>
+                  ) : (
+                    <div className="crew-pass-requests-table-scroll crew-pass-thin-scrollbar material-table-container">
+                    <table className="crew-pass-requests-table material-notes-table landing-table">
+                      <thead>
+                        <tr>
+                          <th>Order No</th>
+                          <th>Date</th>
+                          <th>PO/DO</th>
+                          <th>Landing Proof</th>
+                          <th>Quantity</th>
+                          <th>Package Type</th>
+                          <th>Description</th>
+                          <th className="landing-table-actions-th">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {notesList.map((note) => (
+                            <tr
+                              key={note.id}
+                              className={editingNote && (editingNote.landing_note_id ?? editingNote.id) === (note.landing_note_id ?? note.id) ? "material-notes-table__row--editing" : undefined}
+                            >
+                              <td>
+                                <div className="material-table-cell">{note.landingNoteNo || ""}</div>
+                              </td>
+                              <td>
+                                <div className="material-table-cell">
+                                  {formatDate(note.date)}
+                                </div>
+                              </td>
+                              <td>
+                                <div className="material-table-cell">{note.poDo || ""}</div>
+                              </td>
+                              <td>
+                                <div className="material-table-cell">
+                                  {note.landingProof && note.landingProof.length > 0 ? (
+                                    <span className="landing-table-proof-link">
+                                      {note.landingProof.length} file(s)
+                                    </span>
+                                  ) : (
+                                    <span className="landing-table-proof-none">No files</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td>
+                                <div className="material-table-cell">{note.quantity || ""}</div>
+                              </td>
+                              <td>
+                                <div className="material-table-cell">{note.packageType || ""}</div>
+                              </td>
+                              <td>
+                                <div className="material-table-cell">
+                                  {note.description && note.description.length > 13 ? (
+                                    <>
+                                      <Tooltip
+                                        id={`description-tooltip-${note.id}`}
+                                        place="right"
+                                        content={note.description}
+                                        className="material-table-tooltip"
+                                      />
+                                      <span
+                                        data-tooltip-id={`description-tooltip-${note.id}`}
+                                        className="landing-table-description"
+                                      >
+                                        {note.description.substring(0, 13)}...
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <span>{note.description || ""}</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="landing-table-actions-td">
+                                <div className="material-table-cell landing-table-actions-cell">
+                                  <Tooltip id={`view-note-${note.id}`} place="left" content="View" />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleViewNote(note)}
+                                    data-tooltip-id={`view-note-${note.id}`}
+                                    className="landing-action-btn"
+                                  >
+                                    <img src={eyeIcon} alt="view" />
+                                  </button>
+                                  {canPrintLandingNote && (
+                                    <>
+                                      <Tooltip id={`print-note-${note.id}`} place="left" content="Print" />
+                                      <button
+                                        type="button"
+                                        onClick={() => handlePrintNote(note)}
+                                        data-tooltip-id={`print-note-${note.id}`}
+                                        disabled={printingNoteId === (note.landing_note_id ?? note.id)}
+                                        className="landing-action-btn"
+                                      >
+                                        {printingNoteId === (note.landing_note_id ?? note.id) ? (
+                                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="landing-spin">
+                                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
+                                          </svg>
+                                        ) : (
+                                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M6 9V2H18V9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M6 18H4C2.89543 18 2 17.1046 2 16V11C2 9.89543 2.89543 9 4 9H20C21.1046 9 22 9.89543 22 11V16C22 17.1046 21.1046 18 20 18H18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M18 14H6V22H18V14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M18 9H6V14H18V9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                          </svg>
+                                        )}
+                                      </button>
+                                    </>
+                                  )}
+                                  {canConvertToDispatchNote && (
+                                    <>
+                                      <Tooltip id={`convert-note-${note.id}`} place="left" content=" Convert" />
+                                      <button
+                                        type="button"
+                                        onClick={() => handleConvertToDispatch(note)}
+                                        data-tooltip-id={`convert-note-${note.id}`}
+                                        className="landing-action-btn"
+                                      >
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                          <path d="M1 4H10V12H1V4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                          <path d="M10 6H16L19 9V12H10V6Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                          <circle cx="4" cy="17" r="2" stroke="currentColor" strokeWidth="2" />
+                                          <circle cx="17" cy="17" r="2" stroke="currentColor" strokeWidth="2" />
+                                          <path d="M19 9H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                        </svg>
+                                      </button>
+                                    </>
+                                  )}
+                                  <div className={`action-dropdown-wrapper landing-more-actions-wrapper${openDropdownId === note.id ? " landing-more-actions-wrapper--open" : ""}`}>
+                                    <Tooltip id={`more-actions-${note.id}`} place="left" content="More actions" />
+                                    <button
+                                      type="button"
+                                      onClick={(e) => handleToggleDropdown(note.id, e)}
+                                      data-tooltip-id={`more-actions-${note.id}`}
+                                      className="landing-action-btn"
+                                    >
+                                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="12" cy="6" r="1.5" fill="currentColor" />
+                                        <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                                        <circle cx="12" cy="18" r="1.5" fill="currentColor" />
+                                      </svg>
+                                    </button>
+                                    {openDropdownId === note.id && createPortal(
+                                      <div
+                                        data-dropdown-menu
+                                        className="landing-dropdown-menu"
+                                        style={{ top: `${dropdownPosition.top}px`, right: `${dropdownPosition.right}px` }}
+                                      >
+                                        {canUpdateLandingNote && (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              handleCloseDropdown();
+                                              handleEditNote(note);
+                                            }}
+                                            className="landing-dropdown-item landing-dropdown-item--default"
+                                          >
+                                            <img src={editIcon} alt="edit" />
+                                            <span>Edit</span>
+                                          </button>
+                                        )}
+                                        {canDeleteLandingNote && (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              handleCloseDropdown();
+                                              handleDelete(note);
+                                            }}
+                                            className="landing-dropdown-item landing-dropdown-item--danger"
+                                          >
+                                            <img src={deleteIcon} alt="delete" />
+                                            <span>Delete</span>
+                                          </button>
+                                        )}
+                                      </div>,
+                                      document.body
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                    </div>
+                  )}
+                  {!isLoadingList && notesList.length > 0 && (
+                    <div className="crew-pass-requests-table-card__pagination">
+                      <MaterialTablePagination
+                        page={landingPage}
+                        total={landingTotal || notesList.length}
+                        limit={LANDING_LIMIT}
+                        onPageChange={setLandingPage}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </FormSection>
 
       <CustomModal
         className="material-management-modal"

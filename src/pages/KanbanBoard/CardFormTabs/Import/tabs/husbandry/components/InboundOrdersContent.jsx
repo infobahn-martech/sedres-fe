@@ -1345,7 +1345,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
 
   // Left-hand form card body (was the Add/Edit modal body).
   const renderFormBody = () => (
-        <form id="inboundOrderForm" className="material-edit-form inbound-order-card-form" onSubmit={handleSubmit}>
+        <form id="inboundOrderForm" className="material-edit-form material-note-card-form" onSubmit={handleSubmit}>
           {/* Basic Details */}
           <FormGroup icon="calendar" label="Basic Details" accent={MATERIAL_ACCENT}>
             <div className="row g-2">
@@ -1694,13 +1694,13 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
 
   // Left-hand form card footer (was the modal footer). Cancel only shows in edit mode.
   const renderFormFooter = () => (
-    <div className="form-save-button-wrapper cgpass-save-footer inbound-order-save-footer">
-      <button type="button" onClick={handleReset} className="inbound-order-ghost-action">
+    <div className="form-save-button-wrapper cgpass-save-footer material-note-save-footer">
+      <button type="button" onClick={handleReset} className="material-note-ghost-action">
         Reset
       </button>
-      <div className="inbound-order-footer-actions">
+      <div className="material-note-footer-actions">
         {editingOrder && (
-          <button type="button" onClick={resetInboundForm} className="inbound-order-ghost-action">
+          <button type="button" onClick={resetInboundForm} className="material-note-ghost-action">
             Cancel
           </button>
         )}
@@ -2392,8 +2392,8 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
   return (
     <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
       <FormSection icon={GroupSettingsIcon} title="">
-        <div className="pre-arrival-form inbound-orders-form">
-          <div className={`general-info-two-column operation-section-form-layout crew-pass-premium-grid${showFormCard ? "" : " inbound-orders-grid--list-only"}`}>
+        <div className="pre-arrival-form material-notes-form inbound-orders-form">
+          <div className={`general-info-two-column operation-section-form-layout crew-pass-premium-grid${showFormCard ? "" : " material-notes-grid--list-only"}`}>
             {showFormCard && (
               <div className="general-info-left crew-pass-premium-left">
                 <div className={`crew-pass-request-details-card husb-accent-${MATERIAL_ACCENT}`}>
@@ -2435,7 +2435,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                     <div className="crew-pass-requests-table-card__empty">No inbound orders found</div>
                   ) : (
                     <div className="crew-pass-requests-table-scroll crew-pass-thin-scrollbar material-table-container">
-                      <table className="crew-pass-requests-table inbound-orders-table">
+                      <table className="crew-pass-requests-table material-notes-table inbound-orders-table">
                         <thead>
                           <tr>
                             <th>Order No</th>
@@ -2455,7 +2455,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                               return (
                                 <tr
                                   key={rowKey}
-                                  className={editingInboundId != null && resolveInboundId(order) === editingInboundId ? "inbound-orders-table__row--editing" : undefined}
+                                  className={editingInboundId != null && resolveInboundId(order) === editingInboundId ? "material-notes-table__row--editing" : undefined}
                                 >
                                   <td>
                                     <div className="material-table-cell">{order.inbound_no || ""}</div>

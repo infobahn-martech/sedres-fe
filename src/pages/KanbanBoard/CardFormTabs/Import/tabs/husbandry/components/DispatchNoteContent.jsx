@@ -5,8 +5,19 @@ import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import CustomModal from "@/components/CustomModal";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
-import { FormField, FormInput, FormSelect, ReactQuillEditor } from "./Husbandry.components";
-import { validateDocumentFiles } from "./Husbandry.constants";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+import GroupSettingsIcon from "@/assets/images/cv.png";
+import {
+  FormField,
+  FormInput,
+  FormSelect,
+  ReactQuillEditor,
+  FormSection,
+  FormGroup,
+  PremiumCardHeader,
+} from "./Husbandry.components";
+import { validateDocumentFiles, MAIN_TABS, SERVICE_ACCENT } from "./Husbandry.constants";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import LocationAutocomplete from "./LocationAutocomplete";
 import MaterialTablePagination from "./MaterialTablePagination";
@@ -25,6 +36,8 @@ import inboundOrderService from "@/services/inboundOrderService";
 import landingNoteService from "@/services/landingNoteService";
 import { nextDayOf } from "@/shared/helpers/dateTimeFieldUtils";
 import "@/design/scss/dispatch-note.scss";
+
+const MATERIAL_ACCENT = SERVICE_ACCENT[MAIN_TABS.MATERIAL_MANAGEMENT];
 
 const isTruthyFlag = (value) => value === true || Number(value) === 1 || String(value).toLowerCase() === "true";
 
@@ -190,7 +203,7 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
   const [driverOptions, setDriverOptions] = useState([]);
   const [locationOptions, setLocationOptions] = useState([]);
 
-  const [showModal, setShowModal] = useState(false);
+  const formBodyRef = useRef(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [notesList, setNotesList] = useState([]);
   const [editingNote, setEditingNote] = useState(null);
@@ -307,12 +320,13 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
     setRemovedDocumentIds([]);
   };
 
-  const handleOpenModal = (note) => {
-    if (!canUpdateDispatchNote) return;
+  // Loads a dispatch note into the left-hand edit card.
+  const handleEditNote = (note) => {
+    if (!note || !canUpdateDispatchNote) return;
     setEditingNote(note);
     resetForm();
     setEditMinDate(undefined);
-    setShowModal(true);
+    formBodyRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
     getDispatchNoteById({
       id: note.id || note.dispatch_note_id,
       cb: (detail) => {
@@ -383,8 +397,8 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
     });
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
+  // Exits edit mode and returns the card to its idle state.
+  const resetEditForm = () => {
     setEditingNote(null);
     resetForm();
     setEditMinDate(undefined);
@@ -500,7 +514,7 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
       dispatchNoteId,
       data: fd,
       cb: () => {
-        handleCloseModal();
+        resetEditForm();
         if (callId) {
           getAllDispatchNotes({ call_id: callId, page: dispatchPage, limit: DISPATCH_LIMIT });
           getDispatchNotesTotal({ call_id: callId });
@@ -522,6 +536,10 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
       dispatchNoteId: deletingNote.id,
       cb: () => {
         setShowDeleteModal(false);
+        // Drop out of edit mode if the note being edited was deleted.
+        if (editingNote && editingNote.id === deletingNote.id) {
+          resetEditForm();
+        }
         setDeletingNote(null);
         if (callId) {
           getAllDispatchNotes({ call_id: callId, page: dispatchPage, limit: DISPATCH_LIMIT });
@@ -748,17 +766,13 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
     return "flag";
   };
 
-  const renderHeader = () => (
-    <h1 className="modal-title">Edit Dispatch Note</h1>
-  );
+  const editingNoteLabel = editingNote?.dispatch_note_no || editingNote?.orderNo || "";
 
-  const renderBody = () => (
-    <div className="modal-body">
-      <div className="lead-form">
-        <form id="dispatchNoteForm" className="dispatch-note-edit-form" onSubmit={handleSubmit}>
+  // Left-hand edit card body (was the Edit modal body).
+  const renderFormBody = () => (
+        <form id="dispatchNoteForm" className="dispatch-note-edit-form material-note-card-form" onSubmit={handleSubmit}>
 
-          <div className="dispatch-edit-section">
-            <h3 className="dispatch-edit-section-title">Basic Details</h3>
+          <FormGroup icon="calendar" label="Basic Details" accent={MATERIAL_ACCENT}>
             <div className="row g-2">
               <div className="col-md-6 mb-2">
                 <FormField label="Dispatch Date *" className="dispatch-date-plain">
@@ -819,20 +833,10 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
                 </FormField>
               </div>
             </div>
-          </div>
+          </FormGroup>
 
           {editLaunchHire && (
-            <div className="dispatch-edit-section dispatch-launch-hire-section">
-              <h3 className="dispatch-edit-section-title dispatch-launch-hire-title">
-                <span className="dispatch-launch-hire-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M3 15h18l-2 5H5l-2-5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M12 3v12M9 6l3-3 3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M2 15c2-2.5 4-3.5 10-3.5s8 1 10 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                </span>
-                <span>Launch Hire</span>
-              </h3>
+            <FormGroup icon="LAUNCH_HIRE" label="Launch Hire" accent={MATERIAL_ACCENT}>
               <div className="dispatch-launch-hire-card">
                 <div className="dispatch-launch-hire-steps">
                   {(() => {
@@ -871,11 +875,10 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
                   ))}
                 </div>
               </div>
-            </div>
+            </FormGroup>
           )}
 
-          <div className="dispatch-edit-section">
-            <h3 className="dispatch-edit-section-title">Items</h3>
+          <FormGroup icon="list" label="Items" accent={MATERIAL_ACCENT}>
             {isLoadingDetail ? (
               <CardTabListLoading message="Loading items..." cardColor={cardColor} />
             ) : (
@@ -999,10 +1002,9 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
                 </div>
               ))
             )}
-          </div>
+          </FormGroup>
 
-          <div className="dispatch-edit-section dispatch-edit-section--last">
-            <h3 className="dispatch-edit-section-title">Documents & Remarks</h3>
+          <FormGroup icon="folder" label="Documents & Remarks" accent={MATERIAL_ACCENT}>
             <div className="mb-2">
               <FormField label="File">
                 <AttachmentsList
@@ -1030,29 +1032,28 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
                 />
               </FormField>
             </div>
-          </div>
+          </FormGroup>
 
         </form>
-      </div>
-    </div>
   );
 
-  const renderFooter = () => (
-    <div className="modal-footer">
-      <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
-        Cancel
-      </button>
-      <button
-        type="submit"
-        form="dispatchNoteForm"
-        className="btn btn-primary"
-        disabled={isLoadingUpdate || isLoadingDetail || isLoadingDelete}
-      >
-        {isLoadingUpdate
-          ? <span className="btn-spinner-content"><span className="spinner-border spinner-border-sm" role="status" />Saving...</span>
-          : "Update Note"
-        }
-      </button>
+  // Left-hand edit card footer (was the modal footer).
+  const renderFormFooter = () => (
+    <div className="form-save-button-wrapper cgpass-save-footer material-note-save-footer">
+      <span />
+      <div className="material-note-footer-actions">
+        <button type="button" className="material-note-ghost-action" onClick={resetEditForm}>
+          Cancel
+        </button>
+        <button
+          type="submit"
+          form="dispatchNoteForm"
+          className="form-save-button"
+          disabled={isLoadingUpdate || isLoadingDetail || isLoadingDelete}
+        >
+          {isLoadingUpdate ? "Saving..." : "Update Note"}
+        </button>
+      </div>
     </div>
   );
 
@@ -1425,163 +1426,204 @@ const DispatchNoteContent = ({ formValues, cardColor }) => {
   );
 
   return (
-    <div className="cardform-left-full material-management-content-wrapper" style={{ "--card-color": cardColor }}>
-      <div className="material-list-header">
-        <h3 className="material-list-title">
-          <span className="material-list-title-bar"></span>
-          Dispatch Note
-        </h3>
-      </div>
-      <div className="table-wrapper table-responsive material-table-container dispatch-note-table-container">
-        <div className="dispatch-note-table-scroll">
-          <table className="table table-striped material-table sub-note-table dispatch-note-table">
-            <thead className="dispatch-note-thead">
-              <tr>
-                <th>Order No</th>
-                <th>Date</th>
-                <th>PO/DO</th>
-                <th>Delivery Proof</th>
-                <th>Quantity</th>
-                <th>Package Type</th>
-                <th>Description</th>
-                <th className="dispatch-note-actions-th">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoadingList ? (
-                <tr><td colSpan="8" className="dispatch-note-empty-td">Loading...</td></tr>
-              ) : notesList.length > 0 ? (
-                notesList.map((note) => (
-                  <tr key={note.id}>
-                    <td><div className="material-table-cell">{note.orderNo || ""}</div></td>
-                    <td><div className="material-table-cell">{formatDate(note.date)}</div></td>
-                    <td><div className="material-table-cell">{note.poDo || ""}</div></td>
-                    <td>
-                      <div className="material-table-cell">
-                        {note.deliveryProof && note.deliveryProof.length > 0 ? (
-                          <span className="dispatch-note-file-link">{note.deliveryProof.length} file(s)</span>
-                        ) : (
-                          <span className="dispatch-note-no-files">No files</span>
-                        )}
+    <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+      <FormSection icon={GroupSettingsIcon} title="">
+        <div className="pre-arrival-form material-notes-form">
+          <div className={`general-info-two-column operation-section-form-layout crew-pass-premium-grid${canUpdateDispatchNote ? "" : " material-notes-grid--list-only"}`}>
+            {canUpdateDispatchNote && (
+              <div className="general-info-left crew-pass-premium-left">
+                <div className={`crew-pass-request-details-card husb-accent-${MATERIAL_ACCENT}`}>
+                  <PremiumCardHeader
+                    icon={MAIN_TABS.MATERIAL_MANAGEMENT}
+                    title={editingNote ? `Edit dispatch note${editingNoteLabel ? ` ${editingNoteLabel}` : ""}` : "Edit dispatch note"}
+                    subtitle={editingNote ? "Update the dispatch details and save your changes" : "Select a dispatch note from the list to edit"}
+                    headerClassName="crew-pass-request-details-card__header"
+                    titleClassName="crew-pass-request-details-card__title"
+                  />
+                  {editingNote ? (
+                    <>
+                      <div
+                        ref={formBodyRef}
+                        className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar"
+                      >
+                        {renderFormBody()}
                       </div>
-                    </td>
-                    <td><div className="material-table-cell">{note.quantity || ""}</div></td>
-                    <td><div className="material-table-cell">{note.packageType || ""}</div></td>
-                    <td>
-                      <div className="material-table-cell">
-                        {note.description && note.description.length > 13 ? (
-                          <>
-                            <Tooltip id={`description-tooltip-${note.id}`} place="right" content={note.description} className="material-table-tooltip" />
-                            <span data-tooltip-id={`description-tooltip-${note.id}`} className="dispatch-note-desc-tip">
-                              {note.description.substring(0, 13)}...
-                            </span>
-                          </>
-                        ) : (
-                          <span>{note.description || ""}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="dispatch-note-actions-td">
-                      <div className="material-table-cell dispatch-note-actions-cell">
-                        <Tooltip id={`view-note-${note.id}`} place="left" content="View" />
-                        <button
-                          type="button"
-                          onClick={() => handleViewNote(note)}
-                          data-tooltip-id={`view-note-${note.id}`}
-                          className="dispatch-note-action-btn"
-                        >
-                          <img src={eyeIcon} alt="view" className="dispatch-note-action-icon" />
-                        </button>
-                        {canPrintDispatchNote && (
-                          <>
-                            <Tooltip id={`print-note-${note.id}`} place="left" content="Print" />
-                            <button
-                              type="button"
-                              onClick={() => handlePrintNote(note)}
-                              data-tooltip-id={`print-note-${note.id}`}
-                              className="print-action-icon-wrap"
-                              disabled={printingNoteId === (note.dispatch_note_id || note.id)}
-                            >
-                              {printingNoteId === (note.dispatch_note_id || note.id) ? (
-                                <span className="spinner-border spinner-border-sm" role="status" />
-                              ) : (
-                                <img src={printIcon} alt="print" className="material-action-icon" />
-                              )}
-                            </button>
-                          </>
-                        )}
-                        <div className={`action-dropdown-wrapper${openDropdownId === note.id ? " action-dropdown-wrapper--open" : ""}`}>
-                          <Tooltip id={`more-actions-${note.id}`} place="right" content="More actions" />
-                          <button
-                            type="button"
-                            onClick={(e) => handleToggleDropdown(note.id, e)}
-                            data-tooltip-id={`more-actions-${note.id}`}
-                            className="dispatch-note-action-btn"
-                          >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <circle cx="12" cy="6" r="1.5" fill="currentColor" />
-                              <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-                              <circle cx="12" cy="18" r="1.5" fill="currentColor" />
-                            </svg>
-                          </button>
-                          {openDropdownId === note.id && createPortal(
-                            <div
-                              data-dropdown-menu
-                              className="dispatch-note-dropdown-menu"
-                              style={{ top: `${dropdownPosition.top}px`, right: `${dropdownPosition.right}px` }}
-                            >
-                              {canUpdateDispatchNote && (
-                                <button
-                                  type="button"
-                                  onClick={() => { handleCloseDropdown(); handleOpenModal(note); }}
-                                  className="dispatch-note-dropdown-btn"
-                                >
-                                  <img src={editIcon} alt="edit" className="dispatch-note-dropdown-icon" />
-                                  <span>Edit</span>
-                                </button>
-                              )}
-                              {canDeleteDispatchNote && (
-                              <button
-                                type="button"
-                                onClick={() => { handleCloseDropdown(); handleDelete(note); }}
-                                className="dispatch-note-dropdown-btn dispatch-note-dropdown-btn--danger"
-                              >
-                                <img src={deleteIcon} alt="delete" className="dispatch-note-dropdown-icon" />
-                                <span>Delete</span>
-                              </button>
-                              )}
-                            </div>,
-                            document.body
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="8" className="dispatch-note-empty-td">No dispatch notes added yet.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        <MaterialTablePagination
-          page={dispatchPage}
-          total={dispatchTotal}
-          limit={DISPATCH_LIMIT}
-          onPageChange={setDispatchPage}
-        />
-      </div>
+                      {renderFormFooter()}
+                    </>
+                  ) : (
+                    <div className="crew-pass-requests-table-card__empty material-note-idle">
+                      <span>No dispatch note selected</span>
+                      <small>Dispatch notes are created by converting a landing note. Choose <b>Edit</b> from a row&apos;s menu to update one here.</small>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
-      <CustomModal
-        className="material-management-modal"
-        show={showModal}
-        closeModal={handleCloseModal}
-        header={renderHeader()}
-        body={renderBody()}
-        footer={renderFooter()}
-      />
+            <div className="general-info-right crew-pass-requests-sidebar">
+              <div className={`crew-pass-requests-table-card husb-accent-${MATERIAL_ACCENT}`} role="region" aria-label="Dispatch notes">
+                <PremiumCardHeader
+                  icon="list"
+                  title="Dispatch notes"
+                  subtitle="All dispatch notes for this job"
+                  count={dispatchTotal || undefined}
+                  headerClassName="crew-pass-requests-table-card__header"
+                  titleClassName="crew-pass-requests-table-card__title"
+                />
+                <div className="crew-pass-requests-table-card__body">
+                  {isLoadingList ? (
+                    <div className="crew-pass-requests-table-card__skeleton" aria-busy="true">
+                      <Skeleton height={14} borderRadius={6} count={1} style={{ marginBottom: 12 }} />
+                      <Skeleton height={36} borderRadius={6} count={6} />
+                    </div>
+                  ) : notesList.length === 0 ? (
+                    <div className="crew-pass-requests-table-card__empty">No dispatch notes added yet</div>
+                  ) : (
+                    <div className="crew-pass-requests-table-scroll crew-pass-thin-scrollbar material-table-container">
+                      <table className="crew-pass-requests-table material-notes-table dispatch-note-table">
+                        <thead>
+                          <tr>
+                            <th>Order No</th>
+                            <th>Date</th>
+                            <th>PO/DO</th>
+                            <th>Delivery Proof</th>
+                            <th>Quantity</th>
+                            <th>Package Type</th>
+                            <th>Description</th>
+                            <th className="dispatch-note-actions-th">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {notesList.map((note) => (
+                              <tr
+                                key={note.id}
+                                className={editingNote?.id === note.id ? "material-notes-table__row--editing" : undefined}
+                              >
+                                <td><div className="material-table-cell">{note.orderNo || ""}</div></td>
+                                <td><div className="material-table-cell">{formatDate(note.date)}</div></td>
+                                <td><div className="material-table-cell">{note.poDo || ""}</div></td>
+                                <td>
+                                  <div className="material-table-cell">
+                                    {note.deliveryProof && note.deliveryProof.length > 0 ? (
+                                      <span className="dispatch-note-file-link">{note.deliveryProof.length} file(s)</span>
+                                    ) : (
+                                      <span className="dispatch-note-no-files">No files</span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td><div className="material-table-cell">{note.quantity || ""}</div></td>
+                                <td><div className="material-table-cell">{note.packageType || ""}</div></td>
+                                <td>
+                                  <div className="material-table-cell">
+                                    {note.description && note.description.length > 13 ? (
+                                      <>
+                                        <Tooltip id={`description-tooltip-${note.id}`} place="right" content={note.description} className="material-table-tooltip" />
+                                        <span data-tooltip-id={`description-tooltip-${note.id}`} className="dispatch-note-desc-tip">
+                                          {note.description.substring(0, 13)}...
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <span>{note.description || ""}</span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="dispatch-note-actions-td">
+                                  <div className="material-table-cell dispatch-note-actions-cell">
+                                    <Tooltip id={`view-note-${note.id}`} place="left" content="View" />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleViewNote(note)}
+                                      data-tooltip-id={`view-note-${note.id}`}
+                                      className="dispatch-note-action-btn"
+                                    >
+                                      <img src={eyeIcon} alt="view" className="dispatch-note-action-icon" />
+                                    </button>
+                                    {canPrintDispatchNote && (
+                                      <>
+                                        <Tooltip id={`print-note-${note.id}`} place="left" content="Print" />
+                                        <button
+                                          type="button"
+                                          onClick={() => handlePrintNote(note)}
+                                          data-tooltip-id={`print-note-${note.id}`}
+                                          className="print-action-icon-wrap"
+                                          disabled={printingNoteId === (note.dispatch_note_id || note.id)}
+                                        >
+                                          {printingNoteId === (note.dispatch_note_id || note.id) ? (
+                                            <span className="spinner-border spinner-border-sm" role="status" />
+                                          ) : (
+                                            <img src={printIcon} alt="print" className="material-action-icon" />
+                                          )}
+                                        </button>
+                                      </>
+                                    )}
+                                    <div className={`action-dropdown-wrapper${openDropdownId === note.id ? " action-dropdown-wrapper--open" : ""}`}>
+                                      <Tooltip id={`more-actions-${note.id}`} place="right" content="More actions" />
+                                      <button
+                                        type="button"
+                                        onClick={(e) => handleToggleDropdown(note.id, e)}
+                                        data-tooltip-id={`more-actions-${note.id}`}
+                                        className="dispatch-note-action-btn"
+                                      >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                          <circle cx="12" cy="6" r="1.5" fill="currentColor" />
+                                          <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                                          <circle cx="12" cy="18" r="1.5" fill="currentColor" />
+                                        </svg>
+                                      </button>
+                                      {openDropdownId === note.id && createPortal(
+                                        <div
+                                          data-dropdown-menu
+                                          className="dispatch-note-dropdown-menu"
+                                          style={{ top: `${dropdownPosition.top}px`, right: `${dropdownPosition.right}px` }}
+                                        >
+                                          {canUpdateDispatchNote && (
+                                            <button
+                                              type="button"
+                                              onClick={() => { handleCloseDropdown(); handleEditNote(note); }}
+                                              className="dispatch-note-dropdown-btn"
+                                            >
+                                              <img src={editIcon} alt="edit" className="dispatch-note-dropdown-icon" />
+                                              <span>Edit</span>
+                                            </button>
+                                          )}
+                                          {canDeleteDispatchNote && (
+                                          <button
+                                            type="button"
+                                            onClick={() => { handleCloseDropdown(); handleDelete(note); }}
+                                            className="dispatch-note-dropdown-btn dispatch-note-dropdown-btn--danger"
+                                          >
+                                            <img src={deleteIcon} alt="delete" className="dispatch-note-dropdown-icon" />
+                                            <span>Delete</span>
+                                          </button>
+                                          )}
+                                        </div>,
+                                        document.body
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {!isLoadingList && notesList.length > 0 && (
+                    <div className="crew-pass-requests-table-card__pagination">
+                      <MaterialTablePagination
+                        page={dispatchPage}
+                        total={dispatchTotal}
+                        limit={DISPATCH_LIMIT}
+                        onPageChange={setDispatchPage}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </FormSection>
 
       <CustomModal
         className="material-management-modal"

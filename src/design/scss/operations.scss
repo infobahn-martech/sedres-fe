@@ -4751,7 +4751,7 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
 .third-party-services-form,
 .add-on-services-form,
 .launchhire-form,
-.inbound-orders-form {
+.material-notes-form {
   .cf-input,
   .cf-multi-select-email-input,
   .document-upload-zone,
@@ -5297,7 +5297,7 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
 .mwp-renewal-form,
 .launchhire-form,
 .waste-disposal-form,
-.inbound-orders-form {
+.material-notes-form {
   display: flex;
   flex-direction: column;
 
@@ -6108,7 +6108,7 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
   .add-on-services-form .general-info-two-column.operation-section-form-layout.crew-pass-premium-grid,
   .mwp-renewal-form .general-info-two-column.operation-section-form-layout.crew-pass-premium-grid,
   .launchhire-form .general-info-two-column.operation-section-form-layout.crew-pass-premium-grid,
-  .inbound-orders-form .general-info-two-column.operation-section-form-layout.crew-pass-premium-grid {
+  .material-notes-form .general-info-two-column.operation-section-form-layout.crew-pass-premium-grid {
     grid-template-columns: 1fr;
   }
 
@@ -6123,7 +6123,7 @@ $op-split-cols: ".operation-two-column-grid--split-scroll .operation-form-column
   .third-party-services-form .crew-pass-requests-sidebar .crew-pass-requests-table-card,
   .add-on-services-form .crew-pass-requests-sidebar .crew-pass-requests-table-card,
   .mwp-renewal-form .crew-pass-requests-sidebar .crew-pass-requests-table-card,
-  .inbound-orders-form .crew-pass-requests-sidebar .crew-pass-requests-table-card {
+  .material-notes-form .crew-pass-requests-sidebar .crew-pass-requests-table-card {
     max-height: min(70vh, 720px);
   }
 

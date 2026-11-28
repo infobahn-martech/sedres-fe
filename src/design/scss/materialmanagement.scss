@@ -2344,15 +2344,15 @@ body .material-management-modal .upload-main-text {
     color: var(--text-body);
   }
 }
-
 /* ===========================================================
-   INBOUND ORDERS — premium two-column layout
-   Form card (left) + orders list card (right), matching the
-   Zawil Pass / CG Pass husbandry pages. Grid, card and table
-   chrome come from the shared .crew-pass-* classes in
-   operations.scss; only Inbound-specific tweaks live here.
+   MATERIAL MANAGEMENT — premium two-column layout
+   Inbound Orders / Landing Note / Dispatch Note: form card (left)
+   + list card (right), matching the Zawil Pass / CG Pass husbandry
+   pages. Grid, card and table chrome come from the shared
+   .crew-pass-* classes in operations.scss; only Material
+   Management tweaks live here.
    =========================================================== */
-.inbound-orders-form {
+.material-notes-form {
   // Desktop only — the shared ≤900px rule in operations.scss stacks the columns.
   @media (min-width: 901px) {
     .general-info-two-column.operation-section-form-layout.crew-pass-premium-grid {
@@ -2360,8 +2360,8 @@ body .material-management-modal .upload-main-text {
     }
   }
 
-  // No add permission and nothing being edited: list takes the full width.
-  .general-info-two-column.operation-section-form-layout.crew-pass-premium-grid.inbound-orders-grid--list-only {
+  // No add/update permission: the list takes the full width.
+  .general-info-two-column.operation-section-form-layout.crew-pass-premium-grid.material-notes-grid--list-only {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -2370,8 +2370,27 @@ body .material-management-modal .upload-main-text {
     max-height: calc(100vh - 210px);
   }
 
-  // Order item cards sit inside a FormGroup instead of a modal section.
-  .dispatch-edit-item-card:last-child {
+  // Idle edit card (Landing / Dispatch) before a note is picked.
+  .material-note-idle {
+    gap: 8px;
+
+    span {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    small {
+      max-width: 300px;
+      font-size: 12.5px;
+      font-weight: 400;
+      line-height: 1.5;
+      color: var(--text-muted);
+    }
+  }
+
+  // Item cards sit inside a FormGroup instead of a modal section.
+  .dispatch-edit-item-card:last-child,
+  .landing-edit-item-card:last-child {
     margin-bottom: 0;
   }
 
@@ -2387,20 +2406,26 @@ body .material-management-modal .upload-main-text {
     margin-top: 4px;
   }
 
-  // Narrow column: stack the launch hire steps and drop the decorative track.
+  // Narrow column: stack launch hire steps and drop the decorative track.
   .dispatch-launch-hire-card {
-    margin-top: 12px;
     padding: 14px 16px;
   }
 
-  .dispatch-launch-hire-steps--form {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
+  .dispatch-edit-checkbox-group + .dispatch-launch-hire-card {
+    margin-top: 12px;
   }
 
-  .dispatch-launch-hire-step--form {
+  .dispatch-launch-hire-steps {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 14px;
+    overflow-x: visible;
+  }
+
+  .dispatch-launch-hire-step {
     width: 100%;
+    min-width: 0;
 
     &::after {
       display: none;
@@ -2419,20 +2444,20 @@ body .material-management-modal .upload-main-text {
     }
   }
 
-  // Footer: Reset on the left, Cancel (edit mode) + Save/Update on the right.
-  .form-save-button-wrapper.inbound-order-save-footer {
+  // Footer: Reset (Inbound) on the left, Cancel + Save/Update on the right.
+  .form-save-button-wrapper.material-note-save-footer {
     justify-content: space-between;
     align-items: center;
     gap: 12px;
   }
 
-  .inbound-order-footer-actions {
+  .material-note-footer-actions {
     display: flex;
     align-items: center;
     gap: 10px;
   }
 
-  .inbound-order-ghost-action {
+  .material-note-ghost-action {
     background: var(--surface-primary);
     border: 1px solid var(--border-primary);
     color: var(--text-primary);
@@ -2443,14 +2468,19 @@ body .material-management-modal .upload-main-text {
     cursor: pointer;
     transition: border-color 0.2s ease, background-color 0.2s ease;
 
-    &:hover {
+    &:hover:not(:disabled) {
       border-color: var(--accent, var(--color-primary));
       background: var(--bg-secondary);
     }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
   }
 
-  // Orders table inside the premium list card.
-  .inbound-orders-table {
+  // List table inside the premium list card.
+  .material-notes-table {
     min-width: 680px;
 
     td {
@@ -2458,12 +2488,14 @@ body .material-management-modal .upload-main-text {
     }
 
     .note-actions-th,
-    .note-actions-td {
+    .note-actions-td,
+    .landing-table-actions-th,
+    .dispatch-note-actions-th {
       width: 1%;
       white-space: nowrap;
     }
 
-    tr.inbound-orders-table__row--editing td {
+    tr.material-notes-table__row--editing td {
       background: var(--accent-tint, var(--bg-secondary));
     }
   }
