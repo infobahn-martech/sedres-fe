@@ -126,7 +126,7 @@ const DocumentListModal = ({ show, onClose, onSave, initialSelected = [], librar
       className="so-doc-modal-overlay"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="so-doc-modal" role="dialog" aria-modal="true" aria-labelledby="so-doc-modal-title">
+      <div className="so-doc-modal so-doc-modal--picker" role="dialog" aria-modal="true" aria-labelledby="so-doc-modal-title">
         <div className="so-doc-modal-header">
           <span className="so-doc-modal-header-icon">
             <FiPaperclip />

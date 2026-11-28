@@ -2782,7 +2782,7 @@ const SalesOrderList = ({
       {/* Supporting Documents */}
       <td>
         <div className="sales-order-table-cell">
-          {renderSupportingDocsControl(order.documents, () => setDocumentModalTarget(order.id), !hasWorkOrder)}
+          {renderSupportingDocsControl(order.documents, () => setDocumentModalTarget(order.id))}
         </div>
       </td>
 

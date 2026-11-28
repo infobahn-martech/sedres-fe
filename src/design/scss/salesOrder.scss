@@ -4069,7 +4069,8 @@ $so-po-blue: #1a56db;
   background: #c13a3a;
 }
 
-/* Select Supporting Documents modal (DocumentListModal) */
+/* Select Supporting Documents modal (DocumentListModal) — Sedres modal pattern:
+   navy header (#00368c), Manrope, 20px radius, brand-blue accents. */
 .so-doc-modal-overlay {
   position: fixed;
   inset: 0;
@@ -4079,8 +4080,7 @@ $so-po-blue: #1a56db;
   justify-content: center;
   padding: 16px;
   box-sizing: border-box;
-  background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(0.5px);
+  background: rgba(15, 23, 42, 0.6);
   animation: salesOrderFadeIn 0.15s ease-out;
 }
 
@@ -4091,31 +4091,61 @@ $so-po-blue: #1a56db;
   max-width: 640px;
   max-height: 82vh;
   background: var(--surface-primary);
-  border: 1px solid var(--border-primary);
-  border-radius: 14px;
-  box-shadow: 0 24px 60px -12px rgba(15, 23, 42, 0.35);
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 16px 48px rgba(15, 23, 42, 0.18);
   overflow: hidden;
+  font-family: 'Manrope', sans-serif;
+}
+
+// Supporting-documents picker only (DocumentListModal) — wider, two-column list.
+.so-doc-modal.so-doc-modal--picker {
+  max-width: 900px;
+  width: min(900px, 94vw);
+  max-height: 86vh;
+
+  .so-doc-modal-body {
+    min-height: 320px;
+    padding: 18px 24px;
+    background: var(--surface-secondary, #f8f9fc);
+  }
+
+  .so-doc-modal-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .so-doc-modal-item {
+    min-height: 60px;
+  }
+
+  @media (max-width: 720px) {
+    .so-doc-modal-list {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
 }
 
 .so-doc-modal-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 18px 20px;
-  border-bottom: 1px solid var(--border-primary);
-  background: linear-gradient(135deg, rgba(76, 104, 215, 0.08), rgba(76, 104, 215, 0.02));
+  gap: 14px;
+  padding: 18px 24px;
+  background: #00368c;
+  border-bottom: none;
 }
 
 .so-doc-modal-header-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
   border-radius: 10px;
-  background: rgba(42, 0, 255, 0.1);
-  color: #2a00ff;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
   font-size: 18px;
 }
 
@@ -4124,17 +4154,23 @@ $so-po-blue: #1a56db;
   min-width: 0;
 }
 
-.so-doc-modal-title {
+// Doubled class beats `.operation-right h3 { color: var(--text-primary) }` (operations.scss),
+// which otherwise turns the title dark on the navy header.
+.so-doc-modal .so-doc-modal-title,
+.so-doc-modal .so-doc-modal-title:hover {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #ffffff;
+  cursor: default;
 }
 
 .so-doc-modal-subtitle {
-  margin: 2px 0 0;
-  font-size: 12px;
-  color: var(--text-secondary);
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.25;
+  color: rgba(255, 255, 255, 0.62);
 }
 
 .so-doc-modal-close {
@@ -4144,25 +4180,28 @@ $so-po-blue: #1a56db;
   width: 32px;
   height: 32px;
   flex-shrink: 0;
-  border: 1px solid var(--border-primary);
-  border-radius: 8px;
-  background: var(--surface-primary);
-  color: var(--text-secondary);
-  font-size: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 18px;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .so-doc-modal-close:hover {
-  color: #e53935;
-  border-color: #f5b5b3;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  transform: rotate(90deg);
 }
 
 .so-doc-modal-toolbar {
   display: flex;
   gap: 10px;
-  padding: 14px 20px;
+  padding: 16px 24px;
   border-bottom: 1px solid var(--border-primary);
+  background: var(--surface-primary);
 }
 
 .so-doc-modal-search {
@@ -4173,9 +4212,9 @@ $so-po-blue: #1a56db;
 
 .so-doc-modal-search input {
   width: 100%;
-  height: 38px;
+  height: 40px;
   box-sizing: border-box;
-  padding: 0 34px 0 36px;
+  padding: 0 34px 0 38px;
   border: 1px solid var(--border-primary);
   border-radius: 8px;
   background: var(--surface-primary);
@@ -4187,14 +4226,14 @@ $so-po-blue: #1a56db;
 
 .so-doc-modal-search input:focus {
   outline: none;
-  border-color: #b3baff;
-  box-shadow: 0 0 0 3px rgba(42, 0, 255, 0.1);
+  border-color: #00368c;
+  box-shadow: 0 0 0 3px rgba(0, 54, 140, 0.2);
 }
 
 .so-doc-modal-search-icon {
   position: absolute;
   top: 50%;
-  left: 12px;
+  left: 13px;
   transform: translateY(-50%);
   color: var(--text-secondary);
   font-size: 15px;
@@ -4215,28 +4254,33 @@ $so-po-blue: #1a56db;
   cursor: pointer;
 }
 
+.so-doc-modal-search-clear:hover {
+  color: #00368c;
+}
+
 .so-doc-modal-upload-btn {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  height: 38px;
-  padding: 0 16px;
+  height: 40px;
+  padding: 0 18px;
   margin: 0;
   flex-shrink: 0;
-  border: 1px solid rgba(42, 0, 255, 0.25);
+  border: 1px solid #00368c;
   border-radius: 8px;
-  background: rgba(42, 0, 255, 0.06);
-  color: #2a00ff;
+  background: var(--surface-primary);
+  color: #00368c;
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .so-doc-modal-upload-btn:hover {
-  background: rgba(42, 0, 255, 0.12);
-  border-color: rgba(42, 0, 255, 0.4);
+  background: #00368c;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(0, 54, 140, 0.28);
 }
 
 .so-doc-modal-upload-btn.is-uploading {
@@ -4249,7 +4293,7 @@ $so-po-blue: #1a56db;
   flex: 1;
   min-height: 220px;
   overflow-y: auto;
-  padding: 16px 20px;
+  padding: 16px 24px;
 }
 
 .so-doc-modal-list {
@@ -4273,13 +4317,14 @@ $so-po-blue: #1a56db;
 }
 
 .so-doc-modal-item:hover {
-  border-color: #b3baff;
+  border-color: rgba(0, 54, 140, 0.35);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .so-doc-modal-item.is-selected {
-  border-color: #2a00ff;
-  background: rgba(42, 0, 255, 0.05);
-  box-shadow: 0 2px 8px rgba(42, 0, 255, 0.08);
+  border-color: #00368c;
+  background: rgba(0, 54, 140, 0.04);
+  box-shadow: 0 2px 8px rgba(0, 54, 140, 0.1);
 }
 
 .so-doc-modal-item-checkbox {
@@ -4296,9 +4341,14 @@ $so-po-blue: #1a56db;
   height: 36px;
   flex-shrink: 0;
   border-radius: 8px;
-  background: rgba(76, 104, 215, 0.1);
-  color: #4c68d7;
+  background: rgba(0, 54, 140, 0.08);
+  color: #00368c;
   font-size: 17px;
+}
+
+.so-doc-modal-item.is-selected .so-doc-modal-item-icon {
+  background: #00368c;
+  color: #ffffff;
 }
 
 .so-doc-modal-item-name {
@@ -4312,12 +4362,16 @@ $so-po-blue: #1a56db;
   text-overflow: ellipsis;
 }
 
+.so-doc-modal-item.is-selected .so-doc-modal-item-name {
+  font-weight: 600;
+}
+
 .so-doc-modal-item-type {
   flex-shrink: 0;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(76, 104, 215, 0.1);
-  color: #4c68d7;
+  background: #e3f2fd;
+  color: #00368c;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.4px;
@@ -4332,19 +4386,20 @@ $so-po-blue: #1a56db;
   flex-shrink: 0;
   border: 1.5px solid var(--border-primary);
   border-radius: 6px;
+  background: var(--surface-primary);
   color: transparent;
   font-size: 13px;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .so-doc-modal-item.is-selected .so-doc-modal-item-check {
-  border-color: #2a00ff;
-  background: #2a00ff;
-  color: #fff;
+  border-color: #00368c;
+  background: #00368c;
+  color: #ffffff;
 }
 
 .so-doc-modal-item:focus-within {
-  outline: 2px solid rgba(42, 0, 255, 0.35);
+  outline: 2px solid rgba(0, 54, 140, 0.35);
   outline-offset: 1px;
 }
 
@@ -4363,23 +4418,23 @@ $so-po-blue: #1a56db;
 }
 
 .so-doc-modal-dropzone {
-  border: 1.5px dashed #b3baff;
+  border: 1.5px dashed rgba(0, 54, 140, 0.35);
   border-radius: 12px;
-  background: rgba(42, 0, 255, 0.03);
+  background: var(--surface-primary);
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .so-doc-modal-dropzone:hover {
-  border-color: #2a00ff;
-  background: rgba(42, 0, 255, 0.06);
+  border-color: #00368c;
+  background: rgba(0, 54, 140, 0.04);
 }
 
 .so-doc-modal-dropzone-icon,
 .so-doc-modal-empty-icon {
   margin-bottom: 4px;
   font-size: 32px;
-  color: #4c68d7;
+  color: #00368c;
 }
 
 .so-doc-modal-empty-title {
@@ -4394,7 +4449,7 @@ $so-po-blue: #1a56db;
 }
 
 .so-doc-modal-link {
-  color: #2a00ff;
+  color: #00368c;
   font-weight: 600;
   text-decoration: underline;
 }
@@ -4407,10 +4462,10 @@ $so-po-blue: #1a56db;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: 2px dashed #2a00ff;
+  border: 2px dashed #00368c;
   border-radius: 12px;
-  background: rgba(238, 241, 255, 0.92);
-  color: #2a00ff;
+  background: rgba(245, 249, 255, 0.94);
+  color: #00368c;
   font-size: 14px;
   font-weight: 600;
   pointer-events: none;
@@ -4425,13 +4480,14 @@ $so-po-blue: #1a56db;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 20px;
+  padding: 14px 24px;
   border-top: 1px solid var(--border-primary);
+  background: var(--surface-primary);
 }
 
 .so-doc-modal-count {
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-secondary);
 }
 
@@ -4447,6 +4503,14 @@ $so-po-blue: #1a56db;
 }
 
 @media (max-width: 600px) {
+  .so-doc-modal-header,
+  .so-doc-modal-toolbar,
+  .so-doc-modal-body,
+  .so-doc-modal-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
   .so-doc-modal-toolbar,
   .so-doc-modal-footer {
     flex-wrap: wrap;
