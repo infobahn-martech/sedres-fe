@@ -47,6 +47,18 @@ const useBusinessRuleReducer = create((set, get) => ({
         }
     },
 
+    // Categories of fields allowed inside a Parent / Child cards subquery (get_fields list=subquery).
+    subqueryFields: [],
+
+    getSubqueryFields: async ({ params } = {}) => {
+        try {
+            const { data } = await businessRuleService.getFields({ params });
+            set({ subqueryFields: data?.data ?? [] });
+        } catch {
+            set({ subqueryFields: [] });
+        }
+    },
+
     isLoadingTimeUnits: false,
     timeUnits: [],
 

@@ -26,7 +26,7 @@ import { findLoadedColumnName, isPositionColumnField } from './positionColumnFie
 import SearchableSelect from '../../../components/form/SearchableSelect';
 import BoardFilterPicker from './BoardFilterPicker';
 import FormTemplateFilter from './FormTemplateFilter';
-import { fieldTakesValue, getOperatorId, operatorTakesValue, operatorNeedsTimeUnit, isYesNoOptions, getDateFieldEmptyLabel, getDateFieldEmptyOperatorKey, getOperatorKey, normalizeConnector, splitNoValueOperatorLabel } from './businessRuleFieldUtils';
+import { getConditionOperators, isSubqueryField, fieldTakesValue, getOperatorId, operatorTakesValue, operatorNeedsTimeUnit, isYesNoOptions, getDateFieldEmptyLabel, getDateFieldEmptyOperatorKey, getOperatorKey, normalizeConnector, splitNoValueOperatorLabel } from './businessRuleFieldUtils';
 import DynamicIcon from './DynamicIcon';
 import useBusinessRuleReducer from '../../../store/BusinessRuleReducer';
 import useAlertReducer from '../../../store/AlertReducer';
@@ -621,7 +621,7 @@ function PropertyPill({ pillKey, label, selected, dotColor, disabled, onClick })
   );
 }
 
-function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, triggerTypeId, showTimeUnit = true, showCustomFields = true, restrictFieldIds = null, pickColumnForField = null, defaultBoardId = '' }) {
+function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, triggerTypeId, showTimeUnit = true, showCustomFields = true, restrictFieldIds = null, pickColumnForField = null, defaultBoardId = '', list = '' }) {
   const [selectedRegularFields, setSelectedRegularFields] = useState([]);
   const [selectedTimeUnits, setSelectedTimeUnits] = useState([]);
   const [selectedCustomFields, setSelectedCustomFields] = useState([]);
@@ -641,7 +641,7 @@ function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, 
 
   const {
     regularFields, isLoadingRegularFields, getRegularFields, boardWorkflowsByBoard,
-    timeUnits, isLoadingTimeUnits, getTimeUnits,
+    timeUnits, isLoadingTimeUnits, getTimeUnits, subqueryFields, getSubqueryFields,
   } = useBusinessRuleReducer((s) => s);
 
   const { customFields, isLoadingCustomFields } = useCustomFieldsByTrigger({
@@ -652,12 +652,20 @@ function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, 
 
   // WHEN pickers list only the fields get_fields?list=when allows for the trigger (guide 3.2); an
   // empty list means nothing was returned, so every field stays available.
-  const displayRegularFields = restrictFieldIds?.regular?.length
-    ? regularFields.filter((f) => restrictFieldIds.regular.includes(String(f.regular_field_id)))
+  // list (e.g. "subquery"): only the fields get_fields returns for that list, even when that is none.
+  const listIds = (categoryKey, idKey) => subqueryFields
+    .filter((category) => category.category_key === categoryKey)
+    .flatMap((category) => (category.fields ?? []).map((f) => String(f[idKey])));
+  const allowedIds = list
+    ? { regular: listIds('regular', 'regular_field_id'), custom: listIds('custom', 'custom_field_id') }
+    : restrictFieldIds;
+  const isRestricted = (ids) => Boolean(list || ids?.length);
+  const displayRegularFields = isRestricted(allowedIds?.regular)
+    ? regularFields.filter((f) => allowedIds.regular.includes(String(f.regular_field_id)))
     : regularFields;
   const displayTimeUnits = timeUnits;
-  const displayCustomFields = restrictFieldIds?.custom?.length
-    ? customFields.filter((f) => restrictFieldIds.custom.includes(String(f.custom_field_id)))
+  const displayCustomFields = isRestricted(allowedIds?.custom)
+    ? customFields.filter((f) => allowedIds.custom.includes(String(f.custom_field_id)))
     : customFields;
 
   const isFieldUsed = (field) =>
@@ -688,6 +696,11 @@ function CardPropertyMatchModal({ show, onClose, onSelect, existingFieldLabels, 
     if (!show) return;
     getRegularFields({ params: { trigger_type_id: triggerTypeId, search: debouncedSearch || undefined } });
   }, [show, debouncedSearch, triggerTypeId]);
+
+  useEffect(() => {
+    if (!show || !list) return;
+    getSubqueryFields({ params: { trigger_type_id: triggerTypeId, list, board_ids: defaultBoardId || undefined } });
+  }, [show, list, triggerTypeId, defaultBoardId]);
 
   useEffect(() => {
     if (!show || !showTimeUnit) return;
@@ -6304,8 +6317,8 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
       const next = prev.map((cond) => {
         if (cond.operatorId) return cond;
         const detailsKey = cond.fieldType && cond.fieldId != null ? `${cond.fieldType}-${cond.fieldId}` : null;
-        const operators = detailsKey ? fieldDetailsByKey[detailsKey]?.operators : null;
-        if (!operators || operators.length === 0) return cond;
+        const operators = detailsKey ? getConditionOperators(fieldDetailsByKey[detailsKey], cond.desiredOperatorLabel) : [];
+        if (operators.length === 0) return cond;
         changed = true;
         // A date field saved on its empty state comes back as is_empty but is drawn as "is" + the
         // empty-state text ("Not Set" / "Not Moved").
@@ -6530,6 +6543,10 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
   const handleClearAndConditions = () => {
     setBoardConditionRows((prev) => (prev.length > 1 ? [prev[0]] : prev));
     setConditions(getExtraDefaultConditions(triggerConfig).map(makeDefaultCondition));
+  };
+
+  const handleRemoveCondition = (id) => {
+    setConditions((prev) => prev.filter((c) => c.id !== id));
   };
 
   // "When fields" (shown only for trigger types where get_trigger_config reports
@@ -7839,7 +7856,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
 
             <div className="business-rule-form-column">
               <h3 className="business-rule-form-column-title">AND</h3>
-              <div className="business-rule-form-column-card">
+              <div className="business-rule-form-column-card br-and-column">
                 <p className="business-rule-form-filter-hint">{andHeaderText}</p>
 
                 {hasBoardDefaultCondition && boardConditionRows.length > 0 && (
@@ -7883,11 +7900,14 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                 )}
 
                 {conditions.map((cond) => {
+                  // The trigger's default rows (Position ...) are required by the backend, so only added rows get a close button.
+                  const isTriggerDefault = getExtraDefaultConditions(triggerConfig).some(
+                    (c) => cond.fieldType === 'regular' && String(c.fieldId) === String(cond.fieldId)
+                  );
                   const detailsKey = cond.fieldType && cond.fieldId != null ? `${cond.fieldType}-${cond.fieldId}` : null;
                   const details = detailsKey ? fieldDetailsByKey[detailsKey] : null;
                   const detailsLoading = detailsKey ? Boolean(isLoadingFieldDetails[detailsKey]) : false;
-                  const rawOperators = details?.operators ?? [];
-                  const operators = rawOperators;
+                  const operators = getConditionOperators(details, cond.desiredOperatorLabel);
                   const showOperator = operators.length > 0 && Number(details?.has_operator) !== 0;
                   const selectedOperator = operators.find((op) => getOperatorId(op) === cond.operatorId);
                   const showValueInput = fieldTakesValue(details) && operatorTakesValue(selectedOperator);
@@ -7900,6 +7920,7 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                   // so it keeps the OR pill (adds another value) and the bin (removes this one). Yes/No
                   // states and the Deadline / Last moved rows have nothing to repeat.
                   const hasValueRowActions = showValueInput
+                    && !isSubqueryField(details)
                     && !isYesNoOptions(details?.options ?? [])
                     && !getDateFieldEmptyLabel(details);
                   const isOperatorOpen = openConditionOperatorId === cond.id;
@@ -7910,6 +7931,16 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
 
                   return (
                     <div key={cond.id} className="business-rule-form-filter-row business-rule-form-filter-row--multi">
+                      {!isTriggerDefault && (
+                        <button
+                          type="button"
+                          className="business-rule-form-filter-row-close"
+                          onClick={() => handleRemoveCondition(cond.id)}
+                          aria-label={`Remove ${cond.fieldLabel || 'property'}`}
+                        >
+                          <FiX size={14} />
+                        </button>
+                      )}
                       <div className="business-rule-form-condition-operator-group">
                         <button
                           type="button"
@@ -8043,6 +8074,15 @@ function BusinessRuleFormModal({ show, rule: ruleProp, businessRuleId, boardName
                                 allowLaneOnlyPosition={CHILD_CARD_MOVED_TRIGGER_PATTERN.test(String(whenTriggerName ?? ''))}
                                 onChange={(val) => handleChangeConditionValue(cond.id, v.id, { value: val })}
                                 onTimeUnitChange={(unitId) => handleChangeConditionValue(cond.id, v.id, { timeUnitId: unitId })}
+                                renderPropertyPicker={(pickerProps) => (
+                                  <CardPropertyMatchModal
+                                    {...pickerProps}
+                                    triggerTypeId={rule.id}
+                                    showTimeUnit={false}
+                                    pickColumnForField={(field) => isPositionColumnField(field.regular_field_id, getFieldLabel(field))}
+                                    defaultBoardId={boardConditionRows.find((row) => row.boardId)?.boardId}
+                                  />
+                                )}
                               />
                             )
                           )}
@@ -10291,6 +10331,7 @@ CardPropertyMatchModal.propTypes = {
   showCustomFields: PropTypes.bool,
   pickColumnForField: PropTypes.func,
   defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  list: PropTypes.string,
 };
 
 CreateActionModal.propTypes = {
