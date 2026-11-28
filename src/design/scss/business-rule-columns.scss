@@ -59,3 +59,22 @@
     font-size: 13px;
   }
 }
+
+// AND column: tight, equal spacing between and inside the condition cards.
+.br-and-column.business-rule-form-column-card {
+  gap: 10px;
+
+  .business-rule-form-filter-row {
+    gap: 4px;
+    padding: 10px 14px;
+  }
+
+  // A text value ("present", "Not Set") and a value with the OR / bin pill take the same height.
+  .br-board-condition-value-row {
+    min-height: 28px;
+  }
+
+  .business-rule-form-filter-row-actions {
+    padding: 0 4px 0 10px;
+  }
+}

@@ -23,7 +23,7 @@ const userAvatar = (content) => <span className="br-filter-user-avatar" aria-hid
 
 // renderPropertyPicker draws the Card Property Match modal (the same field picker as the AND column);
 // it is handed in because that modal lives in BusinessRuleFormModal.jsx.
-function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId = '', cardLayout = false, onChange }) {
+function RelativeFilterBox({ label = '', rows, renderPropertyPicker, defaultBoardId = '', cardLayout = false, subquery = null, onChange }) {
   const {
     regularFields, customFields, fieldDetailsByKey, getFieldDetails, valueTimeUnits, boardWorkflowsByBoard,
     boardPickerWorkspaces, getBoardPickerWorkspaces,
@@ -125,12 +125,12 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
 
   return (
     <div className="br-related-filter">
-      <p className="business-rule-form-when-fields-header">{label}</p>
+      {label && <p className="business-rule-form-when-fields-header">{label}</p>}
       {rows.map((row) => {
         const details = fieldDetailsByKey[detailsKeyOf(row)];
         const operators = details?.operators ?? [];
         const operator = operators.find((op) => getOperatorKey(op) === row.operatorKey);
-        const rowLabel = row.fieldLabel || findCatalogField(row)?.field_label || `Field #${row.fieldId}`;
+        const rowLabel = row.fieldLabel || details?.field_label || findCatalogField(row)?.field_label || `Field #${row.fieldId}`;
         const isColumnRow = row.fieldType === 'regular' && isPositionColumnField(row.fieldId, rowLabel);
         const pickedColumns = row.positionColumns ?? [];
         const columnNames = pickedColumns
@@ -143,7 +143,10 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
         const isStateField = cardLayout && details && operator && !fieldTakesValue(details) && operatorTakesValue(operator);
         const operatorTail = operatorParts(operator).tail || (isStateField ? rowLabel : '');
         const removeRow = () => onChange(rows.filter((r) => r.id !== row.id));
-        const toggleConnector = () => setRow(row.id, { connector: normalizeConnector(row.connector) === 'AND' ? 'OR' : 'AND' });
+        // subquery: rows of one field mean "any of them", so the OR pill adds another row of the field.
+        const toggleConnector = () => (subquery
+          ? onChange(rows.flatMap((r) => (r.id === row.id ? [r, { ...r, id: `relative-filter-${Date.now()}`, value: '' }] : [r])))
+          : setRow(row.id, { connector: normalizeConnector(row.connector) === 'AND' ? 'OR' : 'AND' }));
         // cardLayout: only a row with a typed or chosen value (Blocker) gets the OR / bin pill, same as the AND column.
         const hasValueRowActions = cardLayout && fieldTakesValue(details) && operatorTakesValue(operator)
           && !isYesNoOptions(details?.options ?? []) && !getDateFieldEmptyLabel(details);
@@ -175,6 +178,9 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
             timeUnitId={row.timeUnitId}
             timeUnits={valueTimeUnits}
             label={rowLabel}
+            savedLabel={row.value === row.savedValue ? row.savedLabel : ''}
+            defaultBoardId={defaultBoardId}
+            renderPropertyPicker={renderPropertyPicker}
             onChange={(next) => setRow(row.id, { value: next })}
             onTimeUnitChange={(unitId) => setRow(row.id, { timeUnitId: unitId })}
           />
@@ -278,10 +284,10 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
       <div className="br-link-footer-actions w-100">
         <button type="button" className="business-rule-form-add-link" onClick={() => setShowPicker(true)}>
           <FiPlus size={14} aria-hidden />
-          Add new property
+          {subquery ? 'Refine search criteria' : 'Add new property'}
         </button>
-        {cardLayout && rows.length > 1 && (
-          <button type="button" className="business-rule-form-add-link" onClick={() => onChange([])}>
+        {(subquery || (cardLayout && rows.length > 1)) && (
+          <button type="button" className="business-rule-form-add-link" onClick={subquery ? subquery.onClearAll : () => onChange([])}>
             Clear all
           </button>
         )}
@@ -308,11 +314,12 @@ function RelativeFilterBox({ label, rows, renderPropertyPicker, defaultBoardId =
 }
 
 RelativeFilterBox.propTypes = {
-  label: PropTypes.string.isRequired,
+  label: PropTypes.string,
   renderPropertyPicker: PropTypes.func.isRequired,
   defaultBoardId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   rows: PropTypes.arrayOf(PropTypes.object).isRequired,
   cardLayout: PropTypes.bool,
+  subquery: PropTypes.shape({ onClearAll: PropTypes.func.isRequired }),
   onChange: PropTypes.func.isRequired,
 };
 

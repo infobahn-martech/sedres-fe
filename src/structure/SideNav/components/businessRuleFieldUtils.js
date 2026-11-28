@@ -23,6 +23,19 @@ export const getOperatorId = (operator) => operator?.field_operator_id ?? operat
 
 export const getOperatorKey = (operator) => operator?.operator_key ?? null;
 
+// Parent cards / Child cards: the value is a subquery, not a text.
+export const isSubqueryField = (details) => details?.field_type === 'subquery' || details?.option_source === 'subquery';
+
+// Subquery fields (Parent cards, Child cards) offer only the match operators, "all match" first as the default.
+// are / are not stays listed only for a rule already saved with it, so editing does not change that rule.
+export const getConditionOperators = (details, savedOperatorKey) => {
+  const operators = details?.operators ?? [];
+  if (!isSubqueryField(details)) return operators;
+  return operators
+    .filter((op) => !['are_present', 'are_not_present'].includes(getOperatorKey(op)) || getOperatorKey(op) === savedOperatorKey)
+    .sort((a, b) => Number(getOperatorKey(b) === 'all_match') - Number(getOperatorKey(a) === 'all_match'));
+};
+
 export const fieldTakesValue = (details) => {
   if (!details) return true;
   if (Number(details.has_input_value) === 0) return false;
