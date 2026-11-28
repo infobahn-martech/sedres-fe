@@ -2500,6 +2500,21 @@ body .material-management-modal .upload-main-text {
     }
   }
 
+  // Order History: keep the expand-chevron column tight; expanded chain row spans edge to edge.
+  .order-history-table {
+    .custom-table-expand-header,
+    .custom-table-expand-cell {
+      width: 44px;
+      padding-left: 12px;
+      padding-right: 0;
+    }
+
+    .custom-table-expanded-row > td {
+      padding: 0;
+      background: var(--bg-secondary);
+    }
+  }
+
   .crew-pass-requests-table-card__pagination {
     padding: 6px 16px 12px;
     border-top: 1px solid var(--border-primary);

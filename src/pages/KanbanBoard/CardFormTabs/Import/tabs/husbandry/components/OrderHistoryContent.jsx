@@ -2,9 +2,16 @@ import { useState, useEffect, Fragment } from "react";
 import PropTypes from "prop-types";
 import { FiPackage, FiAnchor, FiTruck, FiCheck } from "react-icons/fi";
 import CardTabListLoading from "@/components/CardTabListLoading";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+import GroupSettingsIcon from "@/assets/images/cv.png";
+import { FormSection, PremiumCardHeader } from "./Husbandry.components";
+import { MAIN_TABS, SERVICE_ACCENT } from "./Husbandry.constants";
 import inboundOrderService from "@/services/inboundOrderService";
 import orderHistoryService from "@/services/orderHistoryService";
 import "@/design/scss/order-history.scss";
+
+const MATERIAL_ACCENT = SERVICE_ACCENT[MAIN_TABS.MATERIAL_MANAGEMENT];
 
 const formatDate = (dateStr) => {
   if (!dateStr) return "—";
@@ -191,79 +198,88 @@ const OrderHistoryContent = ({ formValues, cardColor }) => {
   };
 
   return (
-    <div className="cardform-left-full material-management-content-wrapper" style={{ "--card-color": cardColor }}>
-      <div className="material-list-header">
-        <h3 className="material-list-title">
-          <span className="material-list-title-bar"></span>
-          Order History
-        </h3>
-      </div>
-      <div className="table-wrapper table-responsive material-table-container note-table-container">
-        <div className="note-table-scroll">
-          {isLoading ? (
-            <CardTabListLoading message="Loading orders..." cardColor={cardColor} />
-          ) : (
-            <table className="table table-striped material-table inbound-table note-table">
-              <thead className="note-thead">
-                <tr>
-                  <th width="44" className="custom-table-expand-header" aria-label="Expand row" />
-                  <th>Inbound Order No</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.length > 0 ? (
-                  orders.map((order) => {
-                    const isExpanded = expandedIds.has(order.inbound_id);
-                    return (
-                      <Fragment key={order.inbound_id}>
-                        <tr className="order-history-row">
-                          <td className="custom-table-expand-cell">
-                            <button
-                              type="button"
-                              className="order-history-expand-toggle"
-                              aria-expanded={isExpanded}
-                              aria-label={isExpanded ? "Collapse row" : "Expand row"}
-                              onClick={() => toggleExpand(order)}
-                            >
-                              <span className={`custom-table-expand-chevron${isExpanded ? " is-open" : ""}`} />
-                            </button>
-                          </td>
-                          <td>
-                            <div className="material-table-cell">{order.inbound_no || "—"}</div>
-                          </td>
-                          <td>
-                            <div className="material-table-cell">{formatDate(order.inbound_date)}</div>
-                          </td>
-                          <td>
-                            <div className="material-table-cell">{order.status || "—"}</div>
-                          </td>
-                        </tr>
-                        {isExpanded && (
-                          <tr className="custom-table-expanded-row">
-                            <td colSpan={4} className="p-0">
-                              <div className="custom-table-expanded-inner">
-                                {renderChainSections(order)}
-                              </div>
-                            </td>
+    <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+      <FormSection icon={GroupSettingsIcon} title="">
+        <div className="pre-arrival-form material-notes-form">
+          <div className="general-info-two-column operation-section-form-layout crew-pass-premium-grid material-notes-grid--list-only">
+            <div className="general-info-right crew-pass-requests-sidebar">
+              <div className={`crew-pass-requests-table-card husb-accent-${MATERIAL_ACCENT}`} role="region" aria-label="Order history">
+                <PremiumCardHeader
+                  icon="list"
+                  title="Order history"
+                  subtitle="Inbound → landing → dispatch progress for every order on this job"
+                  count={orders.length || undefined}
+                  headerClassName="crew-pass-requests-table-card__header"
+                  titleClassName="crew-pass-requests-table-card__title"
+                />
+                <div className="crew-pass-requests-table-card__body">
+                    {isLoading ? (
+                      <div className="crew-pass-requests-table-card__skeleton" aria-busy="true">
+                        <Skeleton height={14} borderRadius={6} count={1} style={{ marginBottom: 12 }} />
+                        <Skeleton height={36} borderRadius={6} count={6} />
+                      </div>
+                    ) : orders.length === 0 ? (
+                      <div className="crew-pass-requests-table-card__empty">No order history available</div>
+                    ) : (
+                    <div className="crew-pass-requests-table-scroll crew-pass-thin-scrollbar material-table-container">
+                      <table className="crew-pass-requests-table material-notes-table order-history-table">
+                        <thead>
+                          <tr>
+                            <th width="44" className="custom-table-expand-header" aria-label="Expand row" />
+                            <th>Inbound Order No</th>
+                            <th>Date</th>
+                            <th>Status</th>
                           </tr>
-                        )}
-                      </Fragment>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="note-empty-td">
-                      No order history available.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          )}
+                        </thead>
+                        <tbody>
+                          {orders.map((order) => {
+                              const isExpanded = expandedIds.has(order.inbound_id);
+                              return (
+                                <Fragment key={order.inbound_id}>
+                                  <tr className="order-history-row">
+                                    <td className="custom-table-expand-cell">
+                                      <button
+                                        type="button"
+                                        className="order-history-expand-toggle"
+                                        aria-expanded={isExpanded}
+                                        aria-label={isExpanded ? "Collapse row" : "Expand row"}
+                                        onClick={() => toggleExpand(order)}
+                                      >
+                                        <span className={`custom-table-expand-chevron${isExpanded ? " is-open" : ""}`} />
+                                      </button>
+                                    </td>
+                                    <td>
+                                      <div className="material-table-cell">{order.inbound_no || "—"}</div>
+                                    </td>
+                                    <td>
+                                      <div className="material-table-cell">{formatDate(order.inbound_date)}</div>
+                                    </td>
+                                    <td>
+                                      <div className="material-table-cell">{order.status || "—"}</div>
+                                    </td>
+                                  </tr>
+                                  {isExpanded && (
+                                    <tr className="custom-table-expanded-row">
+                                      <td colSpan={4} className="p-0">
+                                        <div className="custom-table-expanded-inner">
+                                          {renderChainSections(order)}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </Fragment>
+                              );
+                            })}
+                        </tbody>
+                      </table>
+                    </div>
+                    )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </FormSection>
     </div>
   );
 };
