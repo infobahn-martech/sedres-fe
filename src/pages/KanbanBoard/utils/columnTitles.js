@@ -213,6 +213,11 @@ const LAMPRELL_SAUDI_SWIMLANE_PATTERN = /lamprell\s*saudi/i;
 /* Operator board: Lamprell Saudi is a swimlane too, and its "Approval Requested" runs the same SO approval flow as BGP. */
 export const isLamprellSaudiSwimlane = (lane) => LAMPRELL_SAUDI_SWIMLANE_PATTERN.test(String(lane?.title ?? ""));
 
+const POSH_SAUDI_SWIMLANE_PATTERN = /posh\s*saudi/i;
+
+/* Operator board: POSH Saudi is a swimlane too, with the same SO approval flow on "Approval Requested". */
+export const isPoshSaudiSwimlane = (lane) => POSH_SAUDI_SWIMLANE_PATTERN.test(String(lane?.title ?? ""));
+
 const DEFAULT_DA_ONE_CARD_COLUMN_PATTERN = /^(ar\s+invoices?\s+issued|ready\s+for\s+submission|submit\s+invoice)$/i;
 
 const DA_DEFAULT_WORKFLOW_PATTERN = /default.*\bda\b|\bda\b.*default/i;
