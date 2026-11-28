@@ -8,8 +8,19 @@ import "react-quill/dist/quill.snow.css";
 import CustomModal from "@/components/CustomModal";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import CardTabListLoading from "@/components/CardTabListLoading";
-import { FormField, FormInput, FormSelect, FormTextarea } from "./Husbandry.components";
-import { validateDocumentFiles } from "./Husbandry.constants";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+import GroupSettingsIcon from "@/assets/images/cv.png";
+import {
+  FormField,
+  FormInput,
+  FormSelect,
+  FormTextarea,
+  FormSection,
+  FormGroup,
+  PremiumCardHeader,
+} from "./Husbandry.components";
+import { validateDocumentFiles, MAIN_TABS, SERVICE_ACCENT } from "./Husbandry.constants";
 import DateTimePickerField from "@/pages/KanbanBoard/CardFormTabs/shared/components/DateTimePickerField";
 import LocationAutocomplete from "./LocationAutocomplete";
 import editIcon from "@/assets/images/edit.svg";
@@ -34,6 +45,8 @@ import {
 import "@/design/scss/material-edit-form.scss";
 import "@/design/scss/dispatch-note.scss";
 import MaterialTablePagination from "./MaterialTablePagination";
+
+const MATERIAL_ACCENT = SERVICE_ACCENT[MAIN_TABS.MATERIAL_MANAGEMENT];
 
 const extractListFromApi = (body) => {
   if (body == null) return [];
@@ -342,9 +355,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
     inboundDetail: viewingOrder,
   } = useInboundOrderReducer((state) => state);
 
-  const [showModal, setShowModal] = useState(false);
-
-
+  const formBodyRef = useRef(null);
   const [printingId, setPrintingId] = useState(null);
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [convertFormErrors, setConvertFormErrors] = useState({});
@@ -590,65 +601,28 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
     setExpandedOrders(expandedState);
   };
 
-  const handleOpenModal = (order = null) => {
-    if (order) {
-      if (!canUpdateInbound) return;
-      setEditingOrder(order);
-      populateFormFromOrder(order);
-      setShowModal(true);
+  // Loads an existing order into the left-hand form card for editing.
+  const handleEditOrder = (order) => {
+    if (!order || !canUpdateInbound) return;
+    setFormErrors({});
+    setEditingOrder(order);
+    populateFormFromOrder(order);
+    formBodyRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
 
-      const inboundId = order.inbound_id ?? order.id;
-      if (inboundId != null && inboundId !== "") {
-        inboundOrderService
-          .getInboundById(inboundId)
-          .then(({ data }) => {
-            const detail = data?.data;
-            if (detail) populateFormFromOrder(detail);
-          })
-          .catch(() => { });
-      }
-      return;
+    const inboundId = order.inbound_id ?? order.id;
+    if (inboundId != null && inboundId !== "") {
+      inboundOrderService
+        .getInboundById(inboundId)
+        .then(({ data }) => {
+          const detail = data?.data;
+          if (detail) populateFormFromOrder(detail);
+        })
+        .catch(() => { });
     }
-
-    if (!canAddInbound) return;
-    setEditingOrder(null);
-    setEditOrderMinDate(undefined);
-    setFormData({
-      date: "",
-      time: "",
-      warehouse: "",
-      remarks: "",
-      launchHire: false,
-      launchHireDate: "",
-      launchHireTime: "",
-      launchHireLocation: "",
-      orders: [{
-        id: 1,
-        inbound_item_id: null,
-        transportation_id: null,
-        orderNo: "",
-        poDo: "",
-        quantity: "",
-        packageType: "",
-        description: "",
-        transportation: false,
-        typeOfVehicle: "",
-        fromLocation: "",
-        pickUpFrom: "",
-        toLocation: "",
-        driverName: "",
-        slotNo: "",
-        reason: "",
-        dispatchDate: "",
-        dispatchTime: "",
-      }],
-    });
-    setExpandedOrders({ 1: true });
-    setShowModal(true);
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
+  // Clears the form card back to a blank "new order" (also exits edit mode).
+  const resetInboundForm = () => {
     setEditingOrder(null);
     setEditOrderMinDate(undefined);
     setFormErrors({});
@@ -682,6 +656,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
         dispatchTime: ""
       }],
     });
+    setExpandedOrders({ 1: true });
   };
 
   const handleFormChange = (field, value) => {
@@ -836,7 +811,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
         inboundId: editingOrder.inbound_id,
         data: payload,
         cb: () => {
-          handleCloseModal();
+          resetInboundForm();
           getAllInbound({ call_id: callId, page: inboundPage, limit: INBOUND_LIMIT });
           getInboundOrdersTotal({ call_id: callId });
         },
@@ -845,7 +820,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
       saveInboundOrder({
         data: payload,
         cb: () => {
-          handleCloseModal();
+          resetInboundForm();
           getAllInbound({ call_id: callId, page: inboundPage, limit: INBOUND_LIMIT });
           getInboundOrdersTotal({ call_id: callId });
         },
@@ -914,6 +889,10 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
       cb: () => {
         setShowDeleteModal(false);
         setDeletingOrder(null);
+        // Drop the form out of edit mode if the order being edited was deleted.
+        if (editingOrder && resolveInboundId(editingOrder) === inboundId) {
+          resetInboundForm();
+        }
         if (pageAfterDelete !== inboundPage) {
           setInboundPage(pageAfterDelete);
         }
@@ -1359,21 +1338,18 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
     { value: "Juaymah", label: "Juaymah" },
   ];
 
-  const renderHeader = () => (
-    <>
-      <h1 className="modal-title">{editingOrder ? "Edit Inbound Order" : "Add Inbound Order"}</h1>
-    </>
-  );
+  const editingOrderLabel = editingOrder?.inbound_no || editingOrder?.order_no || "";
+  const editingInboundId = editingOrder ? resolveInboundId(editingOrder) : null;
+  // The form card replaces the old "+ Add" modal, so hide it when the user can neither add nor is editing.
+  const showFormCard = canAddInbound || !!editingOrder;
 
-  const renderBody = () => (
-    <div className="modal-body">
-      <div className="lead-form">
-        <form id="inboundOrderForm" className="material-edit-form" onSubmit={handleSubmit}>
-          {/* Basic Details Section */}
-          <div className="dispatch-edit-section">
-            <h3 className="dispatch-edit-section-title">Basic Details</h3>
-            <div className="row g-2 mb-2">
-              <div className="col-md-6 mb-2">
+  // Left-hand form card body (was the Add/Edit modal body).
+  const renderFormBody = () => (
+        <form id="inboundOrderForm" className="material-edit-form inbound-order-card-form" onSubmit={handleSubmit}>
+          {/* Basic Details */}
+          <FormGroup icon="calendar" label="Basic Details" accent={MATERIAL_ACCENT}>
+            <div className="row g-2">
+              <div className="col-12">
                 <FormField label="Date *">
                   <DateTimePickerField
                     dateValue={formData.date}
@@ -1395,7 +1371,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                 {formErrors.date && <span className="dispatch-edit-error">{formErrors.date}</span>}
               </div>
 
-              <div className="col-md-6 mb-2">
+              <div className="col-12">
                 <FormField label="Warehouse *">
                   <FormSelect
                     value={formData.warehouse}
@@ -1411,14 +1387,10 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
               </div>
 
             </div>
-          </div>
+          </FormGroup>
 
-          {/* Order Details Section */}
-          <div className="dispatch-edit-section">
-            <div className="dispatch-section-header">
-              <h3 className="dispatch-edit-section-title">Order Details</h3>
-            </div>
-
+          {/* Order Details */}
+          <FormGroup icon="list" label="Order Details" accent={MATERIAL_ACCENT}>
             {formData.orders.map((order, index) => (
               <div key={order.id} className="dispatch-edit-item-card">
                 <div className="dispatch-edit-item-header" onClick={() => toggleOrderExpand(order.id)}>
@@ -1459,7 +1431,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                 {expandedOrders[order.id] && (
                   <div className="dispatch-edit-item-body">
                     <div className="row g-2 mb-2">
-                      <div className="col-lg-4 col-md-6">
+                      <div className="col-12">
                         <FormField label="PO/DO">
                           <FormInput
                             type="text"
@@ -1474,7 +1446,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                         {formErrors[`o${index}_poDo`] && <span className="dispatch-edit-error">{formErrors[`o${index}_poDo`]}</span>}
                       </div>
 
-                      <div className="col-lg-4 col-md-6">
+                      <div className="col-sm-6">
                         <FormField label="Quantity *">
                           <FormInput
                             type="number"
@@ -1489,7 +1461,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                         {formErrors[`o${index}_quantity`] && <span className="dispatch-edit-error">{formErrors[`o${index}_quantity`]}</span>}
                       </div>
 
-                      <div className="col-lg-4 col-md-6">
+                      <div className="col-sm-6">
                         <FormField label="Package Type *">
                           <FormSelect
                             value={order.packageType}
@@ -1504,7 +1476,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                         {formErrors[`o${index}_packageType`] && <span className="dispatch-edit-error">{formErrors[`o${index}_packageType`]}</span>}
                       </div>
 
-                      <div className="col-lg-12 col-md-12">
+                      <div className="col-12">
                         <FormField label="Description">
                           <FormInput
                             type="text"
@@ -1532,7 +1504,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
 
                       {order.transportation && (
                         <div className="row g-2 mb-1">
-                          <div className="col-lg-4 col-md-6">
+                          <div className="col-sm-6">
                             <FormField label="Type of Vehicle *">
                               <FormSelect
                                 value={order.typeOfVehicle}
@@ -1547,7 +1519,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                             {formErrors[`o${index}_typeOfVehicle`] && <span className="dispatch-edit-error">{formErrors[`o${index}_typeOfVehicle`]}</span>}
                           </div>
 
-                          <div className="col-lg-4 col-md-6">
+                          <div className="col-sm-6">
                             <FormField label="From Location *">
                               <FormSelect
                                 value={order.fromLocation}
@@ -1562,7 +1534,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                             {formErrors[`o${index}_fromLocation`] && <span className="dispatch-edit-error">{formErrors[`o${index}_fromLocation`]}</span>}
                           </div>
 
-                          <div className="col-lg-4 col-md-6">
+                          <div className="col-sm-6">
                             <FormField label="Pick-Up From *">
                               <LocationAutocomplete
                                 value={order.pickUpFrom}
@@ -1576,7 +1548,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                             {formErrors[`o${index}_pickUpFrom`] && <span className="dispatch-edit-error">{formErrors[`o${index}_pickUpFrom`]}</span>}
                           </div>
 
-                          <div className="col-lg-4 col-md-6">
+                          <div className="col-sm-6">
                             <FormField label="To Location *">
                               <FormSelect
                                 value={order.toLocation}
@@ -1591,7 +1563,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                             {formErrors[`o${index}_toLocation`] && <span className="dispatch-edit-error">{formErrors[`o${index}_toLocation`]}</span>}
                           </div>
 
-                          <div className="col-lg-4 col-md-6">
+                          <div className="col-sm-6">
                             <FormField label="Driver Name *">
                               <FormSelect
                                 value={order.driverName}
@@ -1613,11 +1585,11 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                 )}
               </div>
             ))}
-          </div>
+          </FormGroup>
 
-          {/* Launch Hire Section */}
+          {/* Launch Hire */}
           {showLaunchHire && (
-          <div className="dispatch-edit-section">
+          <FormGroup icon="LAUNCH_HIRE" label="Launch Hire" accent={MATERIAL_ACCENT}>
             <div className="dispatch-edit-checkbox-group">
               <label className="dispatch-edit-checkbox-label">
                 <input
@@ -1627,7 +1599,7 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                   onChange={(e) => handleFormChange("launchHire", e.target.checked)}
                   disabled={!!editingOrder}
                 />
-                <span>Launch Hire</span>
+                <span>Book a launch hire with this order</span>
               </label>
             </div>
 
@@ -1703,41 +1675,40 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
                 </div>
               </div>
             )}
-          </div>
+          </FormGroup>
           )}
 
-          {/* Remarks - after order details */}
-          <div className="row g-2 mt-2">
-            <div className="col-md-12">
-              <FormField label="Remarks">
-                <FormTextarea
-                  value={formData.remarks}
-                  onChange={(e) => handleFormChange("remarks", e.target.value)}
-                  placeholder="Enter remarks..."
-                  rows={3}
-                />
-              </FormField>
-            </div>
-          </div>
+          {/* Remarks */}
+          <FormGroup icon="notebook" label="Remarks" accent={MATERIAL_ACCENT}>
+            <FormField>
+              <FormTextarea
+                value={formData.remarks}
+                onChange={(e) => handleFormChange("remarks", e.target.value)}
+                placeholder="Enter remarks..."
+                rows={3}
+              />
+            </FormField>
+          </FormGroup>
         </form>
-      </div>
-    </div>
   );
 
-  const renderFooter = () => (
-    <div className="modal-footer justify-content-between">
-      <button type="button" onClick={handleReset} className="btn btn-outline-secondary">
+  // Left-hand form card footer (was the modal footer). Cancel only shows in edit mode.
+  const renderFormFooter = () => (
+    <div className="form-save-button-wrapper cgpass-save-footer inbound-order-save-footer">
+      <button type="button" onClick={handleReset} className="inbound-order-ghost-action">
         Reset
       </button>
-      <div className="d-flex gap-2">
-        <button type="button" onClick={handleCloseModal} className="btn btn-secondary">
-          Cancel
-        </button>
+      <div className="inbound-order-footer-actions">
+        {editingOrder && (
+          <button type="button" onClick={resetInboundForm} className="inbound-order-ghost-action">
+            Cancel
+          </button>
+        )}
         <button
           type="submit"
           form="inboundOrderForm"
           disabled={isSubmitting || isBeingUpdated}
-          className="btn btn-primary"
+          className="form-save-button"
         >
           {editingOrder ? (isBeingUpdated ? "Updating..." : "Update") : (isSubmitting ? "Saving..." : "Save")}
         </button>
@@ -2419,215 +2390,233 @@ const InboundOrdersContent = ({ formValues, cardColor, showLaunchHire = true }) 
   );
 
   return (
-    <div className="cardform-left-full material-management-content-wrapper" style={{ "--card-color": cardColor }}>
-      <div className="material-list-header">
-        <h3 className="material-list-title">
-          <span className="material-list-title-bar"></span>
-          Inbound Orders
-        </h3>
-        {canAddInbound && (
-          <button
-            type="button"
-            className="material-add-btn"
-            onClick={() => handleOpenModal()}
-          >
-            + Add
-          </button>
-        )}
-      </div>
-      <div className="table-wrapper table-responsive material-table-container note-table-container">
-        <div className="note-table-scroll">
-          <table className="table table-striped material-table inbound-table note-table">
-            <thead className="note-thead">
-              <tr>
-                <th>Order No</th>
-                <th>Date</th>
-                <th>PO/DO</th>
-                <th>Quantity</th>
-                <th>Package Type</th>
-                <th>Description</th>
-                <th className="note-actions-th">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoadingOrders ? (
-                <tr>
-                  <td colSpan="7" className="note-empty-td">Loading...</td>
-                </tr>
-              ) : inboundOrders.length > 0 ? (
-                inboundOrders.map((order) => {
-                  const firstItem = Array.isArray(order.items) ? order.items[0] : null;
-                  const rowKey = order.inbound_id ?? order.id ?? Math.random();
-                  const description = firstItem?.description || "";
-                  return (
-                    <tr key={rowKey}>
-                      <td>
-                        <div className="material-table-cell">{order.inbound_no || ""}</div>
-                      </td>
-                      <td>
-                        <div className="material-table-cell">
-                          {formatDate(order.inbound_date || order.date, order.inbound_time || order.time)}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="material-table-cell">{firstItem?.po_do_no ?? firstItem?.po_no ?? ""}</div>
-                      </td>
-                      <td>
-                        <div className="material-table-cell">{firstItem?.quantity ?? ""}</div>
-                      </td>
-                      <td>
-                        <div className="material-table-cell">
-                          {firstItem?.package_type ||
-                            packageTypeOptions.find((o) => o.value === String(firstItem?.package_type_id))?.label ||
-                            ""}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="material-table-cell">
-                          {description.length > 25 ? (
-                            <>
-                              <Tooltip
-                                id={`description-tooltip-${rowKey}`}
-                                place="right"
-                                content={description}
-                                className="material-table-tooltip"
-                              />
-                              <span
-                                data-tooltip-id={`description-tooltip-${rowKey}`}
-                                className="note-desc-tip"
-                              >
-                                {description.substring(0, 25)}...
-                              </span>
-                            </>
-                          ) : (
-                            <span>{description}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="note-actions-td">
-                        <div className="material-table-cell note-actions-cell">
-                          <Tooltip id={`view-order-${rowKey}`} place="left" content="View" />
-                          <button
-                            type="button"
-                            onClick={() => handleViewOrder(order)}
-                            data-tooltip-id={`view-order-${rowKey}`}
-                            className="note-action-btn"
-                          >
-                            <img src={eyeIcon} alt="view" className="note-action-icon" />
-                          </button>
-                          {canPrintInbound && (
-                            <>
-                              <Tooltip id={`print-order-${rowKey}`} place="left" content="Print" />
-                              <button
-                                type="button"
-                                onClick={() => handlePrintOrder(order)}
-                                data-tooltip-id={`print-order-${rowKey}`}
-                                disabled={printingId === resolveInboundId(order)}
-                                className="print-action-icon-wrap"
-                              >
-                                {printingId === resolveInboundId(order) ? (
-                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="icon-spinning">
-                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
-                                  </svg>
-                                ) : (
-                                  <img src={printIcon} alt="print" className="material-action-icon" />
-                                )}
-                              </button>
-                            </>
-                          )}
-                          {canConvertToLandingNote && (
-                            <>
-                              <Tooltip id={`convert-order-${rowKey}`} place="left" content=" Convert" />
-                              <button
-                                type="button"
-                                onClick={() => handleConvertToLanding(order)}
-                                data-tooltip-id={`convert-order-${rowKey}`}
-                                className="note-action-btn"
-                              >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M2 18L4 16L6 18L8 16L10 18L12 16L14 18L16 16L18 18L20 16L22 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                  <path d="M2 10L12 4L22 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                  <path d="M12 4V18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                              </button>
-                            </>
-                          )}
-                          <div className={`action-dropdown-wrapper${openDropdownId === rowKey ? " action-dropdown-wrapper--open" : ""}`}>
-                            <Tooltip id={`more-actions-${rowKey}`} place="left" content="More actions" />
-                            <button
-                              type="button"
-                              onClick={(e) => handleToggleDropdown(rowKey, e)}
-                              data-tooltip-id={`more-actions-${rowKey}`}
-                              className="note-action-btn"
-                            >
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="12" cy="6" r="1.5" fill="currentColor" />
-                                <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-                                <circle cx="12" cy="18" r="1.5" fill="currentColor" />
-                              </svg>
-                            </button>
-                            {openDropdownId === rowKey && createPortal(
-                              <div
-                                data-dropdown-menu
-                                className="dispatch-note-dropdown-menu"
-                                style={{ top: `${dropdownPosition.top}px`, right: `${dropdownPosition.right}px` }}
-                              >
-                                {canUpdateInbound && (
-                                  <button
-                                    type="button"
-                                    onClick={() => { handleCloseDropdown(); handleOpenModal(order); }}
-                                    className="dispatch-note-dropdown-btn"
-                                  >
-                                    <img src={editIcon} alt="edit" className="dispatch-note-dropdown-icon" />
-                                    <span>Edit</span>
-                                  </button>
-                                )}
-                                {canDeleteInbound && (
-                                  <button
-                                    type="button"
-                                    onClick={() => { handleDelete(order); }}
-                                    className="dispatch-note-dropdown-btn dispatch-note-dropdown-btn--danger"
-                                  >
-                                    <img src={deleteIcon} alt="delete" className="dispatch-note-dropdown-icon" />
-                                    <span>Delete</span>
-                                  </button>
-                                )}
-                              </div>,
-                              document.body
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan="7" className="note-empty-td">
-                    No inbound orders found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        <MaterialTablePagination
-          page={inboundPage}
-          total={inboundTotal}
-          limit={INBOUND_LIMIT}
-          onPageChange={setInboundPage}
-        />
-      </div>
+    <div className="cardform-left-full" style={{ "--card-color": cardColor }}>
+      <FormSection icon={GroupSettingsIcon} title="">
+        <div className="pre-arrival-form inbound-orders-form">
+          <div className={`general-info-two-column operation-section-form-layout crew-pass-premium-grid${showFormCard ? "" : " inbound-orders-grid--list-only"}`}>
+            {showFormCard && (
+              <div className="general-info-left crew-pass-premium-left">
+                <div className={`crew-pass-request-details-card husb-accent-${MATERIAL_ACCENT}`}>
+                  <PremiumCardHeader
+                    icon={MAIN_TABS.MATERIAL_MANAGEMENT}
+                    title={editingOrder ? `Edit inbound order${editingOrderLabel ? ` ${editingOrderLabel}` : ""}` : "New inbound order"}
+                    subtitle={editingOrder ? "Update the order details and save your changes" : "Register materials expected at the warehouse"}
+                    headerClassName="crew-pass-request-details-card__header"
+                    titleClassName="crew-pass-request-details-card__title"
+                  />
+                  <div
+                    ref={formBodyRef}
+                    className="crew-pass-request-details-card__body crew-pass-form-fields crew-pass-thin-scrollbar"
+                  >
+                    {renderFormBody()}
+                  </div>
+                  {renderFormFooter()}
+                </div>
+              </div>
+            )}
 
-      <CustomModal
-        className="material-management-modal inbound-orders-modal"
-        show={showModal}
-        closeModal={handleCloseModal}
-        header={renderHeader()}
-        body={renderBody()}
-        footer={renderFooter()}
-        dialgName="modal-dialog modal-dialog-centered"
-      />
+            <div className="general-info-right crew-pass-requests-sidebar">
+              <div className={`crew-pass-requests-table-card husb-accent-${MATERIAL_ACCENT}`} role="region" aria-label="Inbound orders">
+                <PremiumCardHeader
+                  icon="list"
+                  title="Inbound orders"
+                  subtitle="All inbound orders for this job"
+                  count={inboundTotal || undefined}
+                  headerClassName="crew-pass-requests-table-card__header"
+                  titleClassName="crew-pass-requests-table-card__title"
+                />
+                <div className="crew-pass-requests-table-card__body">
+                  {isLoadingOrders ? (
+                    <div className="crew-pass-requests-table-card__skeleton" aria-busy="true">
+                      <Skeleton height={14} borderRadius={6} count={1} style={{ marginBottom: 12 }} />
+                      <Skeleton height={36} borderRadius={6} count={6} />
+                    </div>
+                  ) : inboundOrders.length === 0 ? (
+                    <div className="crew-pass-requests-table-card__empty">No inbound orders found</div>
+                  ) : (
+                    <div className="crew-pass-requests-table-scroll crew-pass-thin-scrollbar material-table-container">
+                      <table className="crew-pass-requests-table inbound-orders-table">
+                        <thead>
+                          <tr>
+                            <th>Order No</th>
+                            <th>Date</th>
+                            <th>PO/DO</th>
+                            <th>Quantity</th>
+                            <th>Package Type</th>
+                            <th>Description</th>
+                            <th className="note-actions-th">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {inboundOrders.map((order) => {
+                              const firstItem = Array.isArray(order.items) ? order.items[0] : null;
+                              const rowKey = order.inbound_id ?? order.id ?? Math.random();
+                              const description = firstItem?.description || "";
+                              return (
+                                <tr
+                                  key={rowKey}
+                                  className={editingInboundId != null && resolveInboundId(order) === editingInboundId ? "inbound-orders-table__row--editing" : undefined}
+                                >
+                                  <td>
+                                    <div className="material-table-cell">{order.inbound_no || ""}</div>
+                                  </td>
+                                  <td>
+                                    <div className="material-table-cell">
+                                      {formatDate(order.inbound_date || order.date, order.inbound_time || order.time)}
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <div className="material-table-cell">{firstItem?.po_do_no ?? firstItem?.po_no ?? ""}</div>
+                                  </td>
+                                  <td>
+                                    <div className="material-table-cell">{firstItem?.quantity ?? ""}</div>
+                                  </td>
+                                  <td>
+                                    <div className="material-table-cell">
+                                      {firstItem?.package_type ||
+                                        packageTypeOptions.find((o) => o.value === String(firstItem?.package_type_id))?.label ||
+                                        ""}
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <div className="material-table-cell">
+                                      {description.length > 25 ? (
+                                        <>
+                                          <Tooltip
+                                            id={`description-tooltip-${rowKey}`}
+                                            place="right"
+                                            content={description}
+                                            className="material-table-tooltip"
+                                          />
+                                          <span
+                                            data-tooltip-id={`description-tooltip-${rowKey}`}
+                                            className="note-desc-tip"
+                                          >
+                                            {description.substring(0, 25)}...
+                                          </span>
+                                        </>
+                                      ) : (
+                                        <span>{description}</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="note-actions-td">
+                                    <div className="material-table-cell note-actions-cell">
+                                      <Tooltip id={`view-order-${rowKey}`} place="left" content="View" />
+                                      <button
+                                        type="button"
+                                        onClick={() => handleViewOrder(order)}
+                                        data-tooltip-id={`view-order-${rowKey}`}
+                                        className="note-action-btn"
+                                      >
+                                        <img src={eyeIcon} alt="view" className="note-action-icon" />
+                                      </button>
+                                      {canPrintInbound && (
+                                        <>
+                                          <Tooltip id={`print-order-${rowKey}`} place="left" content="Print" />
+                                          <button
+                                            type="button"
+                                            onClick={() => handlePrintOrder(order)}
+                                            data-tooltip-id={`print-order-${rowKey}`}
+                                            disabled={printingId === resolveInboundId(order)}
+                                            className="print-action-icon-wrap"
+                                          >
+                                            {printingId === resolveInboundId(order) ? (
+                                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="icon-spinning">
+                                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
+                                              </svg>
+                                            ) : (
+                                              <img src={printIcon} alt="print" className="material-action-icon" />
+                                            )}
+                                          </button>
+                                        </>
+                                      )}
+                                      {canConvertToLandingNote && (
+                                        <>
+                                          <Tooltip id={`convert-order-${rowKey}`} place="left" content=" Convert" />
+                                          <button
+                                            type="button"
+                                            onClick={() => handleConvertToLanding(order)}
+                                            data-tooltip-id={`convert-order-${rowKey}`}
+                                            className="note-action-btn"
+                                          >
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                              <path d="M2 18L4 16L6 18L8 16L10 18L12 16L14 18L16 16L18 18L20 16L22 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                              <path d="M2 10L12 4L22 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                              <path d="M12 4V18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                          </button>
+                                        </>
+                                      )}
+                                      <div className={`action-dropdown-wrapper${openDropdownId === rowKey ? " action-dropdown-wrapper--open" : ""}`}>
+                                        <Tooltip id={`more-actions-${rowKey}`} place="left" content="More actions" />
+                                        <button
+                                          type="button"
+                                          onClick={(e) => handleToggleDropdown(rowKey, e)}
+                                          data-tooltip-id={`more-actions-${rowKey}`}
+                                          className="note-action-btn"
+                                        >
+                                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <circle cx="12" cy="6" r="1.5" fill="currentColor" />
+                                            <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                                            <circle cx="12" cy="18" r="1.5" fill="currentColor" />
+                                          </svg>
+                                        </button>
+                                        {openDropdownId === rowKey && createPortal(
+                                          <div
+                                            data-dropdown-menu
+                                            className="dispatch-note-dropdown-menu"
+                                            style={{ top: `${dropdownPosition.top}px`, right: `${dropdownPosition.right}px` }}
+                                          >
+                                            {canUpdateInbound && (
+                                              <button
+                                                type="button"
+                                                onClick={() => { handleCloseDropdown(); handleEditOrder(order); }}
+                                                className="dispatch-note-dropdown-btn"
+                                              >
+                                                <img src={editIcon} alt="edit" className="dispatch-note-dropdown-icon" />
+                                                <span>Edit</span>
+                                              </button>
+                                            )}
+                                            {canDeleteInbound && (
+                                              <button
+                                                type="button"
+                                                onClick={() => { handleDelete(order); }}
+                                                className="dispatch-note-dropdown-btn dispatch-note-dropdown-btn--danger"
+                                              >
+                                                <img src={deleteIcon} alt="delete" className="dispatch-note-dropdown-icon" />
+                                                <span>Delete</span>
+                                              </button>
+                                            )}
+                                          </div>,
+                                          document.body
+                                        )}
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {!isLoadingOrders && inboundOrders.length > 0 && (
+                    <div className="crew-pass-requests-table-card__pagination">
+                      <MaterialTablePagination
+                        page={inboundPage}
+                        total={inboundTotal}
+                        limit={INBOUND_LIMIT}
+                        onPageChange={setInboundPage}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </FormSection>
 
       <CustomModal
         className="material-management-modal inbound-orders-modal"

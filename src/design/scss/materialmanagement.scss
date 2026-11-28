@@ -2344,3 +2344,132 @@ body .material-management-modal .upload-main-text {
     color: var(--text-body);
   }
 }
+
+/* ===========================================================
+   INBOUND ORDERS — premium two-column layout
+   Form card (left) + orders list card (right), matching the
+   Zawil Pass / CG Pass husbandry pages. Grid, card and table
+   chrome come from the shared .crew-pass-* classes in
+   operations.scss; only Inbound-specific tweaks live here.
+   =========================================================== */
+.inbound-orders-form {
+  // Desktop only — the shared ≤900px rule in operations.scss stacks the columns.
+  @media (min-width: 901px) {
+    .general-info-two-column.operation-section-form-layout.crew-pass-premium-grid {
+      grid-template-columns: minmax(0, 40fr) minmax(0, 60fr);
+    }
+  }
+
+  // No add permission and nothing being edited: list takes the full width.
+  .general-info-two-column.operation-section-form-layout.crew-pass-premium-grid.inbound-orders-grid--list-only {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .crew-pass-request-details-card,
+  .crew-pass-requests-table-card {
+    max-height: calc(100vh - 210px);
+  }
+
+  // Order item cards sit inside a FormGroup instead of a modal section.
+  .dispatch-edit-item-card:last-child {
+    margin-bottom: 0;
+  }
+
+  .dispatch-edit-item-header {
+    background-color: var(--bg-secondary);
+  }
+
+  .dispatch-edit-item-body {
+    padding: 14px;
+  }
+
+  .dispatch-transport-section {
+    margin-top: 4px;
+  }
+
+  // Narrow column: stack the launch hire steps and drop the decorative track.
+  .dispatch-launch-hire-card {
+    margin-top: 12px;
+    padding: 14px 16px;
+  }
+
+  .dispatch-launch-hire-steps--form {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .dispatch-launch-hire-step--form {
+    width: 100%;
+
+    &::after {
+      display: none;
+    }
+  }
+
+  .dispatch-launch-hire-track {
+    display: none;
+  }
+
+  .dispatch-launch-hire-step-field .cf-datetime-picker .cf-datetime-input-field {
+    .MuiPickersInputBase-root,
+    .MuiOutlinedInput-root,
+    .MuiInputBase-root {
+      background: var(--surface-primary);
+    }
+  }
+
+  // Footer: Reset on the left, Cancel (edit mode) + Save/Update on the right.
+  .form-save-button-wrapper.inbound-order-save-footer {
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .inbound-order-footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .inbound-order-ghost-action {
+    background: var(--surface-primary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
+    padding: 9px 20px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+
+    &:hover {
+      border-color: var(--accent, var(--color-primary));
+      background: var(--bg-secondary);
+    }
+  }
+
+  // Orders table inside the premium list card.
+  .inbound-orders-table {
+    min-width: 680px;
+
+    td {
+      vertical-align: middle;
+    }
+
+    .note-actions-th,
+    .note-actions-td {
+      width: 1%;
+      white-space: nowrap;
+    }
+
+    tr.inbound-orders-table__row--editing td {
+      background: var(--accent-tint, var(--bg-secondary));
+    }
+  }
+
+  .crew-pass-requests-table-card__pagination {
+    padding: 6px 16px 12px;
+    border-top: 1px solid var(--border-primary);
+  }
+}
