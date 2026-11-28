@@ -1,249 +1,2447 @@
 {
     "status": "success",
+    "message": "User details fetched successfully",
     "data": {
-        "call": {
-            "call_id": "609",
-            "call_type_id": "1",
-            "call_type": "Import Call",
-            "appointment_type": "Vessel",
-            "port_id": "1",
-            "port": "Jubail",
-            "main_billing_entity_id": "24",
-            "billing_entity": "LARSEN TOUBRO ARABIA LLC",
-            "assigned_operator_id": "85",
-            "assigned_operator": "Infobahn Operator",
-            "created_by": "83",
-            "card_title": "Inward Clearance",
-            "card_color": "#00368c",
-            "eta": "2026-11-27 23:00:00",
-            "ata": null,
-            "time_objects": [
+        "userid": "83",
+        "name": "Infobahn Test",
+        "username": "sdfdsf",
+        "email": "testinfobahn@gmail.com",
+        "phone": "96634343434",
+        "address": "",
+        "image": null,
+        "signature": "83_signature_1794909218.jpg",
+        "signature_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Signature\/83_signature_1794909218.jpg",
+        "last_login": "2026-11-28 07:44:46",
+        "role": {
+            "role_id": "1",
+            "role_name": "Port Supervisor"
+        },
+        "permissions": {
+            "sections": [
                 {
-                    "time_object_id": "4",
-                    "time_object": "Expected Time of Arrival",
-                    "field_key": "ETA",
-                    "time_object_value": "2026-11-27 23:00:00",
-                    "stage_id": 2
+                    "permission_id": "1",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "KANBAN_WORKSPACE",
+                    "module_name": "Kanban workspace",
+                    "sub_modules": [],
+                    "actions": [
+                        {
+                            "permission_id": "2",
+                            "parent_id": "1",
+                            "section_level": "3",
+                            "action_key": "VIEW_WORKSPACE",
+                            "action_name": "View workspace"
+                        },
+                        {
+                            "permission_id": "3",
+                            "parent_id": "1",
+                            "section_level": "3",
+                            "action_key": "CREATE_WORKSPACE",
+                            "action_name": "Create workspace"
+                        },
+                        {
+                            "permission_id": "4",
+                            "parent_id": "1",
+                            "section_level": "3",
+                            "action_key": "DELETE_WORKSPACE",
+                            "action_name": "Delete workspace"
+                        },
+                        {
+                            "permission_id": "5",
+                            "parent_id": "1",
+                            "section_level": "3",
+                            "action_key": "RENAME_WORKSPACE",
+                            "action_name": "Rename Workspace"
+                        },
+                        {
+                            "permission_id": "6",
+                            "parent_id": "1",
+                            "section_level": "3",
+                            "action_key": "ARCHIVE_WORKSPACE",
+                            "action_name": "Archive workspace"
+                        },
+                        {
+                            "permission_id": "8",
+                            "parent_id": "1",
+                            "section_level": "3",
+                            "action_key": "ADD_BOARD",
+                            "action_name": "Add board"
+                        },
+                        {
+                            "permission_id": "9",
+                            "parent_id": "1",
+                            "section_level": "3",
+                            "action_key": "RENAME_BOARD",
+                            "action_name": "Rename Board"
+                        },
+                        {
+                            "permission_id": "10",
+                            "parent_id": "1",
+                            "section_level": "3",
+                            "action_key": "ARCHIVE_BOARD",
+                            "action_name": "Archive Board"
+                        },
+                        {
+                            "permission_id": "11",
+                            "parent_id": "1",
+                            "section_level": "3",
+                            "action_key": "UPDATE_BOARD_BACKGROUND",
+                            "action_name": "Update Board Background"
+                        },
+                        {
+                            "permission_id": "12",
+                            "parent_id": "1",
+                            "section_level": "3",
+                            "action_key": "ADD_NEW_DASHBOARD",
+                            "action_name": "Add New Dashboard"
+                        },
+                        {
+                            "permission_id": "13",
+                            "parent_id": "1",
+                            "section_level": "3",
+                            "action_key": "LIST_DASHBOARD",
+                            "action_name": "List Dashboard"
+                        },
+                        {
+                            "permission_id": "14",
+                            "parent_id": "1",
+                            "section_level": "3",
+                            "action_key": "RENAME_DASHBOARD",
+                            "action_name": "Rename Dashboard"
+                        },
+                        {
+                            "permission_id": "15",
+                            "parent_id": "1",
+                            "section_level": "3",
+                            "action_key": "UPDATE_DASHBOARD_BACKGROUND",
+                            "action_name": "Update Dashboard Background"
+                        },
+                        {
+                            "permission_id": "16",
+                            "parent_id": "1",
+                            "section_level": "3",
+                            "action_key": "DELETE_DASHBOARD",
+                            "action_name": "Delete Dashboard"
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "17",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "KANBAN_WORKFLOW",
+                    "module_name": "Kanban Workflow",
+                    "sub_modules": [],
+                    "actions": [
+                        {
+                            "permission_id": "18",
+                            "parent_id": "17",
+                            "section_level": "3",
+                            "action_key": "VIEW_WORKFLOW",
+                            "action_name": "View Workflow"
+                        },
+                        {
+                            "permission_id": "19",
+                            "parent_id": "17",
+                            "section_level": "3",
+                            "action_key": "CREATE_WORKFLOW",
+                            "action_name": "Create workflow"
+                        },
+                        {
+                            "permission_id": "20",
+                            "parent_id": "17",
+                            "section_level": "3",
+                            "action_key": "RENAME_WORKFLOW",
+                            "action_name": "Rename workflow"
+                        },
+                        {
+                            "permission_id": "21",
+                            "parent_id": "17",
+                            "section_level": "3",
+                            "action_key": "DELETE_WORKFLOW",
+                            "action_name": "Delete workflow"
+                        },
+                        {
+                            "permission_id": "22",
+                            "parent_id": "17",
+                            "section_level": "3",
+                            "action_key": "DISABLE_WORKFLOW",
+                            "action_name": "Disable workflow"
+                        },
+                        {
+                            "permission_id": "23",
+                            "parent_id": "17",
+                            "section_level": "3",
+                            "action_key": "CREATE_SWIMLANE",
+                            "action_name": "Create swimlane"
+                        },
+                        {
+                            "permission_id": "24",
+                            "parent_id": "17",
+                            "section_level": "3",
+                            "action_key": "RENAME_SWIMLANE",
+                            "action_name": "Rename swimlane"
+                        },
+                        {
+                            "permission_id": "25",
+                            "parent_id": "17",
+                            "section_level": "3",
+                            "action_key": "DELETE_SWIMLANE",
+                            "action_name": "Delete swimlane"
+                        },
+                        {
+                            "permission_id": "26",
+                            "parent_id": "17",
+                            "section_level": "3",
+                            "action_key": "UPDATE_SWIMLANE_COLOR",
+                            "action_name": "Update swimlane color"
+                        },
+                        {
+                            "permission_id": "27",
+                            "parent_id": "17",
+                            "section_level": "3",
+                            "action_key": "ADD_COLUMNS",
+                            "action_name": "Add columns"
+                        },
+                        {
+                            "permission_id": "28",
+                            "parent_id": "17",
+                            "section_level": "3",
+                            "action_key": "UPDATE_COLUMN_COLOR",
+                            "action_name": "Update Column color"
+                        },
+                        {
+                            "permission_id": "29",
+                            "parent_id": "17",
+                            "section_level": "3",
+                            "action_key": "DELETE_COLUMN",
+                            "action_name": "Delete Column"
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "30",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "KANBAN_CARD",
+                    "module_name": "Kanban Card",
+                    "sub_modules": [
+                        {
+                            "permission_id": "31",
+                            "parent_id": "30",
+                            "section_level": "2",
+                            "submodule_key": "ADD_CARD",
+                            "submodule_name": "Add card",
+                            "actions": [
+                                {
+                                    "permission_id": "228",
+                                    "parent_id": "31",
+                                    "section_level": "3",
+                                    "action_key": "BASIC_FIELDS",
+                                    "action_name": "Basic fields"
+                                },
+                                {
+                                    "permission_id": "307",
+                                    "parent_id": "31",
+                                    "section_level": "3",
+                                    "action_key": "EMAIL",
+                                    "action_name": "Email"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "32",
+                            "parent_id": "30",
+                            "section_level": "2",
+                            "submodule_key": "APPOINTMENT_DETAILS",
+                            "submodule_name": "Appointment Details",
+                            "actions": [
+                                {
+                                    "permission_id": "33",
+                                    "parent_id": "32",
+                                    "section_level": "3",
+                                    "action_key": "GENERAL_INFORMATION",
+                                    "action_name": "General Information"
+                                },
+                                {
+                                    "permission_id": "308",
+                                    "parent_id": "32",
+                                    "section_level": "3",
+                                    "action_key": "DAILY_TASKS",
+                                    "action_name": "Daily Tasks"
+                                },
+                                {
+                                    "permission_id": "309",
+                                    "parent_id": "32",
+                                    "section_level": "3",
+                                    "action_key": "OPERATION_TASKS",
+                                    "action_name": "Operation Tasks"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "34",
+                            "parent_id": "30",
+                            "section_level": "2",
+                            "submodule_key": "CREW_IMMIGRATION",
+                            "submodule_name": "Crew Immigration",
+                            "actions": [
+                                {
+                                    "permission_id": "35",
+                                    "parent_id": "34",
+                                    "section_level": "3",
+                                    "action_key": "UPLOAD_CREW_LIST",
+                                    "action_name": "Upload crew List"
+                                },
+                                {
+                                    "permission_id": "36",
+                                    "parent_id": "34",
+                                    "section_level": "3",
+                                    "action_key": "DELETE_UPLOADED_CREW_LIST",
+                                    "action_name": "Delete Uploaded Crew List"
+                                },
+                                {
+                                    "permission_id": "37",
+                                    "parent_id": "34",
+                                    "section_level": "3",
+                                    "action_key": "UPLOAD_PASSPORT",
+                                    "action_name": "Upload Passport"
+                                },
+                                {
+                                    "permission_id": "38",
+                                    "parent_id": "34",
+                                    "section_level": "3",
+                                    "action_key": "UPLOAD_IQAMA",
+                                    "action_name": "Upload Iqama"
+                                },
+                                {
+                                    "permission_id": "39",
+                                    "parent_id": "34",
+                                    "section_level": "3",
+                                    "action_key": "UPLOAD_VISA",
+                                    "action_name": "Upload Visa"
+                                },
+                                {
+                                    "permission_id": "40",
+                                    "parent_id": "34",
+                                    "section_level": "3",
+                                    "action_key": "REQUEST_LAUNCH_HIRE",
+                                    "action_name": "Request Launch Hire"
+                                },
+                                {
+                                    "permission_id": "41",
+                                    "parent_id": "34",
+                                    "section_level": "3",
+                                    "action_key": "VIEW_CREW_LIST",
+                                    "action_name": "View Crew List"
+                                },
+                                {
+                                    "permission_id": "42",
+                                    "parent_id": "34",
+                                    "section_level": "3",
+                                    "action_key": "EDIT_CREW",
+                                    "action_name": "Edit Crew"
+                                },
+                                {
+                                    "permission_id": "43",
+                                    "parent_id": "34",
+                                    "section_level": "3",
+                                    "action_key": "DELETE_CREW",
+                                    "action_name": "Delete Crew"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "45",
+                            "parent_id": "30",
+                            "section_level": "2",
+                            "submodule_key": "PRE_ARRIVAL",
+                            "submodule_name": "Pre arrival",
+                            "actions": [
+                                {
+                                    "permission_id": "47",
+                                    "parent_id": "45",
+                                    "section_level": "3",
+                                    "action_key": "BASIC_FIELDS",
+                                    "action_name": "Basic Fields"
+                                },
+                                {
+                                    "permission_id": "48",
+                                    "parent_id": "45",
+                                    "section_level": "3",
+                                    "action_key": "ADD_NEW_TIME_OBJECT",
+                                    "action_name": "Add new time object"
+                                },
+                                {
+                                    "permission_id": "49",
+                                    "parent_id": "45",
+                                    "section_level": "3",
+                                    "action_key": "DELETE_NEW_TIME_OBJECT",
+                                    "action_name": "Delete new time object"
+                                },
+                                {
+                                    "permission_id": "50",
+                                    "parent_id": "45",
+                                    "section_level": "3",
+                                    "action_key": "PREVIEW_EMAIL",
+                                    "action_name": "Preview Email"
+                                },
+                                {
+                                    "permission_id": "51",
+                                    "parent_id": "45",
+                                    "section_level": "3",
+                                    "action_key": "SEND_REPORT",
+                                    "action_name": "Send Report"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "52",
+                            "parent_id": "30",
+                            "section_level": "2",
+                            "submodule_key": "ARRIVAL",
+                            "submodule_name": "Arrival",
+                            "actions": [
+                                {
+                                    "permission_id": "54",
+                                    "parent_id": "52",
+                                    "section_level": "3",
+                                    "action_key": "BASIC_FIELDS",
+                                    "action_name": "Basic Fields"
+                                },
+                                {
+                                    "permission_id": "55",
+                                    "parent_id": "52",
+                                    "section_level": "3",
+                                    "action_key": "ADD_NEW_TIME_OBJECT",
+                                    "action_name": "Add new time object"
+                                },
+                                {
+                                    "permission_id": "56",
+                                    "parent_id": "52",
+                                    "section_level": "3",
+                                    "action_key": "DELETE_NEW_TIME_OBJECT",
+                                    "action_name": "Delete new time object"
+                                },
+                                {
+                                    "permission_id": "57",
+                                    "parent_id": "52",
+                                    "section_level": "3",
+                                    "action_key": "PREVIEW_EMAIL",
+                                    "action_name": "Preview Email"
+                                },
+                                {
+                                    "permission_id": "58",
+                                    "parent_id": "52",
+                                    "section_level": "3",
+                                    "action_key": "SEND_REPORT",
+                                    "action_name": "Send Report"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "59",
+                            "parent_id": "30",
+                            "section_level": "2",
+                            "submodule_key": "DEPARTURE",
+                            "submodule_name": "Departure",
+                            "actions": [
+                                {
+                                    "permission_id": "61",
+                                    "parent_id": "59",
+                                    "section_level": "3",
+                                    "action_key": "BASIC_FIELDS",
+                                    "action_name": "Basic Fields"
+                                },
+                                {
+                                    "permission_id": "62",
+                                    "parent_id": "59",
+                                    "section_level": "3",
+                                    "action_key": "ADD_NEW_TIME_OBJECT",
+                                    "action_name": "Add new time object"
+                                },
+                                {
+                                    "permission_id": "63",
+                                    "parent_id": "59",
+                                    "section_level": "3",
+                                    "action_key": "DELETE_NEW_TIME_OBJECT",
+                                    "action_name": "Delete new time object"
+                                },
+                                {
+                                    "permission_id": "64",
+                                    "parent_id": "59",
+                                    "section_level": "3",
+                                    "action_key": "PREVIEW_EMAIL",
+                                    "action_name": "Preview Email"
+                                },
+                                {
+                                    "permission_id": "65",
+                                    "parent_id": "59",
+                                    "section_level": "3",
+                                    "action_key": "SEND_REPORT",
+                                    "action_name": "Send Report"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "66",
+                            "parent_id": "30",
+                            "section_level": "2",
+                            "submodule_key": "CHECKLIST",
+                            "submodule_name": "Checklist",
+                            "actions": []
+                        },
+                        {
+                            "permission_id": "68",
+                            "parent_id": "30",
+                            "section_level": "2",
+                            "submodule_key": "HUSBANDRY",
+                            "submodule_name": "Husbandry",
+                            "actions": []
+                        },
+                        {
+                            "permission_id": "70",
+                            "parent_id": "30",
+                            "section_level": "2",
+                            "submodule_key": "CREW_MANAGEMENT",
+                            "submodule_name": "Crew Management",
+                            "actions": [
+                                {
+                                    "permission_id": "72",
+                                    "parent_id": "70",
+                                    "section_level": "3",
+                                    "action_key": "UPLOAD_CREW_LIST",
+                                    "action_name": "Upload Crew List"
+                                },
+                                {
+                                    "permission_id": "73",
+                                    "parent_id": "70",
+                                    "section_level": "3",
+                                    "action_key": "UPLOAD_PASSPORT",
+                                    "action_name": "Upload Passport"
+                                },
+                                {
+                                    "permission_id": "74",
+                                    "parent_id": "70",
+                                    "section_level": "3",
+                                    "action_key": "UPLOAD_IQAMA",
+                                    "action_name": "Upload Iqama"
+                                },
+                                {
+                                    "permission_id": "75",
+                                    "parent_id": "70",
+                                    "section_level": "3",
+                                    "action_key": "UPLOAD_VISA",
+                                    "action_name": "Upload Visa"
+                                },
+                                {
+                                    "permission_id": "76",
+                                    "parent_id": "70",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "77",
+                                    "parent_id": "70",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "78",
+                            "parent_id": "30",
+                            "section_level": "2",
+                            "submodule_key": "MATERIAL_MANAGEMENT",
+                            "submodule_name": "Material Management",
+                            "actions": [
+                                {
+                                    "permission_id": "79",
+                                    "parent_id": "78",
+                                    "section_level": "3",
+                                    "action_key": "VIEW_INBOUND_ORDER",
+                                    "action_name": "View Inbound Order"
+                                },
+                                {
+                                    "permission_id": "80",
+                                    "parent_id": "78",
+                                    "section_level": "3",
+                                    "action_key": "ADD_INBOUND_ORDER",
+                                    "action_name": "Add Inbound Order"
+                                },
+                                {
+                                    "permission_id": "81",
+                                    "parent_id": "78",
+                                    "section_level": "3",
+                                    "action_key": "UPDATE_INBOUND_ORDER",
+                                    "action_name": "Update Inbound Order"
+                                },
+                                {
+                                    "permission_id": "82",
+                                    "parent_id": "78",
+                                    "section_level": "3",
+                                    "action_key": "DELETE_INBOUND_ORDER",
+                                    "action_name": "Delete Inbound Order"
+                                },
+                                {
+                                    "permission_id": "83",
+                                    "parent_id": "78",
+                                    "section_level": "3",
+                                    "action_key": "PRINT_INBOUND_ORDER",
+                                    "action_name": "Print Inbound Order"
+                                },
+                                {
+                                    "permission_id": "84",
+                                    "parent_id": "78",
+                                    "section_level": "3",
+                                    "action_key": "CONVERT_TO_LANDING_NOTE",
+                                    "action_name": "Convert to Landing Note"
+                                },
+                                {
+                                    "permission_id": "85",
+                                    "parent_id": "78",
+                                    "section_level": "3",
+                                    "action_key": "VIEW_LANDING_NOTE",
+                                    "action_name": "View Landing Note"
+                                },
+                                {
+                                    "permission_id": "86",
+                                    "parent_id": "78",
+                                    "section_level": "3",
+                                    "action_key": "PRINT_LANDING_NOTE",
+                                    "action_name": "Print Landing Note"
+                                },
+                                {
+                                    "permission_id": "87",
+                                    "parent_id": "78",
+                                    "section_level": "3",
+                                    "action_key": "CONVERT_TO_DISPATCH_NOTE",
+                                    "action_name": "Convert to Dispatch Note"
+                                },
+                                {
+                                    "permission_id": "88",
+                                    "parent_id": "78",
+                                    "section_level": "3",
+                                    "action_key": "UPDATE_LANDING_NOTE",
+                                    "action_name": "Update Landing Note"
+                                },
+                                {
+                                    "permission_id": "89",
+                                    "parent_id": "78",
+                                    "section_level": "3",
+                                    "action_key": "DELETE_LANDING_NOTE",
+                                    "action_name": "Delete Landing Note"
+                                },
+                                {
+                                    "permission_id": "90",
+                                    "parent_id": "78",
+                                    "section_level": "3",
+                                    "action_key": "VIEW_DISPATCH_NOTE",
+                                    "action_name": "View Dispatch Note"
+                                },
+                                {
+                                    "permission_id": "91",
+                                    "parent_id": "78",
+                                    "section_level": "3",
+                                    "action_key": "UPDATE_DISPATCH_NOTE",
+                                    "action_name": "Update Dispatch Note"
+                                },
+                                {
+                                    "permission_id": "92",
+                                    "parent_id": "78",
+                                    "section_level": "3",
+                                    "action_key": "PRINT_DISPATCH_NOTE",
+                                    "action_name": "Print Dispatch Note"
+                                },
+                                {
+                                    "permission_id": "93",
+                                    "parent_id": "78",
+                                    "section_level": "3",
+                                    "action_key": "DELETE_DISPATCH_NOTE",
+                                    "action_name": "Delete Dispatch Note"
+                                },
+                                {
+                                    "permission_id": "94",
+                                    "parent_id": "78",
+                                    "section_level": "3",
+                                    "action_key": "VIEW_ORDER_HISTORY",
+                                    "action_name": "View Order History"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "95",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "USER_MANAGEMENT",
+                    "module_name": "User Management",
+                    "sub_modules": [
+                        {
+                            "permission_id": "96",
+                            "parent_id": "95",
+                            "section_level": "2",
+                            "submodule_key": "USERS",
+                            "submodule_name": "Users",
+                            "actions": [
+                                {
+                                    "permission_id": "97",
+                                    "parent_id": "96",
+                                    "section_level": "3",
+                                    "action_key": "VIEW",
+                                    "action_name": "View"
+                                },
+                                {
+                                    "permission_id": "98",
+                                    "parent_id": "96",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "99",
+                                    "parent_id": "96",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "100",
+                                    "parent_id": "96",
+                                    "section_level": "3",
+                                    "action_key": "PERMISSION",
+                                    "action_name": "Permission"
+                                },
+                                {
+                                    "permission_id": "101",
+                                    "parent_id": "96",
+                                    "section_level": "3",
+                                    "action_key": "ARCHIVE",
+                                    "action_name": "Archive"
+                                },
+                                {
+                                    "permission_id": "102",
+                                    "parent_id": "96",
+                                    "section_level": "3",
+                                    "action_key": "TOGGLE_STATUS",
+                                    "action_name": "Toggle status"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "103",
+                            "parent_id": "95",
+                            "section_level": "2",
+                            "submodule_key": "PERMISSIONS",
+                            "submodule_name": "Permissions",
+                            "actions": [
+                                {
+                                    "permission_id": "104",
+                                    "parent_id": "103",
+                                    "section_level": "3",
+                                    "action_key": "VIEW",
+                                    "action_name": "View"
+                                },
+                                {
+                                    "permission_id": "105",
+                                    "parent_id": "103",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "106",
+                                    "parent_id": "103",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "107",
+                                    "parent_id": "103",
+                                    "section_level": "3",
+                                    "action_key": "ARCHIVE",
+                                    "action_name": "Archive"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "108",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "ENTITY_MANAGEMENT",
+                    "module_name": "Entity Management",
+                    "sub_modules": [
+                        {
+                            "permission_id": "109",
+                            "parent_id": "108",
+                            "section_level": "2",
+                            "submodule_key": "BILLING_ENTITY",
+                            "submodule_name": "Billing Entity",
+                            "actions": [
+                                {
+                                    "permission_id": "110",
+                                    "parent_id": "109",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "111",
+                                    "parent_id": "109",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "112",
+                            "parent_id": "108",
+                            "section_level": "2",
+                            "submodule_key": "GROUP_EMAIL",
+                            "submodule_name": "Group Email",
+                            "actions": [
+                                {
+                                    "permission_id": "113",
+                                    "parent_id": "112",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "114",
+                                    "parent_id": "112",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "115",
+                                    "parent_id": "112",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "116",
+                                    "parent_id": "112",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "117",
+                            "parent_id": "108",
+                            "section_level": "2",
+                            "submodule_key": "BILLING_INSTRUCTION",
+                            "submodule_name": "Billing Instruction",
+                            "actions": [
+                                {
+                                    "permission_id": "118",
+                                    "parent_id": "117",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "119",
+                                    "parent_id": "117",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "120",
+                                    "parent_id": "117",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "121",
+                                    "parent_id": "117",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "122",
+                            "parent_id": "108",
+                            "section_level": "2",
+                            "submodule_key": "CUSTOMER_PRICING",
+                            "submodule_name": "Customer Pricing",
+                            "actions": [
+                                {
+                                    "permission_id": "123",
+                                    "parent_id": "122",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "124",
+                            "parent_id": "108",
+                            "section_level": "2",
+                            "submodule_key": "CREW_MANAGEMENT",
+                            "submodule_name": "Crew Management",
+                            "actions": [
+                                {
+                                    "permission_id": "125",
+                                    "parent_id": "124",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "126",
+                            "parent_id": "108",
+                            "section_level": "2",
+                            "submodule_key": "MWP_HISTORY",
+                            "submodule_name": "MWP History",
+                            "actions": [
+                                {
+                                    "permission_id": "127",
+                                    "parent_id": "126",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "128",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "VESSEL_MANAGEMENT",
+                    "module_name": "Vessel Management",
+                    "sub_modules": [
+                        {
+                            "permission_id": "129",
+                            "parent_id": "128",
+                            "section_level": "2",
+                            "submodule_key": "VESSEL",
+                            "submodule_name": "Vessel",
+                            "actions": [
+                                {
+                                    "permission_id": "130",
+                                    "parent_id": "129",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "131",
+                                    "parent_id": "129",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "132",
+                                    "parent_id": "129",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "133",
+                                    "parent_id": "129",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "134",
+                            "parent_id": "128",
+                            "section_level": "2",
+                            "submodule_key": "VESSEL_TYPES",
+                            "submodule_name": "Vessel Types",
+                            "actions": [
+                                {
+                                    "permission_id": "135",
+                                    "parent_id": "134",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "136",
+                                    "parent_id": "134",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "137",
+                                    "parent_id": "134",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "138",
+                                    "parent_id": "134",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "139",
+                            "parent_id": "128",
+                            "section_level": "2",
+                            "submodule_key": "BARGE_TYPES",
+                            "submodule_name": "Barge Types",
+                            "actions": [
+                                {
+                                    "permission_id": "140",
+                                    "parent_id": "139",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "141",
+                                    "parent_id": "139",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "142",
+                                    "parent_id": "139",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "143",
+                                    "parent_id": "139",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "144",
+                            "parent_id": "128",
+                            "section_level": "2",
+                            "submodule_key": "TUG_TYPES",
+                            "submodule_name": "Tug Types",
+                            "actions": [
+                                {
+                                    "permission_id": "145",
+                                    "parent_id": "144",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "146",
+                                    "parent_id": "144",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "147",
+                                    "parent_id": "144",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "148",
+                                    "parent_id": "144",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "149",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "OPERATIONS_CONFIGURATIONS",
+                    "module_name": "Operations Configurations",
+                    "sub_modules": [
+                        {
+                            "permission_id": "150",
+                            "parent_id": "149",
+                            "section_level": "2",
+                            "submodule_key": "REPORT_TEMPLATES",
+                            "submodule_name": "Report Templates",
+                            "actions": [
+                                {
+                                    "permission_id": "151",
+                                    "parent_id": "150",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "152",
+                                    "parent_id": "150",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "153",
+                                    "parent_id": "150",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "154",
+                                    "parent_id": "150",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "155",
+                            "parent_id": "149",
+                            "section_level": "2",
+                            "submodule_key": "COORDINATES",
+                            "submodule_name": "Coordinates",
+                            "actions": [
+                                {
+                                    "permission_id": "156",
+                                    "parent_id": "155",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "157",
+                                    "parent_id": "155",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "158",
+                                    "parent_id": "155",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "159",
+                                    "parent_id": "155",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "160",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "TIME_OBJECT_MANAGEMENT",
+                    "module_name": "Time Object Management",
+                    "sub_modules": [
+                        {
+                            "permission_id": "161",
+                            "parent_id": "160",
+                            "section_level": "2",
+                            "submodule_key": "TIME_OBJECTS",
+                            "submodule_name": "Time Objects",
+                            "actions": [
+                                {
+                                    "permission_id": "162",
+                                    "parent_id": "161",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "163",
+                                    "parent_id": "161",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "164",
+                                    "parent_id": "161",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "165",
+                                    "parent_id": "161",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "166",
+                            "parent_id": "160",
+                            "section_level": "2",
+                            "submodule_key": "STAGE_TIME_MAPPINGS",
+                            "submodule_name": "Stage Time mappings",
+                            "actions": [
+                                {
+                                    "permission_id": "167",
+                                    "parent_id": "166",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "168",
+                                    "parent_id": "166",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "169",
+                                    "parent_id": "166",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "170",
+                                    "parent_id": "166",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "171",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "CHECKLIST_MANAGEMENT",
+                    "module_name": "Checklist Management",
+                    "sub_modules": [
+                        {
+                            "permission_id": "172",
+                            "parent_id": "171",
+                            "section_level": "2",
+                            "submodule_key": "TASK_ROLES",
+                            "submodule_name": "Task Roles",
+                            "actions": [
+                                {
+                                    "permission_id": "173",
+                                    "parent_id": "172",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "174",
+                                    "parent_id": "172",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "175",
+                                    "parent_id": "172",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "176",
+                            "parent_id": "171",
+                            "section_level": "2",
+                            "submodule_key": "CHECKLIST",
+                            "submodule_name": "Checklist",
+                            "actions": [
+                                {
+                                    "permission_id": "177",
+                                    "parent_id": "176",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "178",
+                                    "parent_id": "176",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "179",
+                                    "parent_id": "176",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "180",
+                                    "parent_id": "176",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "181",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "LAUNCH_HIRE_MANAGEMENT",
+                    "module_name": "Launch Hire Management",
+                    "sub_modules": [
+                        {
+                            "permission_id": "182",
+                            "parent_id": "181",
+                            "section_level": "2",
+                            "submodule_key": "OPERATORS",
+                            "submodule_name": "Operators",
+                            "actions": [
+                                {
+                                    "permission_id": "183",
+                                    "parent_id": "182",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "184",
+                                    "parent_id": "182",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "185",
+                                    "parent_id": "182",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "186",
+                                    "parent_id": "182",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "187",
+                            "parent_id": "181",
+                            "section_level": "2",
+                            "submodule_key": "FLEET",
+                            "submodule_name": "Fleet",
+                            "actions": [
+                                {
+                                    "permission_id": "188",
+                                    "parent_id": "187",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "189",
+                                    "parent_id": "187",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "190",
+                                    "parent_id": "187",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "191",
+                                    "parent_id": "187",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "192",
+                            "parent_id": "181",
+                            "section_level": "2",
+                            "submodule_key": "CAPTAINS",
+                            "submodule_name": "Captains",
+                            "actions": [
+                                {
+                                    "permission_id": "193",
+                                    "parent_id": "192",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "194",
+                                    "parent_id": "192",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "195",
+                                    "parent_id": "192",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "196",
+                                    "parent_id": "192",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "197",
+                            "parent_id": "181",
+                            "section_level": "2",
+                            "submodule_key": "SERVICES",
+                            "submodule_name": "Services",
+                            "actions": [
+                                {
+                                    "permission_id": "198",
+                                    "parent_id": "197",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "199",
+                                    "parent_id": "197",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "200",
+                                    "parent_id": "197",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "201",
+                                    "parent_id": "197",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "202",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "HOTEL_MANAGEMENT",
+                    "module_name": "Hotel Management",
+                    "sub_modules": [],
+                    "actions": [
+                        {
+                            "permission_id": "203",
+                            "parent_id": "202",
+                            "section_level": "3",
+                            "action_key": "LIST",
+                            "action_name": "List"
+                        },
+                        {
+                            "permission_id": "204",
+                            "parent_id": "202",
+                            "section_level": "3",
+                            "action_key": "ADD",
+                            "action_name": "Add"
+                        },
+                        {
+                            "permission_id": "205",
+                            "parent_id": "202",
+                            "section_level": "3",
+                            "action_key": "EDIT",
+                            "action_name": "Edit"
+                        },
+                        {
+                            "permission_id": "206",
+                            "parent_id": "202",
+                            "section_level": "3",
+                            "action_key": "DELETE",
+                            "action_name": "Delete"
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "207",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "HOSPITAL_MANAGEMENT",
+                    "module_name": "Hospital Management",
+                    "sub_modules": [
+                        {
+                            "permission_id": "208",
+                            "parent_id": "207",
+                            "section_level": "2",
+                            "submodule_key": "HOSPITALS",
+                            "submodule_name": "Hospitals",
+                            "actions": [
+                                {
+                                    "permission_id": "209",
+                                    "parent_id": "208",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "210",
+                                    "parent_id": "208",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "211",
+                                    "parent_id": "208",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "212",
+                                    "parent_id": "208",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "213",
+                            "parent_id": "207",
+                            "section_level": "2",
+                            "submodule_key": "MEDICAL_SERVICES",
+                            "submodule_name": "Medical Services",
+                            "actions": [
+                                {
+                                    "permission_id": "214",
+                                    "parent_id": "213",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "215",
+                                    "parent_id": "213",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "216",
+                                    "parent_id": "213",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "217",
+                                    "parent_id": "213",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "218",
+                            "parent_id": "207",
+                            "section_level": "2",
+                            "submodule_key": "HOSPITAL_SERVICES",
+                            "submodule_name": "Hospital Services",
+                            "actions": [
+                                {
+                                    "permission_id": "219",
+                                    "parent_id": "218",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "220",
+                                    "parent_id": "218",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "221",
+                                    "parent_id": "218",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "222",
+                                    "parent_id": "218",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "223",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "TRANSPORT_MANAGEMENT",
+                    "module_name": "Transport Management",
+                    "sub_modules": [
+                        {
+                            "permission_id": "224",
+                            "parent_id": "223",
+                            "section_level": "2",
+                            "submodule_key": "DRIVER",
+                            "submodule_name": "Driver",
+                            "actions": [
+                                {
+                                    "permission_id": "225",
+                                    "parent_id": "224",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "226",
+                                    "parent_id": "224",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "227",
+                                    "parent_id": "224",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "229",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "ON_STATION",
+                    "module_name": "On Station",
+                    "sub_modules": [],
+                    "actions": [
+                        {
+                            "permission_id": "230",
+                            "parent_id": "229",
+                            "section_level": "3",
+                            "action_key": "LIST",
+                            "action_name": "List"
+                        },
+                        {
+                            "permission_id": "231",
+                            "parent_id": "229",
+                            "section_level": "3",
+                            "action_key": "CREATE_SALES_ORDER",
+                            "action_name": "Create Sales Order"
+                        },
+                        {
+                            "permission_id": "232",
+                            "parent_id": "229",
+                            "section_level": "3",
+                            "action_key": "CONVERT_TO_TAX_INVOICE",
+                            "action_name": "Convert to tax invoice"
+                        },
+                        {
+                            "permission_id": "233",
+                            "parent_id": "229",
+                            "section_level": "3",
+                            "action_key": "SUMMARY_SHEET",
+                            "action_name": "Summary Sheet"
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "234",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "TASK_CARD",
+                    "module_name": "Task Card",
+                    "sub_modules": [],
+                    "actions": [
+                        {
+                            "permission_id": "235",
+                            "parent_id": "234",
+                            "section_level": "3",
+                            "action_key": "VIEW",
+                            "action_name": "View"
+                        },
+                        {
+                            "permission_id": "236",
+                            "parent_id": "234",
+                            "section_level": "3",
+                            "action_key": "LIST",
+                            "action_name": "List"
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "237",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "OUTLOOK",
+                    "module_name": "Outlook",
+                    "sub_modules": [],
+                    "actions": [
+                        {
+                            "permission_id": "238",
+                            "parent_id": "237",
+                            "section_level": "3",
+                            "action_key": "VIEW",
+                            "action_name": "View"
+                        },
+                        {
+                            "permission_id": "239",
+                            "parent_id": "237",
+                            "section_level": "3",
+                            "action_key": "LIST",
+                            "action_name": "List"
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "240",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "BUSINESS_RULES",
+                    "module_name": "Business Rules",
+                    "sub_modules": [],
+                    "actions": [
+                        {
+                            "permission_id": "241",
+                            "parent_id": "240",
+                            "section_level": "3",
+                            "action_key": "ADD_NEW_RULE",
+                            "action_name": "Add new rule"
+                        },
+                        {
+                            "permission_id": "242",
+                            "parent_id": "240",
+                            "section_level": "3",
+                            "action_key": "EDIT",
+                            "action_name": "Edit"
+                        },
+                        {
+                            "permission_id": "243",
+                            "parent_id": "240",
+                            "section_level": "3",
+                            "action_key": "COPY",
+                            "action_name": "Copy"
+                        },
+                        {
+                            "permission_id": "244",
+                            "parent_id": "240",
+                            "section_level": "3",
+                            "action_key": "DELETE",
+                            "action_name": "Delete"
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "245",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "CARD_MANAGEMENT",
+                    "module_name": "Card Management",
+                    "sub_modules": [
+                        {
+                            "permission_id": "246",
+                            "parent_id": "245",
+                            "section_level": "2",
+                            "submodule_key": "BLOCKERS",
+                            "submodule_name": "Blockers",
+                            "actions": [
+                                {
+                                    "permission_id": "247",
+                                    "parent_id": "246",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "248",
+                                    "parent_id": "246",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "249",
+                                    "parent_id": "246",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "250",
+                                    "parent_id": "246",
+                                    "section_level": "3",
+                                    "action_key": "DISABLE",
+                                    "action_name": "Disable"
+                                },
+                                {
+                                    "permission_id": "251",
+                                    "parent_id": "246",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "252",
+                            "parent_id": "245",
+                            "section_level": "2",
+                            "submodule_key": "STICKERS",
+                            "submodule_name": "Stickers",
+                            "actions": [
+                                {
+                                    "permission_id": "253",
+                                    "parent_id": "252",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "254",
+                                    "parent_id": "252",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "255",
+                                    "parent_id": "252",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "256",
+                                    "parent_id": "252",
+                                    "section_level": "3",
+                                    "action_key": "DISABLE",
+                                    "action_name": "Disable"
+                                },
+                                {
+                                    "permission_id": "257",
+                                    "parent_id": "252",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "258",
+                            "parent_id": "245",
+                            "section_level": "2",
+                            "submodule_key": "TAGS",
+                            "submodule_name": "Tags",
+                            "actions": [
+                                {
+                                    "permission_id": "259",
+                                    "parent_id": "258",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "260",
+                                    "parent_id": "258",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "261",
+                                    "parent_id": "258",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "262",
+                                    "parent_id": "258",
+                                    "section_level": "3",
+                                    "action_key": "DISABLE",
+                                    "action_name": "Disable"
+                                },
+                                {
+                                    "permission_id": "263",
+                                    "parent_id": "258",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "264",
+                            "parent_id": "245",
+                            "section_level": "2",
+                            "submodule_key": "TYPES",
+                            "submodule_name": "Types",
+                            "actions": [
+                                {
+                                    "permission_id": "265",
+                                    "parent_id": "264",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "266",
+                                    "parent_id": "264",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "267",
+                                    "parent_id": "264",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "268",
+                                    "parent_id": "264",
+                                    "section_level": "3",
+                                    "action_key": "DISABLE",
+                                    "action_name": "Disable"
+                                },
+                                {
+                                    "permission_id": "269",
+                                    "parent_id": "264",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "270",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "THIRD_PARTY_SERVICE",
+                    "module_name": "Third Party Service",
+                    "sub_modules": [],
+                    "actions": [
+                        {
+                            "permission_id": "271",
+                            "parent_id": "270",
+                            "section_level": "3",
+                            "action_key": "LIST",
+                            "action_name": "List"
+                        },
+                        {
+                            "permission_id": "272",
+                            "parent_id": "270",
+                            "section_level": "3",
+                            "action_key": "ADD",
+                            "action_name": "Add"
+                        },
+                        {
+                            "permission_id": "273",
+                            "parent_id": "270",
+                            "section_level": "3",
+                            "action_key": "EDIT",
+                            "action_name": "Edit"
+                        },
+                        {
+                            "permission_id": "274",
+                            "parent_id": "270",
+                            "section_level": "3",
+                            "action_key": "DELETE",
+                            "action_name": "Delete"
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "275",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "MATERIAL_MANAGEMENT",
+                    "module_name": "Material Management",
+                    "sub_modules": [
+                        {
+                            "permission_id": "276",
+                            "parent_id": "275",
+                            "section_level": "2",
+                            "submodule_key": "WASTE_TYPES",
+                            "submodule_name": "Waste Types",
+                            "actions": [
+                                {
+                                    "permission_id": "277",
+                                    "parent_id": "276",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "278",
+                                    "parent_id": "276",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "279",
+                                    "parent_id": "276",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "280",
+                                    "parent_id": "276",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "281",
+                            "parent_id": "275",
+                            "section_level": "2",
+                            "submodule_key": "PACKAGING_TYPES",
+                            "submodule_name": "Packaging Types",
+                            "actions": [
+                                {
+                                    "permission_id": "282",
+                                    "parent_id": "281",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "283",
+                                    "parent_id": "281",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "284",
+                                    "parent_id": "281",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "285",
+                                    "parent_id": "281",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "286",
+                            "parent_id": "275",
+                            "section_level": "2",
+                            "submodule_key": "LOGISTIC_WAREHOUSES",
+                            "submodule_name": "Logistic Warehouses",
+                            "actions": [
+                                {
+                                    "permission_id": "287",
+                                    "parent_id": "286",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                },
+                                {
+                                    "permission_id": "288",
+                                    "parent_id": "286",
+                                    "section_level": "3",
+                                    "action_key": "ADD",
+                                    "action_name": "Add"
+                                },
+                                {
+                                    "permission_id": "289",
+                                    "parent_id": "286",
+                                    "section_level": "3",
+                                    "action_key": "EDIT",
+                                    "action_name": "Edit"
+                                },
+                                {
+                                    "permission_id": "290",
+                                    "parent_id": "286",
+                                    "section_level": "3",
+                                    "action_key": "DELETE",
+                                    "action_name": "Delete"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "291",
+                            "parent_id": "275",
+                            "section_level": "2",
+                            "submodule_key": "ORDER_HISTORY",
+                            "submodule_name": "Order History",
+                            "actions": [
+                                {
+                                    "permission_id": "292",
+                                    "parent_id": "291",
+                                    "section_level": "3",
+                                    "action_key": "LIST",
+                                    "action_name": "List"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "permission_id": "293",
+                    "parent_id": null,
+                    "section_level": "1",
+                    "module_key": "SETTINGS",
+                    "module_name": "Settings",
+                    "sub_modules": [
+                        {
+                            "permission_id": "294",
+                            "parent_id": "293",
+                            "section_level": "2",
+                            "submodule_key": "MY_ACCOUNTS",
+                            "submodule_name": "My Accounts",
+                            "actions": [
+                                {
+                                    "permission_id": "295",
+                                    "parent_id": "294",
+                                    "section_level": "3",
+                                    "action_key": "VIEW",
+                                    "action_name": "View"
+                                }
+                            ]
+                        },
+                        {
+                            "permission_id": "296",
+                            "parent_id": "293",
+                            "section_level": "2",
+                            "submodule_key": "ACTIVITY_LOG",
+                            "submodule_name": "Activity Log",
+                            "actions": [
+                                {
+                                    "permission_id": "297",
+                                    "parent_id": "296",
+                                    "section_level": "3",
+                                    "action_key": "VIEW",
+                                    "action_name": "View"
+                                }
+                            ]
+                        }
+                    ]
                 }
             ]
         },
-        "vessel": {
-            "vessel_id": "84",
-            "vessel_name": "BRITOIL DIGNITY",
-            "vessel_type_id": "3",
-            "tug_type_id": null,
-            "vessel_owner": "BRITOIL OFFSHORE SERVICES PTE LTD",
-            "vessel_principal": "L&T",
-            "vessel_manager": null
-        },
-        "task": {
-            "card_id": "1050",
-            "task_id": "3",
-            "task_name": "Inward Clearance",
-            "stage_id": "8",
-            "is_first_column": false,
-            "assigned_user_id": null,
-            "assigned_user_name": null,
-            "assignees": [],
-            "assignable_users": [
-                {
-                    "user_id": "5",
-                    "name": "GRO user"
-                }
-            ],
-            "fields": [
-                {
-                    "source": "task_field",
-                    "field_key": "customs_status",
-                    "label": "Custom Inspection Status",
-                    "field_type": "status",
-                    "value": "pending",
-                    "options": [
-                        {
-                            "label": "Pending",
-                            "value": "pending"
-                        },
-                        {
-                            "label": "Passed",
-                            "value": "passed"
-                        },
-                        {
-                            "label": "Failed",
-                            "value": "failed"
-                        }
-                    ],
-                    "is_required": 0
-                },
-                {
-                    "source": "task_field",
-                    "field_key": "customs_remarks",
-                    "label": "Custom Remarks",
-                    "field_type": "textarea",
-                    "value": null,
-                    "is_required": 0
-                },
-                {
-                    "source": "task_field",
-                    "field_key": "inward_clearance_issued",
-                    "label": "Inward Clearance Issued",
-                    "field_type": "datetime",
-                    "value": null,
-                    "is_required": 0
-                },
-                {
-                    "source": "task_field",
-                    "field_key": "inward_clearance_doc",
-                    "label": "Inward Clearance Document",
-                    "field_type": "document",
-                    "value": null,
-                    "file_url": null,
-                    "is_required": 0
-                },
-                {
-                    "source": "task_field",
-                    "field_key": "immigration_status",
-                    "label": "Crew Immigration Status",
-                    "field_type": "status",
-                    "value": "Pending",
-                    "options": [
-                        {
-                            "label": "Pending",
-                            "value": "Pending"
-                        },
-                        {
-                            "label": "Completed",
-                            "value": "Completed"
-                        }
-                    ],
-                    "is_required": 0
-                },
-                {
-                    "source": "task_field",
-                    "field_key": "immigration_remarks",
-                    "label": "Crew Immigration Remarks",
-                    "field_type": "textarea",
-                    "value": null,
-                    "is_required": 0
-                },
-                {
-                    "source": "task_field",
-                    "field_key": "immigration_doc",
-                    "label": "Crew Immigration Document",
-                    "field_type": "document",
-                    "value": null,
-                    "file_url": null,
-                    "is_required": 0
-                },
-                {
-                    "source": "time_object",
-                    "field_key": "CIC",
-                    "label": "Custom Inspection Commenced",
-                    "field_type": "datetime",
-                    "value": null,
-                    "is_required": 0,
-                    "time_object_id": 9,
-                    "stage_id": 8,
-                    "sort_order": 1
-                },
-                {
-                    "source": "time_object",
-                    "field_key": "CIC_1",
-                    "label": "Custom Inspection Completed",
-                    "field_type": "datetime",
-                    "value": null,
-                    "is_required": 0,
-                    "time_object_id": 10,
-                    "stage_id": 8,
-                    "sort_order": 2
-                },
-                {
-                    "source": "time_object",
-                    "field_key": "CCT",
-                    "label": "Custom Clearance Time",
-                    "field_type": "datetime",
-                    "value": null,
-                    "is_required": 0,
-                    "time_object_id": 47,
-                    "stage_id": 8,
-                    "sort_order": 3
-                },
-                {
-                    "source": "time_object",
-                    "field_key": "CIC_2",
-                    "label": "Crew Immigration Commenced - BATCH 1",
-                    "field_type": "datetime",
-                    "value": null,
-                    "is_required": 1,
-                    "time_object_id": 12,
-                    "stage_id": 7,
-                    "sort_order": 1,
-                    "batch": "BATCH 1"
-                },
-                {
-                    "source": "time_object",
-                    "field_key": "CIC_3",
-                    "label": "Crew Immigration Completed - BATCH 1",
-                    "field_type": "datetime",
-                    "value": null,
-                    "is_required": 1,
-                    "time_object_id": 20,
-                    "stage_id": 7,
-                    "sort_order": 2,
-                    "batch": "BATCH 1"
-                },
-                {
-                    "source": "time_object",
-                    "field_key": "CIC_2",
-                    "label": "Crew Immigration Commenced - BATCH 2",
-                    "field_type": "datetime",
-                    "value": null,
-                    "is_required": 1,
-                    "time_object_id": 12,
-                    "stage_id": 7,
-                    "sort_order": 1,
-                    "batch": "BATCH 2"
-                },
-                {
-                    "source": "time_object",
-                    "field_key": "CIC_3",
-                    "label": "Crew Immigration Completed - BATCH 2",
-                    "field_type": "datetime",
-                    "value": null,
-                    "is_required": 1,
-                    "time_object_id": 20,
-                    "stage_id": 7,
-                    "sort_order": 2,
-                    "batch": "BATCH 2"
-                }
-            ],
-            "documents": [
-                {
-                    "document_required": 1,
-                    "document_id": "4895",
-                    "call_task_document_id": "472",
-                    "document_name": "Last port Clearance for Tug , Barge , Crew boat",
-                    "file_name": "08f3a856-d112-4cb6-b97f-7cab3afbb2051.png",
-                    "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/08f3a856-d112-4cb6-b97f-7cab3afbb2051.png",
-                    "status": "2",
-                    "remarks": "",
-                    "uploaded_by": "83",
-                    "uploaded_by_user": "Infobahn Test",
-                    "uploaded_at": "2026-11-27 09:54:29"
-                },
-                {
-                    "document_required": 1,
-                    "document_id": "4896",
-                    "call_task_document_id": "473",
-                    "document_name": "Stamped crew List from last port",
-                    "file_name": "8027c8af-1267-47bf-ab77-6ec22455f9501.png",
-                    "file_url": "https:\/\/onlinebareed.com\/sedres\/uploads\/Checklist\/8027c8af-1267-47bf-ab77-6ec22455f9501.png",
-                    "status": "2",
-                    "remarks": "",
-                    "uploaded_by": "83",
-                    "uploaded_by_user": "Infobahn Test",
-                    "uploaded_at": "2026-11-27 09:54:41"
-                }
-            ]
+        "boards": [
+            {
+                "board_id": "34",
+                "board_name": "asdasd",
+                "workflows": [
+                    {
+                        "workflow_id": "136",
+                        "workflow_name": "Default Workflow"
+                    }
+                ]
+            },
+            {
+                "board_id": "29",
+                "board_name": "Centralized DA",
+                "workflows": [
+                    {
+                        "workflow_id": "120",
+                        "workflow_name": "DA"
+                    }
+                ]
+            },
+            {
+                "board_id": "28",
+                "board_name": "Jubail Crew",
+                "workflows": [
+                    {
+                        "workflow_id": "110",
+                        "workflow_name": "Crew Coordinator"
+                    },
+                    {
+                        "workflow_id": "111",
+                        "workflow_name": "GRO"
+                    },
+                    {
+                        "workflow_id": "113",
+                        "workflow_name": "Marine Work Permit"
+                    },
+                    {
+                        "workflow_id": "112",
+                        "workflow_name": "Transport Coordinator"
+                    }
+                ]
+            },
+            {
+                "board_id": "27",
+                "board_name": "Jubail Marine",
+                "workflows": [
+                    {
+                        "workflow_id": "117",
+                        "workflow_name": "Custom Clearance"
+                    },
+                    {
+                        "workflow_id": "114",
+                        "workflow_name": "GRO"
+                    },
+                    {
+                        "workflow_id": "115",
+                        "workflow_name": "Marine Work Permit"
+                    },
+                    {
+                        "workflow_id": "118",
+                        "workflow_name": "Operator"
+                    },
+                    {
+                        "workflow_id": "109",
+                        "workflow_name": "Supervisor"
+                    }
+                ]
+            },
+            {
+                "board_id": "31",
+                "board_name": "Ras Tanura Crew",
+                "workflows": [
+                    {
+                        "workflow_id": "132",
+                        "workflow_name": "Crew Coordinator"
+                    },
+                    {
+                        "workflow_id": "134",
+                        "workflow_name": "GRO"
+                    },
+                    {
+                        "workflow_id": "133",
+                        "workflow_name": "Marine Work Permit"
+                    },
+                    {
+                        "workflow_id": "135",
+                        "workflow_name": "Transport Coordinator"
+                    }
+                ]
+            },
+            {
+                "board_id": "30",
+                "board_name": "Ras Tanura Marine",
+                "workflows": [
+                    {
+                        "workflow_id": "130",
+                        "workflow_name": "Custom Clearance"
+                    },
+                    {
+                        "workflow_id": "129",
+                        "workflow_name": "GRO"
+                    },
+                    {
+                        "workflow_id": "131",
+                        "workflow_name": "Marine Work Permit"
+                    },
+                    {
+                        "workflow_id": "128",
+                        "workflow_name": "Operator"
+                    },
+                    {
+                        "workflow_id": "127",
+                        "workflow_name": "Supervisor"
+                    },
+                    {
+                        "workflow_id": "137",
+                        "workflow_name": "Taxi Boat"
+                    }
+                ]
+            }
+        ],
+        "workflows": [
+            {
+                "workflow_id": "109",
+                "workflow_name": "Supervisor",
+                "board_id": "27"
+            },
+            {
+                "workflow_id": "110",
+                "workflow_name": "Crew Coordinator",
+                "board_id": "28"
+            },
+            {
+                "workflow_id": "111",
+                "workflow_name": "GRO",
+                "board_id": "28"
+            },
+            {
+                "workflow_id": "112",
+                "workflow_name": "Transport Coordinator",
+                "board_id": "28"
+            },
+            {
+                "workflow_id": "113",
+                "workflow_name": "Marine Work Permit",
+                "board_id": "28"
+            },
+            {
+                "workflow_id": "114",
+                "workflow_name": "GRO",
+                "board_id": "27"
+            },
+            {
+                "workflow_id": "115",
+                "workflow_name": "Marine Work Permit",
+                "board_id": "27"
+            },
+            {
+                "workflow_id": "117",
+                "workflow_name": "Custom Clearance",
+                "board_id": "27"
+            },
+            {
+                "workflow_id": "118",
+                "workflow_name": "Operator",
+                "board_id": "27"
+            },
+            {
+                "workflow_id": "120",
+                "workflow_name": "DA",
+                "board_id": "29"
+            },
+            {
+                "workflow_id": "127",
+                "workflow_name": "Supervisor",
+                "board_id": "30"
+            },
+            {
+                "workflow_id": "128",
+                "workflow_name": "Operator",
+                "board_id": "30"
+            },
+            {
+                "workflow_id": "129",
+                "workflow_name": "GRO",
+                "board_id": "30"
+            },
+            {
+                "workflow_id": "130",
+                "workflow_name": "Custom Clearance",
+                "board_id": "30"
+            },
+            {
+                "workflow_id": "131",
+                "workflow_name": "Marine Work Permit",
+                "board_id": "30"
+            },
+            {
+                "workflow_id": "132",
+                "workflow_name": "Crew Coordinator",
+                "board_id": "31"
+            },
+            {
+                "workflow_id": "133",
+                "workflow_name": "Marine Work Permit",
+                "board_id": "31"
+            },
+            {
+                "workflow_id": "134",
+                "workflow_name": "GRO",
+                "board_id": "31"
+            },
+            {
+                "workflow_id": "135",
+                "workflow_name": "Transport Coordinator",
+                "board_id": "31"
+            },
+            {
+                "workflow_id": "136",
+                "workflow_name": "Default Workflow",
+                "board_id": "34"
+            },
+            {
+                "workflow_id": "137",
+                "workflow_name": "Taxi Boat",
+                "board_id": "30"
+            }
+        ],
+        "notifications": {
+            "unread_count": 0,
+            "pagination": {
+                "page": 1,
+                "limit": 20,
+                "total": 0,
+                "total_pages": 0
+            },
+            "data": []
         }
     }
 }
